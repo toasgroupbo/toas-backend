@@ -1,0 +1,59 @@
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  CreateDateColumn,
+  DeleteDateColumn,
+  PrimaryGeneratedColumn,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
+
+import { Equipment } from '../enums';
+
+import { Owner } from 'src/modules/owners/entities/owner.entity';
+import { BusType } from './bus-type.entity';
+
+@Entity('buses')
+export class Bus {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column('text')
+  name: string;
+
+  @Column('text', { unique: true }) //! unique
+  plaque: string;
+
+  @Column({
+    type: 'enum',
+    enum: Equipment,
+    array: true,
+    nullable: true,
+  })
+  equipment?: Equipment[];
+
+  @Column('boolean', { default: false })
+  decks: boolean;
+
+  @CreateDateColumn({ select: false })
+  createdAt: Date;
+
+  @DeleteDateColumn({ nullable: true, select: false })
+  deletedAt: Date;
+
+  //* ---------------------------------------------------------------------------------------------- */
+  //*                                        Relations                                               */
+  //* ---------------------------------------------------------------------------------------------- */
+
+  @ManyToOne(() => Owner, (owner) => owner.buses, { nullable: true }) //! NULL
+  owner?: Owner;
+
+  @OneToOne(() => BusType, (busType) => busType.buses, { cascade: true })
+  @JoinColumn()
+  busType: BusType;
+
+  //* ---------------------------------------------------------------------------------------------- */
+  //*                                        Functions                                               */
+  //* ---------------------------------------------------------------------------------------------- */
+}

@@ -1,0 +1,5 @@
+export enum StaticRoles {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  COMPANY_ADMIN = 'COMPANY_ADMIN',
+  CASHIER = 'CASHIER',
+}
