@@ -9,6 +9,12 @@
 structure.json
 notas.txt
 
+/static/uploads/*
+!/static/uploads/.gitkeep
+*.yml
+
+
+
 # Logs
 logs
 *.log
