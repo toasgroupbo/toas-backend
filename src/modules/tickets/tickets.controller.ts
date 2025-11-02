@@ -8,17 +8,24 @@ import {
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateTicketInAppDto, CreateTicketInOfficeDto } from './dto';
 
-import { GetUser } from '../../auth/decorators';
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
+
+import { Auth, GetUser, Resource } from '../../auth/decorators';
 
 import { TicketsService } from './tickets.service';
 
 import { Customer } from '../customers/entities/customer.entity';
 import { User } from '../users/entities/user.entity';
+
+//!
+@Resource(ValidResourses.TICKET)
+@ApiBearerAuth('access-token')
+//!
 
 @ApiTags('Tickets')
 @Controller('tickets')
@@ -29,6 +36,9 @@ export class TicketsController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.CREATE)
+  //!
   @Post('in-office')
   createInOffice(
     @Body() createTicketDto: CreateTicketInOfficeDto,
@@ -37,6 +47,9 @@ export class TicketsController {
     return this.ticketsService.createTicketInOffice(createTicketDto, user);
   }
 
+  //!
+  @Auth(ValidPermissions.CREATE)
+  //!
   @Post('in-app')
   createInApp(
     @Body() createTicketDto: CreateTicketInAppDto,
@@ -49,6 +62,9 @@ export class TicketsController {
   //?                                        Confirm                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.CONFIRM)
+  //!
   @Post('confirm/:id')
   confirmManual(@Param('id', ParseUUIDPipe) ticketUUID: string) {
     return this.ticketsService.confirmTicketManual(ticketUUID);
@@ -58,6 +74,9 @@ export class TicketsController {
   //?                                         Cancel                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.CANCEL)
+  //!
   @Post('cancel/:id')
   cancelManual(@Param('id', ParseUUIDPipe) ticketUUID: string) {
     return this.ticketsService.cancelTicket(ticketUUID);
@@ -67,6 +86,9 @@ export class TicketsController {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get()
   findAll(@Query() pagination: PaginationDto) {
     return this.ticketsService.findAll(pagination);
@@ -76,29 +98,11 @@ export class TicketsController {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.ticketsService.findOne(id);
-  }
-
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                        Update                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
-
-  /*   @Patch(':id')
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateTicketDto: UpdateTicketDto,
-  ) {
-    return this.ticketsService.update(id, updateTicketDto);
-  } */
-
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
-
-  @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.ticketsService.remove(id);
   }
 }

@@ -7,14 +7,22 @@ import {
   Delete,
   Controller,
   ParseUUIDPipe,
-  Put,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateTravelDto } from './dto';
 
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
+
+import { Auth, Resource } from 'src/auth/decorators';
+
 import { TravelsService } from './travels.service';
+
+//!
+@Resource(ValidResourses.TRAVEL)
+@ApiBearerAuth('access-token')
+//!
 
 @ApiTags('Travels')
 @Controller('travels')
@@ -25,6 +33,9 @@ export class TravelsController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.CREATE)
+  //!
   @Post()
   create(@Body() createTravelDto: CreateTravelDto) {
     return this.travelsService.create(createTravelDto);
@@ -34,6 +45,9 @@ export class TravelsController {
   //?                           Get_Seats_Available                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get('seats-available:id')
   getSeatsAvailable(@Param('id', ParseUUIDPipe) id: string) {
     return this.travelsService.getSeatsAvailable(id);
@@ -43,12 +57,18 @@ export class TravelsController {
   //?                                 Closed_Travel                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.CLOSE)
+  //!
   closed() {}
 
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get()
   findAll(@Query() pagination: PaginationDto) {
     return this.travelsService.findAll(pagination);
@@ -58,6 +78,9 @@ export class TravelsController {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.travelsService.findOne(id);
@@ -67,7 +90,10 @@ export class TravelsController {
   //?                                        Cancel                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  @Put('cancel/:id')
+  //!
+  @Auth(ValidPermissions.CANCEL)
+  //!
+  @Post('cancel/:id')
   cancel(@Param('id', ParseUUIDPipe) id: string) {
     return this.travelsService.cancel(id);
   }
@@ -76,6 +102,9 @@ export class TravelsController {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.DELETE)
+  //!
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.travelsService.remove(id);

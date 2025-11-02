@@ -32,7 +32,7 @@ export class User {
   @Column('text')
   fullName: string;
 
-  @Column('text', { nullable: true })
+  @Column('text', { unique: true }) //! unique
   ci: string;
 
   @Column('text')

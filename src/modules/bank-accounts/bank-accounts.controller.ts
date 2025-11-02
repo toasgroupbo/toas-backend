@@ -9,12 +9,21 @@ import {
   Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { PaginationDto } from 'src/common/pagination/pagination.dto';
 import { CreateBankAccountDto, UpdateBankAccountDto } from './dto';
 
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
+
+import { Auth, Resource } from 'src/auth/decorators';
+
 import { BankAccountsService } from './bank-accounts.service';
+
+//!
+@Resource(ValidResourses.BANK_ACCOUNT)
+@ApiBearerAuth('access-token')
+//!
 
 @ApiTags('Bank Accounts')
 @Controller('bank-accounts')
@@ -25,6 +34,9 @@ export class BankAccountsController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.CREATE)
+  //!
   @Post()
   create(@Body() createBankAccountDto: CreateBankAccountDto) {
     return this.bankAccountsService.create(createBankAccountDto);
@@ -34,9 +46,10 @@ export class BankAccountsController {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get()
-  /*   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'offset', required: false, type: Number }) */
   findAll(@Query() pagination: PaginationDto) {
     return this.bankAccountsService.findAll(pagination);
   }
@@ -45,6 +58,9 @@ export class BankAccountsController {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.bankAccountsService.findOne(id);
@@ -54,6 +70,9 @@ export class BankAccountsController {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.UPDATE)
+  //!
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -66,6 +85,9 @@ export class BankAccountsController {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.DELETE)
+  //!
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.bankAccountsService.remove(id);

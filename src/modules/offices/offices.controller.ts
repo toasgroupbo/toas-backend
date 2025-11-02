@@ -9,12 +9,21 @@ import {
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateOfficeDto, UpdateOfficeDto } from './dto';
 
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
+
+import { Auth, Resource } from 'src/auth/decorators';
+
 import { OfficesService } from './offices.service';
+
+//!
+@Resource(ValidResourses.OFFICE)
+@ApiBearerAuth('access-token')
+//!
 
 @ApiTags('Offices')
 @Controller('offices')
@@ -25,6 +34,9 @@ export class OfficesController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.CREATE)
+  //!
   @Post()
   create(@Body() createOfficeDto: CreateOfficeDto) {
     return this.officesService.create(createOfficeDto);
@@ -34,6 +46,9 @@ export class OfficesController {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get()
   findAll(@Query() pagination: PaginationDto) {
     return this.officesService.findAll(pagination);
@@ -43,6 +58,9 @@ export class OfficesController {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.officesService.findOne(id);
@@ -52,6 +70,9 @@ export class OfficesController {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.UPDATE)
+  //!
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -64,6 +85,9 @@ export class OfficesController {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.DELETE)
+  //!
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.officesService.remove(id);

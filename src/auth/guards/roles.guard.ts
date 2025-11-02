@@ -19,17 +19,26 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    //! se obtiene los metadatos de permiso y recurso
+    // --------------------------------------------------------------------------
+    // 1. Obtención de Metadatos (Permisos)
+    // --------------------------------------------------------------------------
+
     const MetaPermissions = this.reflector.get<{
       permission: ValidPermissions[];
     }>(META_PERMISSION, context.getHandler());
 
-    //! si no hay permisos definidos, permite el acceso solo con la authenticación
+    // --------------------------------------------------------------------------
+    // 2. Si no hay permisos requeridos, permite el acceso
+    // --------------------------------------------------------------------------
+
     if (!MetaPermissions?.permission?.length) {
       return true;
     }
 
-    //! se obtiene el recurso, lo busca de la clase o en la función
+    // --------------------------------------------------------------------------
+    // 3. Obtención de Metadatos (Recurso)
+    // --------------------------------------------------------------------------
+
     const MetaResource =
       this.reflector.get<ValidResourses>(META_RESOURCE, context.getClass()) ||
       //? Si no lo encuentra en la clase, lo busca en el handler
@@ -39,11 +48,17 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Recurso no definido para este endpoint');
     }
 
-    //! se obtiene al usuario desde la request
+    // --------------------------------------------------------------------------
+    // 4. Obtención del usuario desde el request
+    // --------------------------------------------------------------------------
+
     const req = context.switchToHttp().getRequest();
     const user: User = req.user;
 
-    //! un customer no tiene permisos y no tiene rol
+    // --------------------------------------------------------------------------
+    // 3. Validación de Usuario y Rol
+    // --------------------------------------------------------------------------
+
     if (!user) {
       throw new ForbiddenException('User is not authenticated');
     }
@@ -54,15 +69,17 @@ export class RolesGuard implements CanActivate {
       );
     }
 
-    //! Validar permisos
+    // --------------------------------------------------------------------------
+    // 4. Validación de Permisos
+    // --------------------------------------------------------------------------
+
     const rol = user.rol;
 
     //! Si es super admin, tiene acceso a todo
-    if (user.rol.name === StaticRoles.SUPER_ADMIN) {
+    /* if (user.rol.name === StaticRoles.SUPER_ADMIN) {
       return true;
-    }
+    } */
 
-    //! se verifica si el rol tiene permisos para el recurso
     const requiredPermissions = MetaPermissions.permission;
     const hasPermission = rol.permissions?.some((rolePermission) => {
       const matchesResource = rolePermission.resourse === MetaResource;
@@ -72,7 +89,9 @@ export class RolesGuard implements CanActivate {
       return matchesResource && hasAllPermissions;
     });
 
-    //! Si no tiene permisos, lanza una excepción
+    // --------------------------------------------------------------------------
+    // 5. Si no tiene los permisos requeridos, lanza una excepción
+    // --------------------------------------------------------------------------
     if (!hasPermission) {
       throw new ForbiddenException(
         `No tienes los permisos requeridos [${requiredPermissions.join(', ')}] sobre el recurso [${MetaResource}]`,
@@ -82,3 +101,11 @@ export class RolesGuard implements CanActivate {
     return true;
   }
 }
+
+/* 
+| Decorador                                                 | Requiere login   | Requiere rol/permisos |
+| --------------------------------------------------------- | --------------   | --------------------- |
+| `@Auth()`                                                 | ✅ Sí           | ❌ No                  |
+| `@Auth(ValidPermissions.READ)`                            | ✅ Sí           | ✅ Sí (permiso `READ`) |
+| `@Auth(ValidPermissions.CREATE, ValidPermissions.UPDATE)` | ✅ Sí           | ✅ Sí (ambos permisos) |
+*/

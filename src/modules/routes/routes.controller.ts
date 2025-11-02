@@ -9,12 +9,21 @@ import {
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { CreateRouteDto, UpdateRouteDto } from './dto';
 import { PaginationDto } from '../../common/pagination/pagination.dto';
 
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
+
+import { Auth, Resource } from 'src/auth/decorators';
+
 import { RoutesService } from './routes.service';
+
+//!
+@Resource(ValidResourses.ROUTE)
+@ApiBearerAuth('access-token')
+//!
 
 @ApiTags('Routes')
 @Controller('routes')
@@ -25,6 +34,9 @@ export class RoutesController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.CREATE)
+  //!
   @Post()
   create(@Body() createRouteDto: CreateRouteDto) {
     return this.routesService.create(createRouteDto);
@@ -34,6 +46,9 @@ export class RoutesController {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get()
   findAll(@Query() pagination: PaginationDto) {
     return this.routesService.findAll(pagination);
@@ -43,6 +58,9 @@ export class RoutesController {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.routesService.findOne(id);
@@ -52,6 +70,9 @@ export class RoutesController {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.UPDATE)
+  //!
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -64,6 +85,9 @@ export class RoutesController {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.DELETE)
+  //!
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.routesService.remove(id);

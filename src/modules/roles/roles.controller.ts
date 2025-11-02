@@ -9,6 +9,7 @@ import {
   Controller,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateRoleDto, UpdateRoleDto } from './dto';
@@ -16,7 +17,11 @@ import { CreateRoleDto, UpdateRoleDto } from './dto';
 import { ValidResourses, ValidPermissions } from '../../common/enums';
 
 import { Auth, Resource } from '../../auth/decorators';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+//!
+@Resource(ValidResourses.ROL)
+@ApiBearerAuth('access-token')
+//!
 
 @ApiTags('Roles')
 @Controller('roles')
@@ -27,7 +32,9 @@ export class RolesController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  //@Auth(ValidPermissions.CREATE)
+  //!
+  @Auth(ValidPermissions.CREATE)
+  //!
   @Post()
   create(@Body() createRoleDto: CreateRoleDto) {
     return this.rolesService.create(createRoleDto);
@@ -37,6 +44,9 @@ export class RolesController {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get()
   findAll(@Query() pagination: PaginationDto) {
     return this.rolesService.findAll(pagination);
@@ -46,6 +56,9 @@ export class RolesController {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.rolesService.findOne(+id);
@@ -55,6 +68,9 @@ export class RolesController {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.UPDATE)
+  //!
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
     return this.rolesService.update(+id, updateRoleDto);
@@ -64,6 +80,9 @@ export class RolesController {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.DELETE)
+  //!
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.rolesService.remove(+id);

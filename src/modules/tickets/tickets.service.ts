@@ -419,21 +419,4 @@ export class TicketsService {
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
   }
-
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
-
-  async remove(id: string) {
-    const ticket = await this.findOne(id);
-    try {
-      await this.ticketRepository.softRemove(ticket);
-      return {
-        message: 'Ticket deleted successfully',
-        deleted: ticket,
-      };
-    } catch (error) {
-      handleDBExceptions(error);
-    }
-  }
 }

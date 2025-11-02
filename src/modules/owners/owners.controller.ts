@@ -9,12 +9,21 @@ import {
   Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { PaginationDto } from 'src/common/pagination/pagination.dto';
 import { CreateOwnerDto, UpdateOwnerDto } from './dto';
 
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
+
+import { Auth, Resource } from 'src/auth/decorators';
+
 import { OwnersService } from './owners.service';
+
+//!
+@Resource(ValidResourses.OWNER)
+@ApiBearerAuth('access-token')
+//!
 
 @ApiTags('Owners')
 @Controller('owners')
@@ -25,6 +34,9 @@ export class OwnersController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.CREATE)
+  //!
   @Post()
   create(@Body() createOwnerDto: CreateOwnerDto) {
     return this.ownersService.create(createOwnerDto);
@@ -34,6 +46,9 @@ export class OwnersController {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get()
   findAll(@Query() pagination: PaginationDto) {
     return this.ownersService.findAll(pagination);
@@ -43,6 +58,9 @@ export class OwnersController {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.ownersService.findOne(id);
@@ -52,6 +70,9 @@ export class OwnersController {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.UPDATE)
+  //!
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -64,6 +85,9 @@ export class OwnersController {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.DELETE)
+  //!
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.ownersService.remove(id);

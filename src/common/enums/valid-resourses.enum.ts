@@ -1,9 +1,27 @@
 export enum ValidResourses {
   USER = 'USER',
-  ROL = 'ROL',
-  BUS = 'BUS',
-  TRAVEL = 'TRAVEL',
-  OFFICE = 'OFFICE',
-  COMPANY = 'COMPANY',
+
+  CASHIER = 'CASHIER',
+
   CUSTOMER = 'CUSTOMER',
+
+  ROL = 'ROL',
+
+  BANK_ACCOUNT = 'BANK_ACCOUNT',
+
+  COMPANY = 'COMPANY',
+
+  OWNER = 'OWNER',
+
+  BUS = 'BUS',
+
+  OFFICE = 'OFFICE',
+
+  ROUTE = 'ROUTE',
+
+  TRAVEL = 'TRAVEL',
+
+  TICKET = 'TICKET',
+
+  FILE = 'FILE',
 }

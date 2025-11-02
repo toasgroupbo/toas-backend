@@ -1,18 +1,14 @@
 import {
-  Get,
   Post,
   Body,
-  Patch,
   Param,
-  Query,
-  Delete,
   Controller,
   ParseUUIDPipe,
+  Put,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
-import { CreateUserAdminDto, UpdateUserDto } from './dto';
+import { CreateUserCashierDto, UpdateUserOfficeDto } from './dto';
 
 import { ValidResourses, ValidPermissions } from '../../common/enums';
 
@@ -21,13 +17,13 @@ import { Auth, Resource } from '../../auth/decorators';
 import { UsersService } from './users.service';
 
 //!
-@Resource(ValidResourses.USER)
+@Resource(ValidResourses.CASHIER)
 @ApiBearerAuth('access-token')
 //!
 
-@ApiTags('Users')
-@Controller('users')
-export class UsersController {
+@ApiTags('Cashiers')
+@Controller('cashiers')
+export class CashiersController {
   constructor(private readonly usersService: UsersService) {}
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -37,59 +33,39 @@ export class UsersController {
   //!
   @Auth(ValidPermissions.CREATE)
   //!
-  @Post('admins')
-  createAppAdmin(@Body() createUserAdminDto: CreateUserAdminDto) {
-    return this.usersService.create(createUserAdminDto);
+  @Post()
+  createCashier(@Body() createCashierDto: CreateUserCashierDto) {
+    return this.usersService.createCashier(createCashierDto);
   }
 
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  //!
-  @Auth(ValidPermissions.READ)
-  //!
-  @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.usersService.findAll(pagination);
-  }
-
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
-
-  //!
-  @Auth(ValidPermissions.READ)
-  //!
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.findOne(id);
-  }
 
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //? ---------------------------------------------------------------------------------------------- */
+  //?                                      Update_Office                                             */
+  //? ---------------------------------------------------------------------------------------------- */
+
   //!
-  @Auth(ValidPermissions.UPDATE)
+  @Auth(ValidPermissions.PUT)
   //!
-  @Patch(':id')
-  update(
+  @Put('office/:id')
+  updateOffice(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateUserDto: UpdateUserDto,
+    @Body() updateUserOfficeDto: UpdateUserOfficeDto,
   ) {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.updateOffice(id, updateUserOfficeDto);
   }
 
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
-
-  //!
-  @Auth(ValidPermissions.DELETE)
-  //!
-  @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.remove(id);
-  }
 }

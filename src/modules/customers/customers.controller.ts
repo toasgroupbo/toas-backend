@@ -1,5 +1,4 @@
 import {
-  Post,
   Get,
   Body,
   Patch,
@@ -11,17 +10,21 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
-import { CreateCustomerDto, UpdateCustomerDto } from './dto';
+import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
+import { UpdateCustomerDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
+
 import { Auth, Resource } from 'src/auth/decorators';
 
 import { CustomersService } from './customers.service';
-import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
+
+//!
+@Resource(ValidResourses.CUSTOMER)
+@ApiBearerAuth('access-token')
+//!
 
 @ApiTags('Customers')
-@Resource(ValidResourses.CUSTOMER) //! recurso
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
@@ -30,8 +33,9 @@ export class CustomersController {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  //@ApiBearerAuth('access-token')
-  //@Auth() //! debe estar autenticado
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
@@ -48,8 +52,10 @@ export class CustomersController {
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
-  @ApiBearerAuth('access-token')
-  @Auth()
+
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.customersService.findOne(id);
@@ -59,8 +65,9 @@ export class CustomersController {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  @ApiBearerAuth('access-token')
+  //!
   @Auth(ValidPermissions.UPDATE)
+  //!
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -72,8 +79,10 @@ export class CustomersController {
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
-  @ApiBearerAuth('access-token')
+
+  //!
   @Auth(ValidPermissions.DELETE)
+  //!
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.customersService.remove(id);

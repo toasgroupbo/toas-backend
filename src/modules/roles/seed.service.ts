@@ -2,58 +2,233 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
 import { StaticRoles } from 'src/auth/enums/roles.enum';
 
 import { Rol } from '../roles/entities/rol.entity';
+import { Permission } from './entities/permission.entity';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
   constructor(
     @InjectRepository(Rol)
     private readonly rolRepository: Repository<Rol>,
+
+    @InjectRepository(Permission)
+    private readonly permissionRepository: Repository<Permission>,
   ) {}
 
   async onModuleInit() {
-    await this.seedRoles();
-    //await this.seedSuperAdmin();
+    await this.seedRolesAndPermissions();
   }
 
-  private async seedRoles() {
+  private async seedRolesAndPermissions() {
     const staticRoles = [
-      { name: StaticRoles.SUPER_ADMIN, isStatic: true },
-      { name: StaticRoles.COMPANY_ADMIN, isStatic: true },
-      { name: StaticRoles.CASHIER, isStatic: true },
+      //! SUPER-USER
+
+      {
+        name: StaticRoles.SUPER_ADMIN,
+        isStatic: true,
+        permissions: [
+          {
+            resourse: ValidResourses.COMPANY,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.USER,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.CUSTOMER,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+        ],
+      },
+
+      //! COMPANY-ADMIN
+
+      {
+        name: StaticRoles.COMPANY_ADMIN,
+        isStatic: true,
+        permissions: [
+          {
+            resourse: ValidResourses.CASHIER,
+            permissions: [ValidPermissions.CREATE, ValidPermissions.PUT],
+          },
+
+          {
+            resourse: ValidResourses.OFFICE,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.OWNER,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.BUS,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.ROUTE,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.TRAVEL,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+
+              ValidPermissions.CLOSE,
+              ValidPermissions.CANCEL,
+            ],
+          },
+        ],
+      },
+
+      //! CASHIER
+
+      {
+        name: StaticRoles.CASHIER,
+        isStatic: true,
+        permissions: [
+          {
+            resourse: ValidResourses.BUS,
+            permissions: [ValidPermissions.READ],
+          },
+
+          {
+            resourse: ValidResourses.ROUTE,
+            permissions: [ValidPermissions.READ],
+          },
+
+          {
+            resourse: ValidResourses.TRAVEL,
+            permissions: [ValidPermissions.READ, ValidPermissions.CLOSE],
+          },
+
+          {
+            resourse: ValidResourses.TICKET,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+
+              ValidPermissions.CONFIRM,
+              ValidPermissions.CANCEL,
+            ],
+          },
+        ],
+      },
     ];
 
-    for (const role of staticRoles) {
-      const exists = await this.rolRepository.findOne({
-        where: { name: role.name },
+    // --------------------------------------------------------------------------
+    // 1.  Se buscan los roles estáticos en la base de datos
+    // --------------------------------------------------------------------------
+
+    for (const roleData of staticRoles) {
+      let role = await this.rolRepository.findOne({
+        where: { name: roleData.name },
+        relations: ['permissions'],
       });
-      if (!exists) {
-        await this.rolRepository.save(this.rolRepository.create(role));
-        console.log(`Rol created: ${role.name}`);
+
+      if (!role) {
+        role = this.rolRepository.create({
+          name: roleData.name,
+          isStatic: roleData.isStatic,
+        });
+        role = await this.rolRepository.save(role);
+        console.log(`✅ Rol creado: ${roleData.name}`);
+      }
+
+      // --------------------------------------------------------------------------
+      // 2.  Se sincronizan los permisos para cada rol
+      // --------------------------------------------------------------------------
+
+      for (const { resourse, permissions } of roleData.permissions) {
+        let existing = role.permissions.find((p) => p.resourse === resourse);
+
+        if (!existing) {
+          existing = this.permissionRepository.create({
+            resourse,
+            permissions,
+            rol: role,
+          });
+          await this.permissionRepository.save(existing);
+          console.log(`🆕 Permiso creado para ${role.name}: ${resourse}`);
+        } else {
+          const changed =
+            permissions.sort().join(',') !==
+            existing.permissions.sort().join(',');
+          if (changed) {
+            existing.permissions = permissions;
+            await this.permissionRepository.save(existing);
+            console.log(
+              `🔄 Permiso actualizado para ${role.name}: ${resourse}`,
+            );
+          }
+        }
+      }
+
+      // --------------------------------------------------------------------------
+      // 3.  Se eliminan permisos obsoletos para cada rol
+      // --------------------------------------------------------------------------
+
+      const validResources = roleData.permissions.map((p) => p.resourse);
+      const obsolete = role.permissions.filter(
+        (p) => !validResources.includes(p.resourse),
+      );
+      if (obsolete.length > 0) {
+        await this.permissionRepository.remove(obsolete);
+        console.log(
+          `🗑️ Eliminados permisos obsoletos de ${role.name}: ${obsolete
+            .map((p) => p.resourse)
+            .join(', ')}`,
+        );
       }
     }
+
+    console.log('✅ Seed completado correctamente');
   }
-
-  /* private async seedSuperAdmin() {
-    const superRole = await this.roleRepo.findOne({
-      where: { name: StaticRoles.SUPER_ADMIN },
-    });
-
-    const exists = await this.userRepo.findOne({
-      where: { email: 'superadmin@system.com' },
-    });
-
-    if (!exists) {
-      const passwordHash = await bcrypt.hash('123456', 10); // 👈 cámbialo en producción
-      const user = this.userRepo.create({
-        email: 'superadmin@system.com',
-        passwordHash,
-        role: superRole,
-      });
-      await this.userRepo.save(user);
-      console.log('👑 SuperAdmin creado: superadmin@system.com / 123456');
-    }
-  } */
 }

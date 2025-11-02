@@ -37,5 +37,5 @@ export class Rol {
     cascade: true,
     eager: true,
   })
-  permissions?: Permission[];
+  permissions: Permission[];
 }
