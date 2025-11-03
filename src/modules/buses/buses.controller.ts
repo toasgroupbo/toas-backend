@@ -4,21 +4,21 @@ import {
   Body,
   Patch,
   Param,
-  Query,
   Delete,
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateBusDto, UpdateBusDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, Resource } from 'src/auth/decorators';
+import { Auth, GetUser, Resource } from 'src/auth/decorators';
 
 import { BusesService } from './buses.service';
+
+import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.BUS)
@@ -50,8 +50,8 @@ export class BusesController {
   @Auth(ValidPermissions.READ)
   //!
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.busesService.findAll(pagination);
+  findAll(@GetUser() user: User) {
+    return this.busesService.findAll(user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -62,8 +62,8 @@ export class BusesController {
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.busesService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this.busesService.findOne(id, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -77,8 +77,9 @@ export class BusesController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateBusDto: UpdateBusDto,
+    @GetUser() user: User,
   ) {
-    return this.busesService.update(id, updateBusDto);
+    return this.busesService.update(id, updateBusDto, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -89,7 +90,7 @@ export class BusesController {
   @Auth(ValidPermissions.DELETE)
   //!
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.busesService.remove(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this.busesService.remove(id, user); //! GetUser
   }
 }

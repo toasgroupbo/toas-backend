@@ -58,10 +58,7 @@ export class CompanyService {
   //? ---------------------------------------------------------------------------------------------- */
 
   async findAll(pagination: PaginationDto) {
-    //const { limit = 10, offset = 0 } = pagination;
     const companies = await this.companyRepository.find({
-      //take: limit,
-      //skip: offset,
       relations: { bankAccount: true, admin: true },
     });
     return companies;

@@ -3,21 +3,20 @@ import {
   Post,
   Body,
   Param,
-  Query,
   Delete,
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateTravelDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, Resource } from 'src/auth/decorators';
+import { Auth, GetUser, Resource } from 'src/auth/decorators';
 
 import { TravelsService } from './travels.service';
+import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.TRAVEL)
@@ -70,8 +69,8 @@ export class TravelsController {
   @Auth(ValidPermissions.READ)
   //!
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.travelsService.findAll(pagination);
+  findAll(@GetUser() user: User) {
+    return this.travelsService.findAll(user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -82,8 +81,8 @@ export class TravelsController {
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.travelsService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this.travelsService.findOne(id, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -94,8 +93,8 @@ export class TravelsController {
   @Auth(ValidPermissions.CANCEL)
   //!
   @Post('cancel/:id')
-  cancel(@Param('id', ParseUUIDPipe) id: string) {
-    return this.travelsService.cancel(id);
+  cancel(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this.travelsService.cancel(id, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -106,7 +105,7 @@ export class TravelsController {
   @Auth(ValidPermissions.DELETE)
   //!
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.travelsService.remove(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this.travelsService.remove(id, user); //! GetUser
   }
 }

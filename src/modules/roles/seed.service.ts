@@ -41,6 +41,16 @@ export class SeedService implements OnModuleInit {
           },
 
           {
+            resourse: ValidResourses.ROL,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
             resourse: ValidResourses.USER,
             permissions: [
               ValidPermissions.CREATE,
@@ -125,6 +135,11 @@ export class SeedService implements OnModuleInit {
               ValidPermissions.CANCEL,
             ],
           },
+
+          {
+            resourse: ValidResourses.TICKET,
+            permissions: [ValidPermissions.READ],
+          },
         ],
       },
 
@@ -179,6 +194,7 @@ export class SeedService implements OnModuleInit {
           isStatic: roleData.isStatic,
         });
         role = await this.rolRepository.save(role);
+        role.permissions = [];
         console.log(`✅ Rol creado: ${roleData.name}`);
       }
 
@@ -217,7 +233,7 @@ export class SeedService implements OnModuleInit {
 
       const validResources = roleData.permissions.map((p) => p.resourse);
       const obsolete = role.permissions.filter(
-        (p) => !validResources.includes(p.resourse),
+        (p) => !validResources.includes(p.resourse as ValidResourses), //! por el error
       );
       if (obsolete.length > 0) {
         await this.permissionRepository.remove(obsolete);

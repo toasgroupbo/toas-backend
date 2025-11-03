@@ -6,7 +6,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateTravelDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
@@ -15,6 +14,7 @@ import { TravelStatus } from './enums/travel-status.enum';
 import { SeatStatus } from 'src/common/enums';
 
 import { TravelSeat } from './entities/travel-seat.entity';
+import { User } from '../users/entities/user.entity';
 import { Bus } from '../buses/entities/bus.entity';
 import { Travel } from './entities/travel.entity';
 
@@ -109,8 +109,10 @@ export class TravelsService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(pagination: PaginationDto) {
+  async findAll(user: User) {
     const travels = await this.travelRepository.find({
+      where: { bus: { owner: { company: user.company } } },
+
       relations: {
         bus: true,
         route: { officeOrigin: true, officeDestination: true },
@@ -124,9 +126,10 @@ export class TravelsService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string) {
+  async findOne(id: string, user) {
     const travel = await this.travelRepository.findOne({
-      where: { id },
+      where: { id, bus: { owner: { company: user.company } } },
+
       relations: {
         bus: true,
         route: { officeOrigin: true, officeDestination: true },
@@ -141,8 +144,8 @@ export class TravelsService {
   //?                                        Cancel                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async cancel(id: string) {
-    const travel = await this.findOne(id);
+  async cancel(id: string, user: User) {
+    const travel = await this.findOne(id, user);
 
     try {
       travel.travel_status = TravelStatus.CANCELLED;
@@ -158,8 +161,8 @@ export class TravelsService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string) {
-    const travel = await this.findOne(id);
+  async remove(id: string, user: User) {
+    const travel = await this.findOne(id, user);
 
     try {
       //! Verificar si algún asiento está en estado 'sold' o 'reserved'

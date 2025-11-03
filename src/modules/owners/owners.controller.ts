@@ -6,19 +6,19 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from 'src/common/pagination/pagination.dto';
 import { CreateOwnerDto, UpdateOwnerDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, Resource } from 'src/auth/decorators';
+import { Auth, GetUser, Resource } from 'src/auth/decorators';
 
 import { OwnersService } from './owners.service';
+
+import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.OWNER)
@@ -38,8 +38,8 @@ export class OwnersController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
-  create(@Body() createOwnerDto: CreateOwnerDto) {
-    return this.ownersService.create(createOwnerDto);
+  create(@Body() createOwnerDto: CreateOwnerDto, @GetUser() user: User) {
+    return this.ownersService.create(createOwnerDto, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -50,8 +50,8 @@ export class OwnersController {
   @Auth(ValidPermissions.READ)
   //!
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.ownersService.findAll(pagination);
+  findAll(@GetUser() user: User) {
+    return this.ownersService.findAll(user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -62,8 +62,8 @@ export class OwnersController {
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.ownersService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this.ownersService.findOne(id, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -77,8 +77,9 @@ export class OwnersController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateOwnerDto: UpdateOwnerDto,
+    @GetUser() user: User,
   ) {
-    return this.ownersService.update(id, updateOwnerDto);
+    return this.ownersService.update(id, updateOwnerDto, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -89,7 +90,7 @@ export class OwnersController {
   @Auth(ValidPermissions.DELETE)
   //!
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.ownersService.remove(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this.ownersService.remove(id, user); //! GetUser
   }
 }

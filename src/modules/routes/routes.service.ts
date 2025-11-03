@@ -6,11 +6,12 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateRouteDto, UpdateRouteDto } from './dto';
 
-import { Route } from './entities/route.entity';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
+
+import { User } from '../users/entities/user.entity';
+import { Route } from './entities/route.entity';
 
 @Injectable()
 export class RoutesService {
@@ -27,6 +28,7 @@ export class RoutesService {
     try {
       const { officeOriginUUID, officeDestinationUUID } = createRouteDto;
 
+      //! Validar que las oficinas de origen y destino sean diferentes
       if (officeOriginUUID == officeDestinationUUID)
         throw new ConflictException(
           'The origin and destination offices must be different',
@@ -47,11 +49,9 @@ export class RoutesService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(pagination: PaginationDto) {
-    //const { limit = 10, offset = 0 } = pagination;
+  async findAll(user: User) {
     const routes = await this.routeRepository.find({
-      //take: limit,
-      //skip: offset,
+      where: { officeOrigin: { company: user.company } },
       relations: {
         officeOrigin: true,
         officeDestination: true,
@@ -64,9 +64,9 @@ export class RoutesService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string) {
+  async findOne(id: string, user: User) {
     const Route = await this.routeRepository.findOne({
-      where: { id },
+      where: { id, officeOrigin: { company: user.company } },
       relations: {
         officeOrigin: true,
         officeDestination: true,
@@ -80,8 +80,8 @@ export class RoutesService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async update(id: string, updateRouteDto: UpdateRouteDto) {
-    const route = await this.findOne(id);
+  async update(id: string, updateRouteDto: UpdateRouteDto, user: User) {
+    const route = await this.findOne(id, user);
     try {
       Object.assign(route, updateRouteDto);
       return await this.routeRepository.save(route);
@@ -94,8 +94,8 @@ export class RoutesService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string) {
-    const route = await this.findOne(id);
+  async remove(id: string, user: User) {
+    const route = await this.findOne(id, user);
     try {
       await this.routeRepository.softRemove(route);
       return {

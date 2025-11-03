@@ -8,7 +8,6 @@ import { DataSource, Repository } from 'typeorm';
 
 import { envs } from 'src/config/environments/environments';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import {
   CreateTicketInOfficeDto,
   CreateTicketInAppDto,
@@ -94,6 +93,7 @@ export class TicketsService {
       // --------------------------------------------------------------------------
       // 1. Obtener Viaje
       // --------------------------------------------------------------------------
+
       const travel = await queryRunner.manager.findOne(Travel, {
         where: { id: travelUUID },
         relations: { bus: true },
@@ -106,6 +106,7 @@ export class TicketsService {
       // --------------------------------------------------------------------------
       // 2. Obtener Seats
       // --------------------------------------------------------------------------
+
       const seatIds = seatSelections.map((s) => s.seatId);
       const seats = await queryRunner.manager
         .createQueryBuilder(TravelSeat, 'seat')
@@ -150,6 +151,7 @@ export class TicketsService {
       // --------------------------------------------------------------------------
       // 5. Calcular precios y marcar asientos como reservados
       // --------------------------------------------------------------------------
+
       const expires = this.getReservationExpiry();
       let totalPrice = 0;
 
@@ -237,7 +239,7 @@ export class TicketsService {
   //?                         Confirm_Ticket_Manual                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async confirmTicketManual(ticketUUID: string) {
+  async confirmTicketManual(ticketUUID: string, user: User) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -253,6 +255,11 @@ export class TicketsService {
         .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
         .innerJoinAndSelect('ticket.travel', 'travel')
         .where('ticket.id = :ticketUUID', { ticketUUID })
+
+        .andWhere('ticket.travel.bus.owner.company = :company', {
+          company: user.company?.id, //! solo de la misma empresa
+        })
+
         .andWhere('ticket.status = :status', { status: TicketStatus.RESERVED })
         .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! solo office
         .andWhere(
@@ -313,7 +320,7 @@ export class TicketsService {
   //?                                 Cancel_Ticket                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async cancelTicket(ticketUUID: string) {
+  async cancelTicket(ticketUUID: string, user: User) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -329,6 +336,11 @@ export class TicketsService {
         .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
         .innerJoinAndSelect('ticket.travel', 'travel')
         .where('ticket.id = :ticketUUID', { ticketUUID })
+
+        .andWhere('ticket.travel.bus.owner.company = :company', {
+          company: user.company?.id, //! solo de la misma empresa
+        })
+
         //.andWhere('travel.departure_time > NOW()')
         .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! solo office
         .andWhere(
@@ -391,12 +403,14 @@ export class TicketsService {
   // ------------------------------------------------------------------
   // is ticket cancelable
   // ------------------------------------------------------------------
+
   private isTicketCancelable(ticket: Ticket): boolean {
     return [TicketStatus.RESERVED, TicketStatus.SOLD].includes(ticket.status);
   }
   // ------------------------------------------------------------------
   // has travel departed
   // ------------------------------------------------------------------
+
   private hasTravelDeparted(travel: Travel): boolean {
     return travel.departure_time <= new Date();
   }
@@ -405,8 +419,10 @@ export class TicketsService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(pagination: PaginationDto) {
-    const tickets = await this.ticketRepository.find({});
+  async findAll(user: User) {
+    const tickets = await this.ticketRepository.find({
+      where: { travel: { bus: { owner: { company: user.company } } } },
+    });
     return tickets;
   }
 
@@ -414,8 +430,11 @@ export class TicketsService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string) {
-    const ticket = await this.ticketRepository.findOneBy({ id });
+  async findOne(id: string, user: User) {
+    const ticket = await this.ticketRepository.findOneBy({
+      id,
+      travel: { bus: { owner: { company: user.company } } },
+    });
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
   }

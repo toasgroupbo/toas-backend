@@ -35,12 +35,7 @@ export class BankAccountsService {
   //? ---------------------------------------------------------------------------------------------- */
 
   async findAll(pagination: PaginationDto) {
-    //const { limit = 10, offset = 0 } = pagination;
-
-    const bankAccounts = await this.bankAccountRepository.find({
-      //take: limit,
-      //skip: offset,
-    });
+    const bankAccounts = await this.bankAccountRepository.find({});
     return bankAccounts;
   }
 

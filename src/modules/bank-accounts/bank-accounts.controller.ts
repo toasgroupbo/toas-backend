@@ -34,13 +34,13 @@ export class BankAccountsController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  //!
+  /*//!
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
   create(@Body() createBankAccountDto: CreateBankAccountDto) {
     return this.bankAccountsService.create(createBankAccountDto);
-  }
+  }*/
 
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindAll                                                 */

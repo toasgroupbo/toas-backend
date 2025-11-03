@@ -7,13 +7,13 @@ export class CreateOfficeDto {
   @IsString()
   name: string;
 
-  @ApiProperty({
+  /*   @ApiProperty({
     description: 'Company UUID',
     example: '1acd78b9-2eb5-4bdd-8ebb-b87dac87b85a',
   })
   @IsUUID()
   @IsString()
-  company: string;
+  company: string; */
 
   @ApiProperty({
     enum: PlacesEnum,

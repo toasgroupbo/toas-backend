@@ -10,7 +10,11 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { ValidResourses, ValidPermissions } from '../../../common/enums';
+import {
+  ValidResourses,
+  ValidPermissions,
+  ValidResoursesForAdmins,
+} from '../../../common/enums';
 
 import { Rol } from './rol.entity';
 
@@ -24,7 +28,7 @@ export class Permission {
     type: 'enum',
     enum: ValidResourses,
   })
-  resourse: ValidResourses; // Ej: 'users', 'products', etc.
+  resourse: ValidResourses | ValidResoursesForAdmins; // Ej: 'users', 'products', etc.
 
   @Column({
     type: 'enum',

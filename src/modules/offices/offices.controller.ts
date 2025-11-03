@@ -4,21 +4,21 @@ import {
   Body,
   Patch,
   Param,
-  Query,
   Delete,
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateOfficeDto, UpdateOfficeDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, Resource } from 'src/auth/decorators';
+import { Auth, GetUser, Resource } from 'src/auth/decorators';
 
 import { OfficesService } from './offices.service';
+
+import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.OFFICE)
@@ -38,8 +38,8 @@ export class OfficesController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
-  create(@Body() createOfficeDto: CreateOfficeDto) {
-    return this.officesService.create(createOfficeDto);
+  create(@Body() createOfficeDto: CreateOfficeDto, @GetUser() user: User) {
+    return this.officesService.create(createOfficeDto, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -50,8 +50,8 @@ export class OfficesController {
   @Auth(ValidPermissions.READ)
   //!
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.officesService.findAll(pagination);
+  findAll(@GetUser() user: User) {
+    return this.officesService.findAll(user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -62,8 +62,8 @@ export class OfficesController {
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.officesService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this.officesService.findOne(id, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -77,8 +77,9 @@ export class OfficesController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateOfficeDto: UpdateOfficeDto,
+    @GetUser() user: User,
   ) {
-    return this.officesService.update(id, updateOfficeDto);
+    return this.officesService.update(id, updateOfficeDto, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -89,7 +90,7 @@ export class OfficesController {
   @Auth(ValidPermissions.DELETE)
   //!
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.officesService.remove(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this.officesService.remove(id, user); //! GetUser
   }
 }

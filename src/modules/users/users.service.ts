@@ -44,7 +44,6 @@ export class UsersService {
   async createCashier(createUserDto: CreateUserCashierDto) {
     try {
       const { office, ...data } = createUserDto;
-
       //! busqueda del rol de Cashier
       const rol = await this.rolService.findOneByName(StaticRoles.CASHIER);
       if (!rol) {
@@ -65,10 +64,7 @@ export class UsersService {
   //? ---------------------------------------------------------------------------------------------- */
 
   async findAll(pagination: PaginationDto) {
-    //const { limit = 10, offset = 0 } = pagination;
     const users = await this.userRepository.find({
-      //take: limit,
-      //skip: offset,
       relations: { rol: true, office: true, company: true },
     });
     return users;

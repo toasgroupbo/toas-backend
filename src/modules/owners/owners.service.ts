@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { PaginationDto } from 'src/common/pagination/pagination.dto';
 import { CreateOwnerDto, UpdateOwnerDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
+import { User } from '../users/entities/user.entity';
 import { Owner } from './entities/owner.entity';
 
 @Injectable()
@@ -20,13 +20,14 @@ export class OwnersService {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async create(createOwnerDto: CreateOwnerDto) {
+  async create(createOwnerDto: CreateOwnerDto, user: User) {
     try {
       const { bankAccount, ...data } = createOwnerDto;
 
       const owner = this.ownerRepository.create({
         ...data,
         bankAccount, //! se crea la cuenta de banco
+        company: user.company, //! se añade la company del user que crea el owner
       });
       return await this.ownerRepository.save(owner);
     } catch (error) {
@@ -38,11 +39,11 @@ export class OwnersService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(pagination: PaginationDto) {
-    //
+  //! solo trae los owners de la company del user
+
+  async findAll(user: User) {
     const owners = await this.ownerRepository.find({
-      //take: limit,
-      //skip: offset,
+      where: { company: user.company },
       relations: { bankAccount: true },
     });
 
@@ -53,9 +54,11 @@ export class OwnersService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string) {
+  //! solo trae los owners de la company del user
+
+  async findOne(id: string, user: User) {
     const owner = await this.ownerRepository.findOne({
-      where: { id },
+      where: { id, company: user.company },
       relations: { bankAccount: true },
     });
     if (!owner) {
@@ -68,8 +71,8 @@ export class OwnersService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async update(id: string, updateOwnerDto: UpdateOwnerDto) {
-    const owner = await this.findOne(id);
+  async update(id: string, updateOwnerDto: UpdateOwnerDto, user: User) {
+    const owner = await this.findOne(id, user);
     try {
       Object.assign(owner, updateOwnerDto);
       return await this.ownerRepository.save(owner);
@@ -82,8 +85,8 @@ export class OwnersService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string) {
-    const owner = await this.findOne(id);
+  async remove(id: string, user: User) {
+    const owner = await this.findOne(id, user);
     try {
       await this.ownerRepository.softRemove(owner);
       return {

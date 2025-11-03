@@ -3,14 +3,11 @@ import {
   Post,
   Body,
   Param,
-  Query,
-  Delete,
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateTicketInAppDto, CreateTicketInOfficeDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
@@ -66,8 +63,11 @@ export class TicketsController {
   @Auth(ValidPermissions.CONFIRM)
   //!
   @Post('confirm/:id')
-  confirmManual(@Param('id', ParseUUIDPipe) ticketUUID: string) {
-    return this.ticketsService.confirmTicketManual(ticketUUID);
+  confirmManual(
+    @Param('id', ParseUUIDPipe) ticketUUID: string,
+    @GetUser() user: User,
+  ) {
+    return this.ticketsService.confirmTicketManual(ticketUUID, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -78,8 +78,11 @@ export class TicketsController {
   @Auth(ValidPermissions.CANCEL)
   //!
   @Post('cancel/:id')
-  cancelManual(@Param('id', ParseUUIDPipe) ticketUUID: string) {
-    return this.ticketsService.cancelTicket(ticketUUID);
+  cancelManual(
+    @Param('id', ParseUUIDPipe) ticketUUID: string,
+    @GetUser() user: User,
+  ) {
+    return this.ticketsService.cancelTicket(ticketUUID, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -90,8 +93,8 @@ export class TicketsController {
   @Auth(ValidPermissions.READ)
   //!
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.ticketsService.findAll(pagination);
+  findAll(@GetUser() user: User) {
+    return this.ticketsService.findAll(user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -102,7 +105,7 @@ export class TicketsController {
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.ticketsService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this.ticketsService.findOne(id, user); //! GetUser
   }
 }

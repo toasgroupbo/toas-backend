@@ -1,15 +1,19 @@
-import { ArrayUnique, IsArray, IsEnum, IsString } from 'class-validator';
-import { ValidPermissions, ValidResourses } from '../../../common/enums';
+import { ArrayUnique, IsArray, IsEnum } from 'class-validator';
+import {
+  ValidPermissions,
+  ValidResourses,
+  ValidResoursesForAdmins,
+} from '../../../common/enums';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateRolePermissionDto {
   @ApiProperty({
     description: 'resourse',
-    enum: ValidResourses,
-    example: ValidResourses.ROL,
+    enum: ValidResoursesForAdmins,
+    example: ValidResoursesForAdmins.COMPANY,
   })
-  @IsEnum(ValidResourses)
-  resourse: ValidResourses;
+  @IsEnum(ValidResoursesForAdmins)
+  resourse: ValidResoursesForAdmins; //ValidResourses; //! para los admins
 
   @ApiProperty({
     description: 'permissions',
