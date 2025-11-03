@@ -4,15 +4,13 @@ import {
   Body,
   Patch,
   Param,
-  Query,
   Delete,
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
-import { CreateUserAdminDto, UpdateUserDto } from './dto';
+import { CreateUserAdminDto, CreateUserDto, UpdateUserDto } from './dto';
 
 import { ValidResourses, ValidPermissions } from '../../common/enums';
 
@@ -34,12 +32,17 @@ export class UsersController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  @Post()
+  create(@Body() createUser: CreateUserDto) {
+    return this.usersService.createAdmin(createUser);
+  }
+
   //!
   @Auth(ValidPermissions.CREATE)
   //!
   @Post('admins')
   createAppAdmin(@Body() createUserAdminDto: CreateUserAdminDto) {
-    return this.usersService.create(createUserAdminDto);
+    return this.usersService.createAppAdmin(createUserAdminDto);
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -50,8 +53,8 @@ export class UsersController {
   @Auth(ValidPermissions.READ)
   //!
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.usersService.findAll(pagination);
+  findAll() {
+    return this.usersService.findAll();
   }
 
   //? ---------------------------------------------------------------------------------------------- */

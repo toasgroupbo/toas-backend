@@ -2,10 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import {
   CreateUserAdminDto,
   CreateUserCashierDto,
+  CreateUserDto,
   UpdateUserDto,
   UpdateUserOfficeDto,
 } from './dto';
@@ -29,7 +29,34 @@ export class UsersService {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async create(createUserDto: CreateUserAdminDto) {
+  // --------------------------------------------------------------------------
+  // 1. Creacion de un usuario Super-Admin
+  // --------------------------------------------------------------------------
+
+  async createAdmin(createUserDto: CreateUserDto) {
+    //! busqueda del rol de Super-Admin
+    const rol = await this.rolService.findOneByName(StaticRoles.SUPER_ADMIN);
+
+    if (!rol) {
+      throw new NotFoundException('Role Super-User not found');
+    }
+
+    try {
+      const newUser = this.userRepository.create({
+        ...createUserDto,
+        rol,
+      });
+      return await this.userRepository.save(newUser);
+    } catch (error) {
+      handleDBExceptions(error);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // 2. Creacion de un usuario Admin-App
+  // --------------------------------------------------------------------------
+
+  async createAppAdmin(createUserDto: CreateUserAdminDto) {
     try {
       const newUser = this.userRepository.create({
         ...createUserDto,
@@ -40,6 +67,10 @@ export class UsersService {
       handleDBExceptions(error);
     }
   }
+
+  // --------------------------------------------------------------------------
+  // 3. Creacion de un usuario Cashier
+  // --------------------------------------------------------------------------
 
   async createCashier(createUserDto: CreateUserCashierDto) {
     try {
@@ -63,7 +94,7 @@ export class UsersService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(pagination: PaginationDto) {
+  async findAll() {
     const users = await this.userRepository.find({
       relations: { rol: true, office: true, company: true },
     });
