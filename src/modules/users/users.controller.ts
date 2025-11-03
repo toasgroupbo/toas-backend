@@ -32,10 +32,10 @@ export class UsersController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  @Post()
+  /* @Post()
   create(@Body() createUser: CreateUserDto) {
     return this.usersService.createAdmin(createUser);
-  }
+  } */
 
   //!
   @Auth(ValidPermissions.CREATE)
