@@ -261,7 +261,7 @@ export class TicketsService {
         })
 
         .andWhere('ticket.status = :status', { status: TicketStatus.RESERVED })
-        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! solo office
+        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! solo en office
         .andWhere(
           '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
         )
@@ -342,7 +342,7 @@ export class TicketsService {
         })
 
         //.andWhere('travel.departure_time > NOW()')
-        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! solo office
+        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! solo en office
         .andWhere(
           '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
         )

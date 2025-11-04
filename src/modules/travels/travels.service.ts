@@ -149,7 +149,10 @@ export class TravelsService {
 
     try {
       travel.travel_status = TravelStatus.CANCELLED;
-      travel.travelSeats.forEach((s) => (s.deletedAt = new Date()));
+      travel.travelSeats.forEach((s) => {
+        s.travel_status = TravelStatus.CANCELLED; //! se cancela el asiento
+        s.deletedAt = new Date(); //! se elimina el asiento
+      });
 
       return await this.travelRepository.save(travel);
     } catch (error) {

@@ -10,9 +10,10 @@ export const GetUser = createParamDecorator(
     const user = req.user;
 
     // el decorador se puede usar en el controlador para obtener el usuario
-    if (!user) return undefined; /* throw new InternalServerErrorException(
-        'User not found (request)',
-      ); */
+    if (!user)
+      throw new InternalServerErrorException(
+        /* return undefined; */ 'User not found (request)',
+      );
 
     return user;
   },

@@ -36,7 +36,6 @@ export class UsersService {
   async createAdmin(createUserDto: CreateUserDto) {
     //! busqueda del rol de Super-Admin
     const rol = await this.rolService.findOneByName(StaticRoles.SUPER_ADMIN);
-
     if (!rol) {
       throw new NotFoundException('Role Super-User not found');
     }
@@ -73,13 +72,14 @@ export class UsersService {
   // --------------------------------------------------------------------------
 
   async createCashier(createUserDto: CreateUserCashierDto) {
+    const { office, ...data } = createUserDto;
+    //! busqueda del rol de Cashier
+    const rol = await this.rolService.findOneByName(StaticRoles.CASHIER);
+    if (!rol) {
+      throw new NotFoundException('Role Cashier not found');
+    }
+
     try {
-      const { office, ...data } = createUserDto;
-      //! busqueda del rol de Cashier
-      const rol = await this.rolService.findOneByName(StaticRoles.CASHIER);
-      if (!rol) {
-        throw new NotFoundException('Role Cashier not found');
-      }
       const newCashier = this.userRepository.create({
         ...data,
         rol,

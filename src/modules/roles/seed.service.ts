@@ -18,6 +18,10 @@ export class SeedService implements OnModuleInit {
     private readonly permissionRepository: Repository<Permission>,
   ) {}
 
+  // --------------------------------------------------------------------------
+  // -- On Module Init
+  // --------------------------------------------------------------------------
+
   async onModuleInit() {
     await this.seedRolesAndPermissions();
   }
