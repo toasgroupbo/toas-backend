@@ -4,14 +4,12 @@ import {
   Body,
   Patch,
   Param,
-  Query,
   Delete,
   Controller,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateRoleDto, UpdateRoleDto } from './dto';
 
 import { ValidResourses, ValidPermissions } from '../../common/enums';
@@ -48,8 +46,8 @@ export class RolesController {
   @Auth(ValidPermissions.READ)
   //!
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.rolesService.findAll(pagination);
+  findAll() {
+    return this.rolesService.findAll();
   }
 
   //? ---------------------------------------------------------------------------------------------- */

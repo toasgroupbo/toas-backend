@@ -46,10 +46,10 @@ export class FilesService {
       const filePath = path.join(this.uploadPath, fileName);
 
       try {
-        await fs.access(filePath); // Verifica si existe
-        await fs.unlink(filePath); // Lo elimina
+        await fs.access(filePath); //! Verifica si existe
+        await fs.unlink(filePath); //! Lo elimina
       } catch {
-        // Si no existe o falla, simplemente se ignora
+        //! Si no existe o falla, simplemente se ignora
       }
     }
   }

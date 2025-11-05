@@ -21,6 +21,9 @@ export class Route {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
+  @Column('text', { array: true, default: [] })
+  pass_by: string[];
+
   @CreateDateColumn({ select: false })
   createdAt: Date;
 

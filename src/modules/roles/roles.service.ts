@@ -6,7 +6,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateRoleDto, UpdateRoleDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
@@ -51,11 +50,8 @@ export class RolesService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(pagination: PaginationDto) {
-    //const { limit = 10, offset = 0 } = pagination;
+  async findAll() {
     const roles = await this.rolRepository.find({
-      //take: limit,
-      //skip: offset,
       relations: { permissions: true },
     });
     return roles;
