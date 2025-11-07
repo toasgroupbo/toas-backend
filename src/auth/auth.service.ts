@@ -48,7 +48,7 @@ export class AuthService {
     return {
       token: this.generateJwt({
         id: customerEntity.id,
-        email: customerEntity.email,
+        //email: customerEntity.email,
         type: LoginType.customer,
       }),
     };
@@ -78,7 +78,7 @@ export class AuthService {
       user: entityWithoutPassword,
       token: this.generateJwt({
         id: entityWithoutPassword.id,
-        email: entityWithoutPassword.email,
+        //email,
         type: LoginType.user,
       }),
     };
@@ -99,7 +99,7 @@ export class AuthService {
       return {
         token: this.generateJwt({
           id: customer.id,
-          email: customer.email,
+          //email: customer.email,
           type: LoginType.customer,
         }),
       };

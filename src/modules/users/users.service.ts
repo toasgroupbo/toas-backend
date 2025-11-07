@@ -119,10 +119,22 @@ export class UsersService {
   //? ---------------------------------------------------------------------------------------------- */
 
   async findOneByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { email },
-      select: { password: true, id: true },
-    });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.rol', 'rol')
+      .leftJoinAndSelect('user.company', 'company')
+      .select([
+        'user.id',
+        'user.ci',
+        'user.email',
+        'user.fullName',
+        'user.password',
+        'rol.name',
+        'company.id',
+      ])
+      .where('user.email = :email', { email })
+      .getOne();
+
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
