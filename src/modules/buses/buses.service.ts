@@ -6,7 +6,6 @@ import { CreateBusDto, UpdateBusDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { Company } from '../companies/entities/company.entity';
 import { User } from '../users/entities/user.entity';
 import { Bus } from './entities/bus.entity';
 
@@ -47,15 +46,9 @@ export class BusesService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  findAllWithCommpany(companyId: string) {
-    let user: User = new User();
-    user.company = { id: companyId } as Company;
-    return this.findAll(user);
-  }
-
-  async findAll(user: User) {
+  async findAll(companyUUID: string) {
     const buses = await this.busRepository.find({
-      where: { owner: { company: user.company } },
+      where: { owner: { company: { id: companyUUID } } },
       relations: { owner: true, busType: true },
     });
     return buses;
@@ -65,10 +58,9 @@ export class BusesService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string, user: User) {
-    const bus = await this.busRepository.findOneBy({
-      id,
-      owner: { company: user.company },
+  async findOne(id: string, companyUUID: string) {
+    const bus = await this.busRepository.findOne({
+      where: { id, owner: { company: { id: companyUUID } } },
     });
     if (!bus) throw new NotFoundException('Bus not found');
     return bus;
@@ -78,8 +70,8 @@ export class BusesService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async update(id: string, updateBusDto: UpdateBusDto, user: User) {
-    const bus = await this.findOne(id, user);
+  async update(id: string, updateBusDto: UpdateBusDto, companyUUID: string) {
+    const bus = await this.findOne(id, companyUUID);
     try {
       Object.assign(bus, updateBusDto);
       return await this.busRepository.save(bus);
@@ -92,8 +84,8 @@ export class BusesService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string, user: User) {
-    const bus = await this.findOne(id, user);
+  async remove(id: string, companyUUID: string) {
+    const bus = await this.findOne(id, companyUUID);
     try {
       await this.busRepository.softRemove(bus);
       return {

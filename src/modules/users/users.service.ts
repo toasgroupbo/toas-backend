@@ -114,6 +114,14 @@ export class UsersService {
     return user;
   }
 
+  async findById(id: string) {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: { rol: true, company: true },
+    });
+    return user;
+  }
+
   //? ---------------------------------------------------------------------------------------------- */
   //?                                     FindOneByEmail                                             */
   //? ---------------------------------------------------------------------------------------------- */

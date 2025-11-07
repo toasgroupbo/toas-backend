@@ -14,7 +14,6 @@ import { TravelStatus } from './enums/travel-status.enum';
 import { SeatStatus } from 'src/common/enums';
 
 import { TravelSeat } from './entities/travel-seat.entity';
-import { User } from '../users/entities/user.entity';
 import { Bus } from '../buses/entities/bus.entity';
 import { Travel } from './entities/travel.entity';
 
@@ -109,9 +108,9 @@ export class TravelsService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(user: User) {
+  async findAll(companyUUID: string) {
     const travels = await this.travelRepository.find({
-      where: { bus: { owner: { company: user.company } } },
+      where: { bus: { owner: { company: { id: companyUUID } } } },
 
       relations: {
         bus: true,
@@ -126,9 +125,9 @@ export class TravelsService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string, user) {
+  async findOne(id: string, companyUUID: string) {
     const travel = await this.travelRepository.findOne({
-      where: { id, bus: { owner: { company: user.company } } },
+      where: { id, bus: { owner: { company: { id: companyUUID } } } },
 
       relations: {
         bus: true,
@@ -144,8 +143,8 @@ export class TravelsService {
   //?                                        Cancel                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async cancel(id: string, user: User) {
-    const travel = await this.findOne(id, user);
+  async cancel(id: string, companyUUID: string) {
+    const travel = await this.findOne(id, companyUUID);
 
     try {
       travel.travel_status = TravelStatus.CANCELLED;
@@ -164,8 +163,8 @@ export class TravelsService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string, user: User) {
-    const travel = await this.findOne(id, user);
+  async remove(id: string, companyUUID: string) {
+    const travel = await this.findOne(id, companyUUID);
 
     try {
       //! Verificar si algún asiento está en estado 'sold' o 'reserved'

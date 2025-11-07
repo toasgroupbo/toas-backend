@@ -7,18 +7,17 @@ import {
   Delete,
   Controller,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CreateBusDto, UpdateBusDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetUser, Resource } from 'src/auth/decorators';
+import { Auth, GetCompany, GetUser, Resource } from 'src/auth/decorators';
 
 import { BusesService } from './buses.service';
-
-import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.BUS)
@@ -49,9 +48,10 @@ export class BusesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get()
-  findAll(@GetUser() user: User) {
-    return this.busesService.findAll(user); //! GetUser
+  findAll(@GetCompany() companyUUID: string) {
+    return this.busesService.findAll(companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -61,9 +61,13 @@ export class BusesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.busesService.findOne(id, user); //! GetUser
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.busesService.findOne(id, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -73,13 +77,14 @@ export class BusesController {
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateBusDto: UpdateBusDto,
-    @GetUser() user: User,
+    @GetCompany() companyUUID: string,
   ) {
-    return this.busesService.update(id, updateBusDto, user); //! GetUser
+    return this.busesService.update(id, updateBusDto, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -89,8 +94,12 @@ export class BusesController {
   //!
   @Auth(ValidPermissions.DELETE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.busesService.remove(id, user); //! GetUser
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.busesService.remove(id, companyUUID); //! GetCompany
   }
 }

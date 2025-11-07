@@ -28,14 +28,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (type === LoginType.user) {
       const user = await this.userService.findOne(id);
       if (!user) throw new UnauthorizedException('Token inválido (user)');
-      return user;
+      return user; //! se introduce el user en la req
     }
 
     if (type === LoginType.customer) {
       const customer = await this.customerService.findOne(id);
       if (!customer)
         throw new UnauthorizedException('Token inválido (customer)');
-      return customer;
+      return customer; //! se introduce el customer en la req
     }
 
     throw new UnauthorizedException('Unrecognized type');

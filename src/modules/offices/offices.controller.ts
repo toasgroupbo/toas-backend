@@ -7,18 +7,17 @@ import {
   Delete,
   Controller,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CreateOfficeDto, UpdateOfficeDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetUser, Resource } from 'src/auth/decorators';
+import { Auth, GetCompany, Resource } from 'src/auth/decorators';
 
 import { OfficesService } from './offices.service';
-
-import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.OFFICE)
@@ -37,9 +36,13 @@ export class OfficesController {
   //!
   @Auth(ValidPermissions.CREATE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Post()
-  create(@Body() createOfficeDto: CreateOfficeDto, @GetUser() user: User) {
-    return this.officesService.create(createOfficeDto, user); //! GetUser
+  create(
+    @Body() createOfficeDto: CreateOfficeDto,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.officesService.create(createOfficeDto, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -49,9 +52,10 @@ export class OfficesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get()
-  findAll(@GetUser() user: User) {
-    return this.officesService.findAll(user); //! GetUser
+  findAll(@GetCompany() companyUUID: string) {
+    return this.officesService.findAll(companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -61,9 +65,13 @@ export class OfficesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.officesService.findOne(id, user); //! GetUser
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.officesService.findOne(id, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -73,13 +81,14 @@ export class OfficesController {
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateOfficeDto: UpdateOfficeDto,
-    @GetUser() user: User,
+    @GetCompany() companyUUID: string,
   ) {
-    return this.officesService.update(id, updateOfficeDto, user); //! GetUser
+    return this.officesService.update(id, updateOfficeDto, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -89,8 +98,12 @@ export class OfficesController {
   //!
   @Auth(ValidPermissions.DELETE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.officesService.remove(id, user); //! GetUser
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.officesService.remove(id, companyUUID); //! GetCompany
   }
 }

@@ -7,16 +7,15 @@ import {
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CreateTravelDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetUser, Resource } from 'src/auth/decorators';
+import { Auth, GetCompany, GetUser, Resource } from 'src/auth/decorators';
 
 import { TravelsService } from './travels.service';
-import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.TRAVEL)
@@ -68,9 +67,10 @@ export class TravelsController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get()
-  findAll(@GetUser() user: User) {
-    return this.travelsService.findAll(user); //! GetUser
+  findAll(@GetCompany() companyUUID: string) {
+    return this.travelsService.findAll(companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -80,9 +80,13 @@ export class TravelsController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.travelsService.findOne(id, user); //! GetUser
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.travelsService.findOne(id, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -92,9 +96,13 @@ export class TravelsController {
   //!
   @Auth(ValidPermissions.CANCEL)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Post('cancel/:id')
-  cancel(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.travelsService.cancel(id, user); //! GetUser
+  cancel(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.travelsService.cancel(id, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -104,8 +112,12 @@ export class TravelsController {
   //!
   @Auth(ValidPermissions.DELETE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.travelsService.remove(id, user); //! GetUser
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.travelsService.remove(id, companyUUID); //! GetCompany
   }
 }

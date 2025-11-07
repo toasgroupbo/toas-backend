@@ -6,7 +6,6 @@ import { CreateOwnerDto, UpdateOwnerDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { User } from '../users/entities/user.entity';
 import { Owner } from './entities/owner.entity';
 
 @Injectable()
@@ -20,14 +19,14 @@ export class OwnersService {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async create(createOwnerDto: CreateOwnerDto, user: User) {
+  async create(createOwnerDto: CreateOwnerDto, companyUUID: string) {
     try {
       const { bankAccount, ...data } = createOwnerDto;
 
       const owner = this.ownerRepository.create({
         ...data,
         bankAccount, //! se crea la cuenta de banco
-        company: user.company, //! se añade la company del user que crea el owner
+        company: { id: companyUUID }, //! se añade la company del user que crea el owner
       });
       return await this.ownerRepository.save(owner);
     } catch (error) {
@@ -41,9 +40,9 @@ export class OwnersService {
 
   //! solo trae los owners de la company del user
 
-  async findAll(user: User) {
+  async findAll(companyUUID: string) {
     const owners = await this.ownerRepository.find({
-      where: { company: user.company },
+      where: { company: { id: companyUUID } },
       relations: { bankAccount: true },
     });
 
@@ -56,9 +55,9 @@ export class OwnersService {
 
   //! solo trae los owners de la company del user
 
-  async findOne(id: string, user: User) {
+  async findOne(id: string, companyUUID: string) {
     const owner = await this.ownerRepository.findOne({
-      where: { id, company: user.company },
+      where: { id, company: { id: companyUUID } },
       relations: { bankAccount: true },
     });
     if (!owner) {
@@ -71,8 +70,12 @@ export class OwnersService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async update(id: string, updateOwnerDto: UpdateOwnerDto, user: User) {
-    const owner = await this.findOne(id, user);
+  async update(
+    id: string,
+    updateOwnerDto: UpdateOwnerDto,
+    companyUUID: string,
+  ) {
+    const owner = await this.findOne(id, companyUUID);
     try {
       Object.assign(owner, updateOwnerDto);
       return await this.ownerRepository.save(owner);
@@ -85,8 +88,8 @@ export class OwnersService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string, user: User) {
-    const owner = await this.findOne(id, user);
+  async remove(id: string, companyUUID: string) {
+    const owner = await this.findOne(id, companyUUID);
     try {
       await this.ownerRepository.softRemove(owner);
       return {

@@ -8,17 +8,15 @@ import {
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CreateRouteDto, UpdateRouteDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetUser, Resource } from 'src/auth/decorators';
+import { Auth, GetCompany, GetUser, Resource } from 'src/auth/decorators';
 
 import { RoutesService } from './routes.service';
-
-import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.ROUTE)
@@ -49,9 +47,10 @@ export class RoutesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get()
-  findAll(@GetUser() user: User) {
-    return this.routesService.findAll(user); //! GetUser
+  findAll(@GetCompany() companyUUID: string) {
+    return this.routesService.findAll(companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -61,9 +60,13 @@ export class RoutesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.routesService.findOne(id, user); //! GetUser
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.routesService.findOne(id, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -73,13 +76,14 @@ export class RoutesController {
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateRouteDto: UpdateRouteDto,
-    @GetUser() user: User,
+    @GetCompany() companyUUID: string,
   ) {
-    return this.routesService.update(id, updateRouteDto, user); //! GetUser
+    return this.routesService.update(id, updateRouteDto, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -89,8 +93,12 @@ export class RoutesController {
   //!
   @Auth(ValidPermissions.DELETE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.routesService.remove(id, user); //! GetUser
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.routesService.remove(id, companyUUID); //! GetCompany
   }
 }

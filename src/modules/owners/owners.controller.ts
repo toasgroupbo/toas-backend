@@ -8,17 +8,15 @@ import {
   Delete,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CreateOwnerDto, UpdateOwnerDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetUser, Resource } from 'src/auth/decorators';
+import { Auth, GetCompany, GetUser, Resource } from 'src/auth/decorators';
 
 import { OwnersService } from './owners.service';
-
-import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.OWNER)
@@ -37,9 +35,13 @@ export class OwnersController {
   //!
   @Auth(ValidPermissions.CREATE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Post()
-  create(@Body() createOwnerDto: CreateOwnerDto, @GetUser() user: User) {
-    return this.ownersService.create(createOwnerDto, user); //! GetUser
+  create(
+    @Body() createOwnerDto: CreateOwnerDto,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.ownersService.create(createOwnerDto, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -49,9 +51,10 @@ export class OwnersController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get()
-  findAll(@GetUser() user: User) {
-    return this.ownersService.findAll(user); //! GetUser
+  findAll(@GetCompany() companyUUID: string) {
+    return this.ownersService.findAll(companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -61,9 +64,13 @@ export class OwnersController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.ownersService.findOne(id, user); //! GetUser
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.ownersService.findOne(id, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -73,13 +80,14 @@ export class OwnersController {
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateOwnerDto: UpdateOwnerDto,
-    @GetUser() user: User,
+    @GetCompany() companyUUID: string,
   ) {
-    return this.ownersService.update(id, updateOwnerDto, user); //! GetUser
+    return this.ownersService.update(id, updateOwnerDto, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -89,8 +97,12 @@ export class OwnersController {
   //!
   @Auth(ValidPermissions.DELETE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.ownersService.remove(id, user); //! GetUser
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.ownersService.remove(id, companyUUID); //! GetCompany
   }
 }

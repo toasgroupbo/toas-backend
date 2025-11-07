@@ -10,7 +10,6 @@ import { CreateRouteDto, UpdateRouteDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { User } from '../users/entities/user.entity';
 import { Route } from './entities/route.entity';
 
 @Injectable()
@@ -49,9 +48,9 @@ export class RoutesService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(user: User) {
+  async findAll(companyUUID: string) {
     const routes = await this.routeRepository.find({
-      where: { officeOrigin: { company: user.company } },
+      where: { officeOrigin: { company: { id: companyUUID } } },
       relations: {
         officeOrigin: true,
         officeDestination: true,
@@ -64,9 +63,9 @@ export class RoutesService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string, user: User) {
+  async findOne(id: string, companyUUID: string) {
     const Route = await this.routeRepository.findOne({
-      where: { id, officeOrigin: { company: user.company } },
+      where: { id, officeOrigin: { company: { id: companyUUID } } },
       relations: {
         officeOrigin: true,
         officeDestination: true,
@@ -80,8 +79,12 @@ export class RoutesService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async update(id: string, updateRouteDto: UpdateRouteDto, user: User) {
-    const route = await this.findOne(id, user);
+  async update(
+    id: string,
+    updateRouteDto: UpdateRouteDto,
+    companyUUID: string,
+  ) {
+    const route = await this.findOne(id, companyUUID);
     try {
       Object.assign(route, updateRouteDto);
       return await this.routeRepository.save(route);
@@ -94,8 +97,8 @@ export class RoutesService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string, user: User) {
-    const route = await this.findOne(id, user);
+  async remove(id: string, companyUUID: string) {
+    const route = await this.findOne(id, companyUUID);
     try {
       await this.routeRepository.softRemove(route);
       return {

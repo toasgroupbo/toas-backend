@@ -35,7 +35,7 @@ export class SeedService implements OnModuleInit {
         isStatic: true,
         permissions: [
           {
-            resourse: ValidResourses.COMPANY,
+            resourse: ValidResourses.ROL,
             permissions: [
               ValidPermissions.CREATE,
               ValidPermissions.READ,
@@ -45,7 +45,7 @@ export class SeedService implements OnModuleInit {
           },
 
           {
-            resourse: ValidResourses.ROL,
+            resourse: ValidResourses.COMPANY,
             permissions: [
               ValidPermissions.CREATE,
               ValidPermissions.READ,
@@ -66,6 +66,76 @@ export class SeedService implements OnModuleInit {
 
           {
             resourse: ValidResourses.CUSTOMER,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.OFFICE,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.OWNER,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.ROUTE,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.BUS,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.TRAVEL,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.CASHIER,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.FILE,
             permissions: [
               ValidPermissions.CREATE,
               ValidPermissions.READ,

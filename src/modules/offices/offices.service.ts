@@ -6,7 +6,6 @@ import { CreateOfficeDto, UpdateOfficeDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { User } from '../users/entities/user.entity';
 import { Office } from './entities/office.entity';
 
 @Injectable()
@@ -20,11 +19,11 @@ export class OfficesService {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async create(createOfficeDto: CreateOfficeDto, user: User) {
+  async create(createOfficeDto: CreateOfficeDto, companyUUID: string) {
     try {
       const newOffice = this.officeRepository.create({
         ...createOfficeDto,
-        company: user.company, //! se añade la company del user que crea la office
+        company: { id: companyUUID }, //! se añade la company del user que crea la office
       });
       return await this.officeRepository.save(newOffice);
     } catch (error) {
@@ -38,9 +37,9 @@ export class OfficesService {
 
   //! solo trae las offices de la company del user
 
-  async findAll(user: User) {
+  async findAll(companyUUID: string) {
     const offices = await this.officeRepository.find({
-      where: { company: user.company },
+      where: { company: { id: companyUUID } },
     });
     return offices;
   }
@@ -51,8 +50,10 @@ export class OfficesService {
 
   //! solo trae las offices de la company del user
 
-  async findOne(id: string, user: User) {
-    const office = await this.officeRepository.findOneBy({ id });
+  async findOne(id: string, companyUUID: string) {
+    const office = await this.officeRepository.findOne({
+      where: { id, company: { id: companyUUID } },
+    });
     if (!office) throw new NotFoundException('Office not found');
     return office;
   }
@@ -61,8 +62,12 @@ export class OfficesService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async update(id: string, updateOfficeDto: UpdateOfficeDto, user: User) {
-    const office = await this.findOne(id, user);
+  async update(
+    id: string,
+    updateOfficeDto: UpdateOfficeDto,
+    companyUUID: string,
+  ) {
+    const office = await this.findOne(id, companyUUID);
     try {
       Object.assign(office, updateOfficeDto);
       return await this.officeRepository.save(office);
@@ -75,8 +80,8 @@ export class OfficesService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string, user: User) {
-    const office = await this.findOne(id, user);
+  async remove(id: string, companyUUID: string) {
+    const office = await this.findOne(id, companyUUID);
     try {
       await this.officeRepository.softRemove(office);
       return {
