@@ -10,7 +10,7 @@ export class CreateUserAdminDto extends CreateUserDto {
 
   @ApiProperty({
     description: 'Role UUID',
-    example: '1acd78b9-2eb5-4bdd-8ebb-b87dac87b85a',
+    example: '1',
   })
   @IsNumber()
   rol: number;

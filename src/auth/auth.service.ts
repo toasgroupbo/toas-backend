@@ -75,6 +75,7 @@ export class AuthService {
     const { password: _, ...entityWithoutPassword } = user;
 
     return {
+      user: entityWithoutPassword,
       token: this.generateJwt({
         id: entityWithoutPassword.id,
         email: entityWithoutPassword.email,

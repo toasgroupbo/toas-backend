@@ -6,6 +6,7 @@ import { CreateBusDto, UpdateBusDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
+import { Company } from '../companies/entities/company.entity';
 import { User } from '../users/entities/user.entity';
 import { Bus } from './entities/bus.entity';
 
@@ -45,6 +46,12 @@ export class BusesService {
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
+
+  findAllWithCommpany(companyId: string) {
+    let user: User = new User();
+    user.company = { id: companyId } as Company;
+    return this.findAll(user);
+  }
 
   async findAll(user: User) {
     const buses = await this.busRepository.find({
