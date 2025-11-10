@@ -26,7 +26,7 @@ export class OwnersService {
       const owner = this.ownerRepository.create({
         ...data,
         bankAccount, //! se crea la cuenta de banco
-        company: { id: companyUUID }, //! se añade la company del user que crea el owner
+        company: { id: companyUUID },
       });
       return await this.ownerRepository.save(owner);
     } catch (error) {
@@ -37,8 +37,6 @@ export class OwnersService {
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
-
-  //! solo trae los owners de la company del user
 
   async findAll(companyUUID: string) {
     const owners = await this.ownerRepository.find({
@@ -52,8 +50,6 @@ export class OwnersService {
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
-
-  //! solo trae los owners de la company del user
 
   async findOne(id: string, companyUUID: string) {
     const owner = await this.ownerRepository.findOne({

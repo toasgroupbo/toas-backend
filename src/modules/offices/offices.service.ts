@@ -35,8 +35,6 @@ export class OfficesService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  //! solo trae las offices de la company del user
-
   async findAll(companyUUID: string) {
     const offices = await this.officeRepository.find({
       where: { company: { id: companyUUID } },
@@ -47,8 +45,6 @@ export class OfficesService {
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
-
-  //! solo trae las offices de la company del user
 
   async findOne(id: string, companyUUID: string) {
     const office = await this.officeRepository.findOne({

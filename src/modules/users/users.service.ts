@@ -101,6 +101,16 @@ export class UsersService {
     return users;
   }
 
+  // --------------------------------------------------------------------------
+
+  async findAllCashiers(companyUUID: string) {
+    const cashiers = await this.userRepository.find({
+      where: { company: { id: companyUUID } },
+      relations: { rol: true, office: true, company: true },
+    });
+    return cashiers;
+  }
+
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
@@ -113,6 +123,19 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
+
+  // --------------------------------------------------------------------------
+
+  async findOneCashier(id: string, companyUUID: string) {
+    const cashier = await this.userRepository.findOne({
+      where: { id, company: { id: companyUUID } },
+      relations: { rol: true, office: true, company: true },
+    });
+    if (!cashier) throw new NotFoundException('Cashier not found');
+    return cashier;
+  }
+
+  // --------------------------------------------------------------------------
 
   async findById(id: string) {
     const user = await this.userRepository.findOne({
@@ -166,9 +189,13 @@ export class UsersService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async updateOffice(id: string, updateUserOfficeDto: UpdateUserOfficeDto) {
+  async updateOffice(
+    id: string,
+    updateUserOfficeDto: UpdateUserOfficeDto,
+    companyUUID: string,
+  ) {
     try {
-      const user = await this.findOne(id);
+      const user = await this.findOneCashier(id, companyUUID);
       if (user.rol.name !== StaticRoles.CASHIER) {
         throw new NotFoundException('The user is not a Cashier');
       }

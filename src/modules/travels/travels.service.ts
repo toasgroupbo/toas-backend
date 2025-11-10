@@ -41,14 +41,20 @@ export class TravelsService {
     try {
       const { busUUID, routeUUID, ...data } = createTravelDto;
 
-      //! obtener bus con tipo y su layout
+      // --------------------------------------------------------------------------
+      // 1. Obtener el Bus con tipo y su layout
+      // --------------------------------------------------------------------------
+
       const busEntity = await queryRunner.manager.findOne(Bus, {
         where: { id: busUUID },
         relations: { busType: true },
       });
       if (!busEntity) throw new NotFoundException('Bus not found');
 
-      //! generar asientos del viaje según la maquetación del bus
+      // --------------------------------------------------------------------------
+      // 2. Generar asientos del viaje segun la maquetacion del Bus
+      // --------------------------------------------------------------------------
+
       const travelSeats = busEntity.busType.decks.flatMap((deck) =>
         deck.seats.map((seat) => ({
           ...seat,
@@ -57,7 +63,10 @@ export class TravelsService {
         })),
       );
 
-      //! crear travel
+      // --------------------------------------------------------------------------
+      // 3. Creacion del Travel
+      // --------------------------------------------------------------------------
+
       const newTravel = queryRunner.manager.create(Travel, {
         ...data,
         route: { id: routeUUID },

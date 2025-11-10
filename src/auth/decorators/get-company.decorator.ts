@@ -18,10 +18,16 @@ export const GetCompany = createParamDecorator(
       throw new InternalServerErrorException('User not found in request');
     }
 
-    //! Prioriza la empresa del usuario si existe
+    // --------------------------------------------------------------------------
+    // 1. Prioriza la empresa del usuario si existe
+    // --------------------------------------------------------------------------
+
     if (user.company) return user.company.id;
 
-    //! Si hay companyUUID en query, valida que sea un UUID válido
+    // --------------------------------------------------------------------------
+    // 2. Si hay companyUUID en query, valida que sea un UUID válido
+    // --------------------------------------------------------------------------
+
     if (companyUUID) {
       if (typeof companyUUID !== 'string' || !isUUID(companyUUID)) {
         throw new BadRequestException('Invalid companyUUID format');
@@ -29,7 +35,10 @@ export const GetCompany = createParamDecorator(
       return companyUUID;
     }
 
-    //! Si no hay ninguna forma de determinar la empresa
+    // --------------------------------------------------------------------------
+    // 3. Si no hay ninguna forma de determinar la empresa
+    // --------------------------------------------------------------------------
+
     throw new ForbiddenException('The company could not be determined.');
   },
 );

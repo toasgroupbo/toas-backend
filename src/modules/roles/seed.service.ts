@@ -153,11 +153,6 @@ export class SeedService implements OnModuleInit {
         isStatic: true,
         permissions: [
           {
-            resourse: ValidResourses.CASHIER,
-            permissions: [ValidPermissions.CREATE, ValidPermissions.PUT],
-          },
-
-          {
             resourse: ValidResourses.OFFICE,
             permissions: [
               ValidPermissions.CREATE,
@@ -207,6 +202,26 @@ export class SeedService implements OnModuleInit {
 
               ValidPermissions.CLOSE,
               ValidPermissions.CANCEL,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.CASHIER,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.FILE,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
             ],
           },
 

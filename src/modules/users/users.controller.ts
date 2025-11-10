@@ -32,7 +32,7 @@ export class UsersController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  @Post()
+  @Post('super-admin')
   create(@Body() createUser: CreateUserDto) {
     return this.usersService.createAdmin(createUser);
   }
