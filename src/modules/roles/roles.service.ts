@@ -68,7 +68,7 @@ export class RolesService {
     });
 
     if (!role) {
-      throw new Error(`Role not found`);
+      throw new NotFoundException(`Role not found`);
     }
 
     return role;

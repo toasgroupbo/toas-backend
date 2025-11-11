@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -182,6 +186,14 @@ export class UsersService {
   async update(id: string, updateUserDto: UpdateUserDto) {
     try {
       const user = await this.findOne(id);
+
+      if (updateUserDto.rol) {
+        const rol = await this.rolService.findOne(updateUserDto.rol);
+
+        if (rol.isStatic) {
+          throw new ConflictException('The Rol is Static');
+        }
+      }
 
       Object.assign(user, updateUserDto);
       return await this.userRepository.save(user);
