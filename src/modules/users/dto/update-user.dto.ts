@@ -9,11 +9,11 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsEmpty()
   password?: string;
 
-  @ApiPropertyOptional({
+  /*   @ApiPropertyOptional({
     description: 'Role UUID',
     example: '1',
   })
   @IsOptional()
   @IsNumber()
-  rol?: number;
+  rol?: number; */
 }
