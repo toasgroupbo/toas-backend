@@ -153,6 +153,7 @@ export class UsersService {
     const user = await this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.rol', 'rol')
+      .leftJoinAndSelect('rol.permissions', 'permissions')
       .leftJoinAndSelect('user.company', 'company')
       .select([
         'user.id',
@@ -161,6 +162,8 @@ export class UsersService {
         'user.fullName',
         'user.password',
         'rol.name',
+        'permissions.resourse',
+        'permissions.permissions',
         'company.id',
       ])
       .where('user.email = :email', { email })

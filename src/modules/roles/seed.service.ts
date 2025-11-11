@@ -143,6 +143,15 @@ export class SeedService implements OnModuleInit {
               ValidPermissions.DELETE,
             ],
           },
+
+          {
+            resourse: ValidResourses.BANK_ACCOUNT,
+            permissions: [
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.DELETE,
+            ],
+          },
         ],
       },
 

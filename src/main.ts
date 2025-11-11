@@ -7,10 +7,7 @@ import { setupSwagger } from './config/swagger/swagger.config';
 async function main() {
   const app = await NestFactory.create(AppModule);
 
-  const logger = new Logger('TRANET');
-
-  //! cors global enable
-  app.enableCors();
+  const logger = new Logger('TOAS');
 
   //! cors global enable
   app.enableCors();
