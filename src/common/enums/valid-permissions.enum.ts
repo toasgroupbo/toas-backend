@@ -3,7 +3,7 @@ export enum ValidPermissions {
   READ = 'READ',
   UPDATE = 'UPDATE',
   DELETE = 'DELETE',
-  PUT = 'PUT',
+  //PUT = 'PUT',
 
   CLOSE = 'CLOSE',
   CONFIRM = 'CONFIRM',

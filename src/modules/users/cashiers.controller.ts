@@ -72,7 +72,7 @@ export class CashiersController {
   //? ---------------------------------------------------------------------------------------------- */
 
   //!
-  @Auth(ValidPermissions.PUT)
+  @Auth(ValidPermissions.UPDATE)
   //!
   @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Put('office/:id')
