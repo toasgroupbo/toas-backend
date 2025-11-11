@@ -11,14 +11,21 @@ import {
   Body,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { diskStorage } from 'multer';
 
 import { fileFilter } from './helpers/fileFilter.helper';
 import { fileNamer } from './helpers/fileNamer.helper';
 
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
+
 import { FilesService } from './files.service';
+import { Auth, Resource } from 'src/auth/decorators';
+
+//!
+@Resource(ValidResourses.FILE)
+//!
 
 @ApiTags('Files')
 @Controller('multimedia')
@@ -29,6 +36,10 @@ export class FilesController {
   //?                                        Upload                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.CREATE)
+  @ApiBearerAuth('access-token')
+  //!
   @Post()
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -77,6 +88,10 @@ export class FilesController {
   //?                                   GetAllFiles                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.READ)
+  @ApiBearerAuth('access-token')
+  //!
   @Get('uploads')
   getAllFiles() {
     return this.filesService.getAllFiles();
@@ -86,6 +101,10 @@ export class FilesController {
   //?                                  deletedFiles                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
+  //!
+  @Auth(ValidPermissions.DELETE)
+  @ApiBearerAuth('access-token')
+  //!
   @Delete()
   deleteFiles(@Body() deleteDto: string[]) {
     return this.filesService.deletedFiles(deleteDto);
