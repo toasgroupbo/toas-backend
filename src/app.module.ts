@@ -30,7 +30,8 @@ import { BankAccountsModule } from './modules/bank-accounts/bank-accounts.module
       username: envs.DB_USERNAME,
       password: envs.DB_PASSWORD,
       autoLoadEntities: true,
-      synchronize: true, // true, // solo para desarrollo
+      synchronize: true,
+      //migrations: [process.env.NODE_ENV === 'production' ? 'dist/migrations/*.js' : 'src/migrations/*.ts'],
     }),
     AuthModule,
     RolesModule,
