@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 import {
   CreateUserAdminDto,
@@ -12,6 +13,7 @@ import {
   CreateUserDto,
   UpdateUserDto,
   UpdateUserOfficeDto,
+  UpdateUserPasswordDto,
 } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
@@ -204,7 +206,22 @@ export class UsersService {
   }
 
   //? ---------------------------------------------------------------------------------------------- */
-  //?                                        Update                                                  */
+  //?                               Update_password                                                  */
+  //? ---------------------------------------------------------------------------------------------- */
+
+  async changePassword(
+    id: string,
+    updateUserPasswordDto: UpdateUserPasswordDto,
+  ) {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) throw new NotFoundException('User not found');
+
+    user.password = await bcrypt.hash(updateUserPasswordDto.password, 10);
+    return this.userRepository.save(user);
+  }
+
+  //? ---------------------------------------------------------------------------------------------- */
+  //?                                 Update_Office                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
   async updateOffice(

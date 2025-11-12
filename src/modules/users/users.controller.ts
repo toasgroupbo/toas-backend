@@ -7,10 +7,16 @@ import {
   Delete,
   Controller,
   ParseUUIDPipe,
+  Put,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { CreateUserAdminDto, CreateUserDto, UpdateUserDto } from './dto';
+import {
+  CreateUserAdminDto,
+  CreateUserDto,
+  UpdateUserDto,
+  UpdateUserPasswordDto,
+} from './dto';
 
 import { ValidResourses, ValidPermissions } from '../../common/enums';
 
@@ -82,6 +88,21 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(id, updateUserDto);
+  }
+
+  //? ---------------------------------------------------------------------------------------------- */
+  //?                                Update_Password                                                 */
+  //? ---------------------------------------------------------------------------------------------- */
+
+  //!
+  @Auth(ValidPermissions.UPDATE)
+  //!
+  @Put(':id')
+  updatePassword(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateUserPasswordDto: UpdateUserPasswordDto,
+  ) {
+    return this.usersService.changePassword(id, updateUserPasswordDto);
   }
 
   //? ---------------------------------------------------------------------------------------------- */
