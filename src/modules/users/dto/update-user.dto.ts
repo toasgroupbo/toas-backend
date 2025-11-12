@@ -3,7 +3,7 @@ import { CreateUserDto } from './create-user.dto';
 import { IsNumber, IsOptional } from 'class-validator';
 
 export class UpdateUserDto extends PartialType(
-  OmitType(CreateUserDto, ['email', 'password'] as const),
+  OmitType(CreateUserDto, [/* 'email',  */ 'password'] as const),
 ) {
   @ApiPropertyOptional({
     description: 'Role UUID',

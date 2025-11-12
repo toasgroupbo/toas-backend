@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 
 import {
   CreateUserAdminDto,
@@ -101,6 +101,7 @@ export class UsersService {
   async findAll() {
     const users = await this.userRepository.find({
       relations: { rol: true, office: true, company: true },
+      where: { rol: { name: Not(StaticRoles.CASHIER) } },
     });
     return users;
   }
