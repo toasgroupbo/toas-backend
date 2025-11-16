@@ -34,7 +34,7 @@ export class CashiersController {
   //!
   @Auth(ValidPermissions.CREATE)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  //@ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Post()
   createCashier(@Body() createCashierDto: CreateUserCashierDto) {
     return this.usersService.createCashier(createCashierDto); //! GetCompany

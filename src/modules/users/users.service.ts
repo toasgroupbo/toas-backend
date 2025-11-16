@@ -112,8 +112,11 @@ export class UsersService {
 
   async findAllCashiers(companyUUID: string) {
     const cashiers = await this.userRepository.find({
-      where: { company: { id: companyUUID } },
       relations: { rol: true, office: true, company: true },
+      where: {
+        office: { company: { id: companyUUID } },
+        rol: { name: StaticRoles.CASHIER },
+      },
     });
     return cashiers;
   }
@@ -135,7 +138,7 @@ export class UsersService {
 
   async findOneCashier(id: string, companyUUID: string) {
     const cashier = await this.userRepository.findOne({
-      where: { id, company: { id: companyUUID } },
+      where: { id, office: { company: { id: companyUUID } } },
       relations: { rol: true, office: true, company: true },
     });
     if (!cashier) throw new NotFoundException('Cashier not found');
