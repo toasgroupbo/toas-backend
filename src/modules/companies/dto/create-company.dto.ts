@@ -17,7 +17,7 @@ export class CreateCompanyDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ example: 'logo.png' })
+  @ApiProperty({ example: '/api/files/imagen1.jpeg' })
   @IsString()
   logo: string;
 

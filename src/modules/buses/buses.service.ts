@@ -6,7 +6,6 @@ import { CreateBusDto, UpdateBusDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { User } from '../users/entities/user.entity';
 import { Bus } from './entities/bus.entity';
 
 @Injectable()
@@ -61,6 +60,7 @@ export class BusesService {
   async findOne(id: string, companyUUID: string) {
     const bus = await this.busRepository.findOne({
       where: { id, owner: { company: { id: companyUUID } } },
+      relations: { owner: true, busType: true },
     });
     if (!bus) throw new NotFoundException('Bus not found');
     return bus;

@@ -21,6 +21,7 @@ export class CreateBusTypeDto {
       {
         deck: 1,
         deckType: 'LEITO',
+        image: '/api/files/imagen1.jpeg',
         seats: [
           {
             row: 1,
@@ -39,6 +40,7 @@ export class CreateBusTypeDto {
       {
         deck: 2,
         deckType: 'SEMICAMA',
+        image: '/api/files/imagen1.jpeg',
         seats: [
           {
             row: 1,

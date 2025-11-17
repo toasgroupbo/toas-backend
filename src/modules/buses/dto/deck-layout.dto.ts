@@ -1,5 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNumber, Max, Min, ValidateNested } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsArray,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 import { SeatsDto } from './seats.dto';
@@ -12,6 +21,10 @@ export class DeckLayoutDto {
   @Max(2)
   @IsNumber()
   deck: number;
+
+  @ApiProperty({ example: '/api/files/imagen1.jpeg' })
+  @IsString()
+  image: string;
 
   @ApiProperty({ enum: DeckType, example: DeckType.LEITO })
   @IsEnum(DeckType)

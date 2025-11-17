@@ -196,8 +196,26 @@ export class UsersService {
       if (updateUserDto.rol) {
         const rol = await this.rolService.findOne(updateUserDto.rol);
 
+        // --------------------------------------------------------------------------
+        // 1. No se puede asignar un rol estatico
+        // --------------------------------------------------------------------------
+
         if (rol.isStatic) {
           throw new ConflictException('The Rol is Static');
+        }
+
+        const allowed: StaticRoles[] = [
+          StaticRoles.SUPER_ADMIN,
+          StaticRoles.COMPANY_ADMIN,
+          StaticRoles.CASHIER,
+        ];
+
+        // --------------------------------------------------------------------------
+        // 2. No se puede asignar un rol a un user estatico
+        // --------------------------------------------------------------------------
+
+        if (allowed.includes(user.rol.name as StaticRoles)) {
+          throw new ConflictException('The User is Static');
         }
       }
 
