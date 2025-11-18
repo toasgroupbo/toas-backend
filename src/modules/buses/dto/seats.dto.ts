@@ -1,12 +1,7 @@
-import {
-  IsEnum,
-  IsNumber,
-  IsString,
-  IsBoolean,
-  IsOptional,
-} from 'class-validator';
-import { SeatType } from '../enums/seat-type.enum';
+import { IsEnum, IsNumber, IsString, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+import { SeatType } from '../enums/seat-type.enum';
 
 export class SeatsDto {
   @ApiProperty()
@@ -22,7 +17,7 @@ export class SeatsDto {
   @IsString()
   seatNumber?: string;
 
-  @ApiProperty({ enum: SeatType, example: SeatType.SEAT })
+  @ApiProperty({ enum: SeatType })
   @IsEnum(SeatType)
   type: SeatType;
 }

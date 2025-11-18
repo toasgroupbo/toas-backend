@@ -33,6 +33,18 @@ export class Bus {
   })
   equipment?: Equipment[];
 
+  @Column('text')
+  interior_image: string;
+
+  @Column('text')
+  exterior_image: string;
+
+  @Column('text')
+  brand: string;
+
+  @Column('text')
+  model: string;
+
   @Column('boolean', { default: false })
   decks: boolean;
 

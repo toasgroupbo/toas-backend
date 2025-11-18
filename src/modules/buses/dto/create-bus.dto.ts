@@ -39,6 +39,22 @@ export class CreateBusDto {
   @Type(() => String)
   equipment: Equipment[];
 
+  @ApiProperty({ example: '/api/files/imagen1.jpeg' })
+  @IsString()
+  interior_image: string;
+
+  @ApiProperty({ example: '/api/files/imagen2.jpeg' })
+  @IsString()
+  exterior_image: string;
+
+  @ApiProperty({ example: 'NISSAN' })
+  @IsString()
+  brand: string;
+
+  @ApiProperty({ example: '2025' })
+  @IsString()
+  model: string;
+
   //* ---------------------------------------------------------------------------------------------- */
   //*                                        Relations                                               */
   //* ---------------------------------------------------------------------------------------------- */
