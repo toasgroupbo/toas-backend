@@ -33,16 +33,16 @@ export class Bus {
   })
   equipment?: Equipment[];
 
-  @Column('text')
+  @Column('text', { nullable: true })
   interior_image: string;
 
-  @Column('text')
+  @Column('text', { nullable: true })
   exterior_image: string;
 
-  @Column('text')
+  @Column('text', { nullable: true })
   brand: string;
 
-  @Column('text')
+  @Column('text', { nullable: true })
   model: string;
 
   @Column('boolean', { default: false })
