@@ -31,8 +31,8 @@ export class TravelSeat {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: '0' }) //! default 0 (cambiar)
   price: string;
 
-  @Column('varchar', { length: 3, nullable: true })
-  seatNumber?: string;
+  @Column('varchar', { length: 3, default: '' })
+  seatNumber: string;
 
   @Column({ type: 'enum', enum: SeatType })
   type: SeatType; // 'seat' | 'aisle' | 'space'
