@@ -125,11 +125,19 @@ export class TicketsService {
         .getMany();
 
       // --------------------------------------------------------------------------
-      // 3. Validar disponibilidad de asientos
+      // 3. Validar disponibilidad de asientos y que no sean espacios
       // --------------------------------------------------------------------------
 
-      if (seats.length !== seatIds.length) {
-        const foundIds = seats.map((s) => s.id.toString());
+      //! valida que los asientos no sean "0" (espacios sin asiento)
+      const seatsCleaned = [...seats];
+      for (const seat of seats) {
+        if (seat.seatNumber === '0') {
+          seatsCleaned.splice(seatsCleaned.indexOf(seat), 1);
+        }
+      }
+
+      if (seatsCleaned.length !== seatIds.length) {
+        const foundIds = seatsCleaned.map((s) => s.id.toString());
         const missing = seatIds.filter((id) => !foundIds.includes(id));
         throw new BadRequestException(
           `Some seats are unavailable or already sold: ${missing.join(', ')}`,
