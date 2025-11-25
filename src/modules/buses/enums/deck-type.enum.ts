@@ -3,4 +3,5 @@ export enum DeckType {
   SEMICAMA = 'SEMICAMA',
   CAMA = 'CAMA',
   MIXTO = 'MIXTO',
+  SUIT_CAMA = 'suit_cama',
 }
