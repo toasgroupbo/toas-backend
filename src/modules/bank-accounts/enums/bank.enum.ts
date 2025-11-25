@@ -11,4 +11,5 @@ export enum Bank {
   VISION = 'BancoVisión',
   FORTALEZA = 'Banco Fortaleza',
   BISA = 'Banco BISA',
+  CREDIFE = 'Banco CREDIFE',
 }
