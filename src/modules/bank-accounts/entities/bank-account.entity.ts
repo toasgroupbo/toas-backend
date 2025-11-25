@@ -17,10 +17,10 @@ export class BankAccount {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'enum', enum: Bank })
+  @Column('text', { nullable: true })
   bank: Bank;
 
-  @Column({ type: 'enum', enum: BankAccountType })
+  @Column('text', { nullable: true })
   typeAccount: BankAccountType;
 
   @Column('text', { unique: true }) //! unique
