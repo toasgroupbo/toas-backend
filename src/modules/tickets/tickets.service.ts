@@ -429,7 +429,11 @@ export class TicketsService {
 
   async findAll(user: User) {
     const tickets = await this.ticketRepository.find({
-      where: { travel: { bus: { owner: { company: user.company } } } },
+      where: {
+        travel: {
+          bus: { owner: { companies: user.company /* user.company */ } },
+        },
+      },
     });
     return tickets;
   }
@@ -441,7 +445,9 @@ export class TicketsService {
   async findOne(id: string, user: User) {
     const ticket = await this.ticketRepository.findOneBy({
       id,
-      travel: { bus: { owner: { company: user.company } } },
+      travel: {
+        bus: { owner: { companies: user.company /* user.company */ } },
+      },
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;

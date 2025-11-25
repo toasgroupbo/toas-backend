@@ -11,6 +11,7 @@ import {
 
 import { Equipment } from '../enums';
 
+import { Company } from 'src/modules/companies/entities/company.entity';
 import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { BusType } from './bus-type.entity';
 
@@ -63,6 +64,9 @@ export class Bus {
   @OneToOne(() => BusType, (busType) => busType.buses, { cascade: true })
   @JoinColumn()
   busType: BusType;
+
+  @ManyToOne(() => Company, (company) => company.buses)
+  company: Company;
 
   //* ---------------------------------------------------------------------------------------------- */
   //*                                        Functions                                               */

@@ -119,7 +119,7 @@ export class TravelsService {
 
   async findAll(companyUUID: string) {
     const travels = await this.travelRepository.find({
-      where: { bus: { owner: { company: { id: companyUUID } } } },
+      where: { bus: { company: { id: companyUUID } } },
 
       relations: {
         bus: true,
@@ -136,7 +136,7 @@ export class TravelsService {
 
   async findOne(id: string, companyUUID: string) {
     const travel = await this.travelRepository.findOne({
-      where: { id, bus: { owner: { company: { id: companyUUID } } } },
+      where: { id, bus: { company: { id: companyUUID } } },
 
       relations: {
         bus: true,

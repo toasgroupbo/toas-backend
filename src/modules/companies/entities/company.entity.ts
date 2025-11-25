@@ -7,12 +7,15 @@ import {
   PrimaryGeneratedColumn,
   OneToOne,
   JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 
-import { User } from 'src/modules/users/entities/user.entity';
-import { Owner } from 'src/modules/owners/entities/owner.entity';
-import { Office } from 'src/modules/offices/entities/office.entity';
 import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
+import { Office } from 'src/modules/offices/entities/office.entity';
+import { Owner } from 'src/modules/owners/entities/owner.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Bus } from 'src/modules/buses/entities/bus.entity';
 
 @Entity('companies')
 export class Company {
@@ -55,8 +58,25 @@ export class Company {
   @OneToMany(() => Office, (office) => office.company)
   offices: Office[];
 
-  @OneToMany(() => Owner, (owner) => owner.company)
-  owner: Owner[];
+  @OneToMany(() => Bus, (bus) => bus.company)
+  buses: Office[];
+
+  /* @OneToMany(() => Owner, (owner) => owner.company)
+  owner: Owner[]; */
+
+  @ManyToMany(() => Owner, (owner) => owner.companies, {})
+  @JoinTable({
+    name: 'company_owners', // nombre de la tabla intermedia
+    joinColumn: {
+      name: 'companyId', // columna FK hacia Outfit
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'ownerId', // columna FK hacia Variant
+      referencedColumnName: 'id',
+    },
+  })
+  owners: Owner[];
 
   //* ---------------------------------------------------------------------------------------------- */
   //*                                        Functions                                               */

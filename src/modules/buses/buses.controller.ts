@@ -7,7 +7,6 @@ import {
   Delete,
   Controller,
   ParseUUIDPipe,
-  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -15,7 +14,7 @@ import { CreateBusDto, UpdateBusDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetCompany, GetUser, Resource } from 'src/auth/decorators';
+import { Auth, GetCompany, Resource } from 'src/auth/decorators';
 
 import { BusesService } from './buses.service';
 
@@ -36,9 +35,13 @@ export class BusesController {
   //!
   @Auth(ValidPermissions.CREATE)
   //!
+  @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Post()
-  create(@Body() createBusDto: CreateBusDto) {
-    return this.busesService.create(createBusDto);
+  create(
+    @Body() createBusDto: CreateBusDto,
+    @GetCompany() companyUUID: string,
+  ) {
+    return this.busesService.create(createBusDto, companyUUID); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */

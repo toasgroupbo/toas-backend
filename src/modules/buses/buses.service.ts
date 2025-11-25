@@ -19,7 +19,7 @@ export class BusesService {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async create(createBusDto: CreateBusDto) {
+  async create(createBusDto: CreateBusDto, companyUUID: string) {
     try {
       const { busType, ...data } = createBusDto;
 
@@ -34,6 +34,7 @@ export class BusesService {
         owner: { id: createBusDto.owner },
         busType,
         decks,
+        company: { id: companyUUID },
       });
       return await this.busRepository.save(newBus);
     } catch (error) {
@@ -47,7 +48,9 @@ export class BusesService {
 
   async findAll(companyUUID: string) {
     const buses = await this.busRepository.find({
-      where: { owner: { company: { id: companyUUID } } },
+      where: {
+        company: { id: companyUUID },
+      },
       relations: { owner: true, busType: true },
     });
     return buses;
@@ -59,7 +62,10 @@ export class BusesService {
 
   async findOne(id: string, companyUUID: string) {
     const bus = await this.busRepository.findOne({
-      where: { id, owner: { company: { id: companyUUID } } },
+      where: {
+        id,
+        company: { id: companyUUID },
+      },
       relations: { owner: true, busType: true },
     });
     if (!bus) throw new NotFoundException('Bus not found');

@@ -21,13 +21,50 @@ export class OwnersService {
 
   async create(createOwnerDto: CreateOwnerDto, companyUUID: string) {
     try {
-      const { bankAccount, ...data } = createOwnerDto;
+      const { bankAccount, ci, ...data } = createOwnerDto;
 
-      const owner = this.ownerRepository.create({
-        ...data,
-        bankAccount, //! se crea la cuenta de banco
-        company: { id: companyUUID },
+      // --------------------------------------------------------------------------
+      // 1. Buscar si existe un owner con el mismo CI
+      // --------------------------------------------------------------------------
+
+      let owner = await this.ownerRepository.findOne({
+        where: { ci },
+        relations: { companies: true, bankAccount: true },
       });
+
+      // --------------------------------------------------------------------------
+      // 2. Si no existiera se crea uno nuevo owner
+      // --------------------------------------------------------------------------
+
+      if (!owner) {
+        owner = this.ownerRepository.create({
+          ...data,
+          ci,
+          bankAccount, // se crea la cuenta de banco
+          companies: [{ id: companyUUID }], // se asigna la primera compañía
+        });
+
+        return await this.ownerRepository.save(owner);
+      }
+
+      // --------------------------------------------------------------------------
+      // 3. Si ya existiera, se agrega la nueva company
+      // --------------------------------------------------------------------------
+
+      const companyAlreadyAdded = owner.companies.some(
+        (c) => c.id === companyUUID,
+      );
+
+      if (!companyAlreadyAdded) {
+        owner.companies.push({ id: companyUUID } as any);
+      }
+
+      // --------------------------------------------------------------------------
+      // 4. Actualizar los datos del owner existente
+      // --------------------------------------------------------------------------
+
+      Object.assign(owner, data);
+
       return await this.ownerRepository.save(owner);
     } catch (error) {
       handleDBExceptions(error);
@@ -40,8 +77,11 @@ export class OwnersService {
 
   async findAll(companyUUID: string) {
     const owners = await this.ownerRepository.find({
-      where: { company: { id: companyUUID } },
-      relations: { bankAccount: true },
+      where: {
+        companies: { id: companyUUID },
+        buses: { company: { id: companyUUID } },
+      },
+      relations: { bankAccount: true, buses: true },
     });
 
     return owners;
@@ -53,7 +93,7 @@ export class OwnersService {
 
   async findOne(id: string, companyUUID: string) {
     const owner = await this.ownerRepository.findOne({
-      where: { id, company: { id: companyUUID } },
+      where: { id, companies: { id: companyUUID } },
       relations: { bankAccount: true },
     });
     if (!owner) {

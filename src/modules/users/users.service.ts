@@ -272,6 +272,11 @@ export class UsersService {
 
   async remove(id: string) {
     const user = await this.findOne(id);
+
+    if (user.rol.isStatic) {
+      throw new ConflictException('The User is Static and cannot be deleted');
+    }
+
     await this.userRepository.softRemove(user);
     return {
       message: 'User deleted successfully',

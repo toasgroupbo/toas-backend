@@ -1,17 +1,18 @@
-import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
-import { Bus } from 'src/modules/buses/entities/bus.entity';
-import { Company } from 'src/modules/companies/entities/company.entity';
 import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
   JoinColumn,
-  ManyToOne,
+  ManyToMany,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+
+import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
+import { Company } from 'src/modules/companies/entities/company.entity';
+import { Bus } from 'src/modules/buses/entities/bus.entity';
 
 @Entity('owners')
 export class Owner {
@@ -44,6 +45,9 @@ export class Owner {
   @OneToMany(() => Bus, (bus) => bus.owner, { cascade: true })
   buses: Bus[];
 
-  @ManyToOne(() => Company, (company) => company.owner)
-  company: Company;
+  /* @ManyToOne(() => Company, (company) => company.owner)
+  company: Company; */
+
+  @ManyToMany(() => Company, (company) => company.owners)
+  companies: Company[];
 }
