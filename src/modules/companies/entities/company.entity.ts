@@ -9,9 +9,9 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { User } from 'src/modules/users/entities/user.entity';
 import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { Office } from 'src/modules/offices/entities/office.entity';
-import { User } from 'src/modules/users/entities/user.entity';
 import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
 
 @Entity('companies')

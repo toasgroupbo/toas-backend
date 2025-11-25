@@ -23,8 +23,8 @@ export class Office {
   name: string;
 
   @Column({
-    type: 'enum',
-    enum: PlacesEnum,
+    type: 'text',
+    nullable: true,
   })
   place: PlacesEnum;
 

@@ -21,7 +21,7 @@ export class Balance {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: string;
 
-  @Column({ type: 'enum', enum: BalanceType, default: BalanceType.RECHARGE })
+  @Column('text', { default: BalanceType.RECHARGE })
   type: BalanceType;
 
   @Column({ type: 'timestamptz', nullable: true }) //! nullable

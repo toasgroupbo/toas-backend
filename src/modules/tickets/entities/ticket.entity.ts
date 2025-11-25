@@ -23,10 +23,10 @@ export class Ticket {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'enum', enum: TicketType })
+  @Column({ type: 'text', default: TicketType.IN_OFFICE })
   type: TicketType;
 
-  @Column({ type: 'enum', enum: TicketStatus, default: TicketStatus.RESERVED })
+  @Column({ type: 'text', default: TicketStatus.RESERVED })
   status: TicketStatus;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })

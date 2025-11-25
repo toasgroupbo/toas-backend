@@ -26,8 +26,7 @@ export class Bus {
   plaque: string;
 
   @Column({
-    type: 'enum',
-    enum: Equipment,
+    type: 'text',
     array: true,
     nullable: true,
   })

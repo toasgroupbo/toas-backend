@@ -19,6 +19,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { BankAccountsModule } from './modules/bank-accounts/bank-accounts.module';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
   imports: [
@@ -57,6 +58,8 @@ import { BankAccountsModule } from './modules/bank-accounts/bank-accounts.module
     TransactionsModule,
 
     BalanceModule,
+
+    LoggerModule,
   ],
   controllers: [],
   providers: [],

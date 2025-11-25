@@ -8,11 +8,12 @@ import {
   Column,
 } from 'typeorm';
 
+import { TravelStatus } from '../enums/travel-status.enum';
+
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { Route } from 'src/modules/routes/entities/route.entity';
 import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { TravelSeat } from './travel-seat.entity';
-import { TravelStatus } from '../enums/travel-status.enum';
 
 @Entity('travels')
 export class Travel {
@@ -36,7 +37,7 @@ export class Travel {
   })
   price_deck_2?: string;
 
-  @Column({ type: 'enum', enum: TravelStatus, default: TravelStatus.ACTIVE })
+  @Column({ type: 'text', default: TravelStatus.ACTIVE })
   travel_status: TravelStatus;
 
   @CreateDateColumn({ select: false })
