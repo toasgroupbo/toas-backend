@@ -45,9 +45,6 @@ export class Owner {
   @OneToMany(() => Bus, (bus) => bus.owner, { cascade: true })
   buses: Bus[];
 
-  /* @ManyToOne(() => Company, (company) => company.owner)
-  company: Company; */
-
   @ManyToMany(() => Company, (company) => company.owners)
   companies: Company[];
 }

@@ -20,7 +20,7 @@ export class Office {
   id: string;
 
   @Column('text')
-  name: string;
+  gps: string;
 
   @Column({
     type: 'text',

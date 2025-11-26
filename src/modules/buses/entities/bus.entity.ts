@@ -29,9 +29,8 @@ export class Bus {
   @Column({
     type: 'text',
     array: true,
-    nullable: true,
   })
-  equipment?: Equipment[];
+  equipment: Equipment[];
 
   @Column('text', { nullable: true })
   interior_image: string;

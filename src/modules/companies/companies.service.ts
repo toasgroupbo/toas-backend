@@ -2,16 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { StaticRoles } from 'src/auth/enums/roles.enum';
 
-import { UsersService } from '../users/users.service';
 import { RolesService } from '../roles/roles.service';
 
+import { User } from '../users/entities/user.entity';
 import { Company } from './entities/company.entity';
 
 @Injectable()
@@ -19,7 +18,9 @@ export class CompanyService {
   constructor(
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
-    private readonly userService: UsersService,
+
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
 
     private readonly rolService: RolesService,
   ) {}
@@ -32,7 +33,10 @@ export class CompanyService {
     try {
       const { bankAccount, manager, ...data } = createCompanyDto;
 
-      //! busqueda del rol de COMPANY_ADMIN
+      // --------------------------------------------------------------------------
+      // 1. Busqueda del rol de COMPANY_ADMIN
+      // --------------------------------------------------------------------------
+
       const rol = await this.rolService.findOneByName(
         StaticRoles.COMPANY_ADMIN,
       );
@@ -40,11 +44,14 @@ export class CompanyService {
         throw new NotFoundException('Role COMPANY_ADMIN not found');
       }
 
-      //! creacion de la compania
+      // --------------------------------------------------------------------------
+      // 2. Creacion de la compania
+      // --------------------------------------------------------------------------
+
       const newCompany = this.companyRepository.create({
         ...data,
-        admin: { ...manager, rol: rol }, //! se crea el usuario admin de la compania
-        bankAccount, //! se crea la cuenta de banco
+        admin: { ...manager, rol: rol }, //! se crea el admin de la compania
+        bankAccount,
       });
 
       return await this.companyRepository.save(newCompany);
@@ -57,7 +64,7 @@ export class CompanyService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(pagination: PaginationDto) {
+  async findAll() {
     const companies = await this.companyRepository.find({
       relations: { bankAccount: true, admin: true },
     });
@@ -98,14 +105,26 @@ export class CompanyService {
   async remove(id: string) {
     const company = await this.findOne(id);
 
-    try {
-      await this.companyRepository.softRemove(company);
-      return {
-        message: 'Company deleted successfully',
-        deleted: company,
-      };
-    } catch (error) {
-      handleDBExceptions(error);
-    }
+    // --------------------------------------------------------------------------
+    // 1. SoftDelete de Admin de la company
+    // --------------------------------------------------------------------------
+
+    await this.userRepository
+      .createQueryBuilder()
+      .softDelete()
+      .where('id = :id', { id: company.admin.id })
+      .execute();
+
+    // --------------------------------------------------------------------------
+    // 2. Delete de la company
+    // --------------------------------------------------------------------------
+
+    await this.companyRepository
+      .createQueryBuilder()
+      .softDelete()
+      .where('id = :id', { id: company.id })
+      .execute();
+
+    return { message: 'Company deleted successfully', deleted: company };
   }
 }

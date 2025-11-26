@@ -7,12 +7,16 @@ import { CreateOwnerDto, UpdateOwnerDto } from './dto';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { Owner } from './entities/owner.entity';
+import { Bus } from '../buses/entities/bus.entity';
 
 @Injectable()
 export class OwnersService {
   constructor(
     @InjectRepository(Owner)
     private readonly ownerRepository: Repository<Owner>,
+
+    @InjectRepository(Bus)
+    private readonly busRepository: Repository<Bus>,
   ) {}
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -126,14 +130,28 @@ export class OwnersService {
 
   async remove(id: string, companyUUID: string) {
     const owner = await this.findOne(id, companyUUID);
-    try {
-      await this.ownerRepository.softRemove(owner);
-      return {
-        message: 'Owner deleted successfully',
-        deleted: owner,
-      };
-    } catch (error) {
-      handleDBExceptions(error);
-    }
+
+    // --------------------------------------------------------------------------
+    // 1. SoftDelete de buses asociados al owner en esa company
+    // --------------------------------------------------------------------------
+
+    await this.busRepository
+      .createQueryBuilder()
+      .softDelete()
+      .where('ownerId = :id', { id })
+      .andWhere('companyId = :companyUUID', { companyUUID })
+      .execute();
+
+    // --------------------------------------------------------------------------
+    // 2. Delete de relación Owner - Company
+    // --------------------------------------------------------------------------
+
+    await this.ownerRepository
+      .createQueryBuilder()
+      .relation(Owner, 'companies')
+      .of(id)
+      .remove(companyUUID);
+
+    return { message: 'Owner deleted successfully', deleted: owner };
   }
 }

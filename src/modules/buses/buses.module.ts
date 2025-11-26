@@ -11,5 +11,6 @@ import { BusType } from './entities/bus-type.entity';
   imports: [TypeOrmModule.forFeature([Bus, BusType])],
   controllers: [BusesController],
   providers: [BusesService],
+  exports: [TypeOrmModule],
 })
 export class BusesModule {}

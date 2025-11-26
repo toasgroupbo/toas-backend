@@ -4,14 +4,12 @@ import {
   Body,
   Patch,
   Param,
-  Query,
   Delete,
   Controller,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
@@ -50,8 +48,8 @@ export class CompanyController {
   @Auth(ValidPermissions.READ)
   //!
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.companyService.findAll(pagination);
+  findAll() {
+    return this.companyService.findAll();
   }
 
   //? ---------------------------------------------------------------------------------------------- */

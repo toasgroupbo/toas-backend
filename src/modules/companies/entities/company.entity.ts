@@ -61,9 +61,6 @@ export class Company {
   @OneToMany(() => Bus, (bus) => bus.company)
   buses: Office[];
 
-  /* @OneToMany(() => Owner, (owner) => owner.company)
-  owner: Owner[]; */
-
   @ManyToMany(() => Owner, (owner) => owner.companies, {})
   @JoinTable({
     name: 'company_owners', // nombre de la tabla intermedia

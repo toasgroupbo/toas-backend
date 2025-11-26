@@ -23,11 +23,18 @@ export class BusesService {
     try {
       const { busType, ...data } = createBusDto;
 
-      //! determina si un bus tiene o no decks
+      // --------------------------------------------------------------------------
+      // 1. Determina si un bus tiene o no decks
+      // --------------------------------------------------------------------------
+
       let decks: boolean = false;
       if (busType.decks.length > 1) {
         decks = true;
       }
+
+      // --------------------------------------------------------------------------
+      // 2. Se crea el Bus
+      // --------------------------------------------------------------------------
 
       const newBus = this.busRepository.create({
         ...data,

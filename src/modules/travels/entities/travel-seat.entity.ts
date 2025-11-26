@@ -9,10 +9,10 @@ import {
 
 import { SeatStatus, SeatType } from '../../../common/enums';
 import { TravelStatus } from '../enums/travel-status.enum';
+import { SaleType } from '../enums/sale_type-enum';
 
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { Travel } from './travel.entity';
-import { SaleType } from '../enums/sale_type-enum';
 
 @Entity('travel_seats')
 export class TravelSeat {
@@ -34,16 +34,16 @@ export class TravelSeat {
   @Column('varchar', { length: 3, default: '' })
   seatNumber: string;
 
-  @Column({ type: 'enum', enum: SeatType })
+  @Column({ type: 'text', nullable: true })
   type: SeatType; // 'seat' | 'aisle' | 'space'
 
-  @Column({ type: 'enum', enum: SaleType, default: SaleType.UNSOLD })
+  @Column({ type: 'text', default: SaleType.UNSOLD })
   sale_type: SaleType; // 'office' | 'app'
 
-  @Column({ type: 'enum', enum: SeatStatus, default: SeatStatus.AVAILABLE })
+  @Column({ type: 'text', default: SeatStatus.AVAILABLE })
   status: SeatStatus; // 'available' | 'reserved' | 'sold'
 
-  @Column({ type: 'enum', enum: TravelStatus, default: TravelStatus.ACTIVE })
+  @Column({ type: 'text', default: TravelStatus.ACTIVE })
   travel_status: TravelStatus; // 'active' | 'cancelled' | 'completed' | 'closed'
 
   @Column({ type: 'timestamptz', nullable: true })
