@@ -6,6 +6,7 @@ import {
   DeleteDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+
 import { User } from '../../users/entities/user.entity';
 import { Permission } from './permission.entity';
 

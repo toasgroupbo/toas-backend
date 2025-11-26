@@ -25,14 +25,14 @@ export class Permission {
   id: number;
 
   @Column({
-    type: 'enum',
-    enum: ValidResourses,
+    type: 'text',
+    //enum: ValidResourses,
   })
   resourse: ValidResourses | ValidResoursesForAdmins; // Ej: 'users', 'products', etc.
 
   @Column({
-    type: 'enum',
-    enum: ValidPermissions,
+    type: 'text',
+    //enum: ValidPermissions,
     array: true,
     default: [],
   })
