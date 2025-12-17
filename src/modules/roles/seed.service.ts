@@ -242,22 +242,17 @@ export class SeedService implements OnModuleInit {
         isStatic: true,
         permissions: [
           {
-            resourse: ValidResourses.BUS,
+            resourse: ValidResourses.CASHIER_BUS,
             permissions: [ValidPermissions.READ],
           },
 
           {
-            resourse: ValidResourses.ROUTE,
-            permissions: [ValidPermissions.READ],
-          },
-
-          {
-            resourse: ValidResourses.TRAVEL,
+            resourse: ValidResourses.CASHIER_TRAVEL,
             permissions: [ValidPermissions.READ, ValidPermissions.CLOSE],
           },
 
           {
-            resourse: ValidResourses.TICKET,
+            resourse: ValidResourses.CASHIER_TICKET,
             permissions: [
               ValidPermissions.CREATE,
               ValidPermissions.READ,

@@ -4,12 +4,14 @@ export enum ValidResoursesForAdmins {
   CUSTOMER = 'CUSTOMER',
 
   //! permisos de una company
-  OFFICE = 'OFFICE',
-  OWNER = 'OWNER',
-  ROUTE = 'ROUTE',
-  BUS = 'BUS',
-  TRAVEL = 'TRAVEL',
   CASHIER = 'CASHIER',
+  OWNER = 'OWNER',
+  BUS = 'BUS',
+  OFFICE = 'OFFICE',
+  ROUTE = 'ROUTE',
+  TRAVEL = 'TRAVEL',
+  //TICKET = 'TICKET',
+
   FILE = 'FILE',
 }
 
@@ -20,15 +22,24 @@ export enum ValidResourses {
   USER = 'USER',
   COMPANY = 'COMPANY',
   CUSTOMER = 'CUSTOMER',
+
+  BANK_ACCOUNT = 'BANK_ACCOUNT',
+
   CASHIER = 'CASHIER',
   OWNER = 'OWNER',
   BUS = 'BUS',
   OFFICE = 'OFFICE',
   ROUTE = 'ROUTE',
   TRAVEL = 'TRAVEL',
+  TICKET = 'TICKET',
+
   FILE = 'FILE',
 
   //! solo el cashier
-  BANK_ACCOUNT = 'BANK_ACCOUNT',
-  TICKET = 'TICKET',
+  CASHIER_BUS = 'CASHIER_BUS',
+  CASHIER_ROUTE = 'CASHIER_ROUTE',
+
+  CASHIER_TRAVEL = 'CASHIER_TRAVEL',
+  CASHIER_TICKET = 'CASHIER_TICKET',
+  //customer
 }

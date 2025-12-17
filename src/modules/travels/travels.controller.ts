@@ -13,9 +13,16 @@ import { CreateTravelDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetCompany, GetUser, Resource } from 'src/auth/decorators';
+import {
+  Auth,
+  GetCompany,
+  GetOffice,
+  GetUser,
+  Resource,
+} from 'src/auth/decorators';
 
 import { TravelsService } from './travels.service';
+import { Office } from '../offices/entities/office.entity';
 
 //!
 @Resource(ValidResourses.TRAVEL)
@@ -71,6 +78,18 @@ export class TravelsController {
   @Get()
   findAll(@GetCompany() companyUUID: string) {
     return this.travelsService.findAll(companyUUID); //! GetCompany
+  }
+
+  //? ---------------------------------------------------------------------------------------------- */
+
+  //!
+  @Resource(ValidResourses.CASHIER_TRAVEL)
+  @Auth(ValidPermissions.READ)
+  @ApiBearerAuth('access-token')
+  //!
+  @Get('cashier')
+  findAllTravelsforCashier(@GetOffice() office: Office) {
+    return this.travelsService.findAllForCashier(office); //! GetOffice object
   }
 
   //? ---------------------------------------------------------------------------------------------- */

@@ -40,9 +40,9 @@ export class RolesGuard implements CanActivate {
     // --------------------------------------------------------------------------
 
     const MetaResource =
-      this.reflector.get<ValidResourses>(META_RESOURCE, context.getClass()) ||
-      //? Si no lo encuentra en la clase, lo busca en el handler
-      this.reflector.get<ValidResourses>(META_RESOURCE, context.getHandler());
+      this.reflector.get<ValidResourses>(META_RESOURCE, context.getHandler()) ||
+      //? si no lo encuentra en el handler (metodo), lo busca en la clase
+      this.reflector.get<ValidResourses>(META_RESOURCE, context.getClass());
 
     if (!MetaResource) {
       throw new ForbiddenException('Recurso no definido para este endpoint');

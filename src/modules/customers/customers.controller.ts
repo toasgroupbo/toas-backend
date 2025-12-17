@@ -61,6 +61,14 @@ export class CustomersController {
     return this.customersService.findOne(id);
   }
 
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
+  @Get(':id')
+  findOneByCi(@Param('id') ci: string) {
+    return this.customersService.findOneByCi(ci);
+  }
+
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */

@@ -13,6 +13,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 import { TravelStatus } from './enums/travel-status.enum';
 import { SeatStatus } from 'src/common/enums';
 
+import { Office } from '../offices/entities/office.entity';
 import { TravelSeat } from './entities/travel-seat.entity';
 import { Bus } from '../buses/entities/bus.entity';
 import { Travel } from './entities/travel.entity';
@@ -121,6 +122,20 @@ export class TravelsService {
     const travels = await this.travelRepository.find({
       where: { bus: { company: { id: companyUUID } } },
 
+      relations: {
+        bus: true,
+        route: { officeOrigin: true, officeDestination: true },
+        travelSeats: true,
+      },
+    });
+    return travels;
+  }
+
+  async findAllForCashier(office: Office) {
+    const officeUUID = office.id;
+
+    const travels = await this.travelRepository.find({
+      where: { route: { officeOrigin: { id: officeUUID } } },
       relations: {
         bus: true,
         route: { officeOrigin: true, officeDestination: true },

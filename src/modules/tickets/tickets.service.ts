@@ -145,15 +145,20 @@ export class TicketsService {
       }
 
       // --------------------------------------------------------------------------
-      // 4. Obtener o crear customer
+      // 4. Obtener el customer
       // --------------------------------------------------------------------------
 
       if (type === TicketType.IN_OFFICE && !buyer) {
         const officeDto = dto as CreateTicketInOfficeDto;
-        buyer = await this.customersService.create(
-          { ci: officeDto.customerCI, name: officeDto.customerName },
+        buyer = await this.customersService.findOne(
+          officeDto.customerUUID,
           queryRunner.manager,
         );
+
+        /* create(
+          { ci: officeDto.customerCI, name: officeDto.customerName },
+          queryRunner.manager,
+        ); */
       }
 
       // --------------------------------------------------------------------------

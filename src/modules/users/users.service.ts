@@ -102,8 +102,8 @@ export class UsersService {
 
   async findAll() {
     const users = await this.userRepository.find({
+      where: { rol: { isStatic: false } },
       relations: { rol: true, office: true, company: true },
-      where: { rol: { name: Not(StaticRoles.CASHIER) } },
     });
     return users;
   }
@@ -112,11 +112,11 @@ export class UsersService {
 
   async findAllCashiers(companyUUID: string) {
     const cashiers = await this.userRepository.find({
-      relations: { rol: true, office: true, company: true },
       where: {
         office: { company: { id: companyUUID } },
         rol: { name: StaticRoles.CASHIER },
       },
+      relations: { rol: true, office: true, company: true },
     });
     return cashiers;
   }
@@ -171,6 +171,7 @@ export class UsersService {
         'user.email',
         'user.fullName',
         'user.password',
+        'user.phone',
         'rol.id',
         'rol.name',
         'rol.isStatic',

@@ -1,9 +1,11 @@
-export enum PlacesEnum {
+export enum CitiesEnum {
   SANTA_CRUZ_DE_LA_SIERRA = 'Santa Cruz de la Sierra',
-  MONTERO = 'Montero',
-  WARNES = 'Warnes',
-  COTOCA = 'Cotoca',
-  LA_GUARDIA = 'La Guardia',
-  EL_TORNO = 'El Torno',
-  MINEROS = 'Mineros',
+  COCHABAMBA = 'Cochabamba',
+  PANDO = 'Pando',
+  BENI = 'Beni',
+  CHUQUISACA = 'Chuquisaca',
+  TARIJA = 'Tarija',
+  LA_PAZ = 'La Paz',
+  ORURO = 'Oruro',
+  POTOSI = 'Potosi',
 }

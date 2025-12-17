@@ -11,5 +11,6 @@ import { TravelSeat } from './entities/travel-seat.entity';
   imports: [TypeOrmModule.forFeature([Travel, TravelSeat])],
   controllers: [TravelsController],
   providers: [TravelsService],
+  exports: [TravelsService, TypeOrmModule],
 })
 export class TravelsModule {}

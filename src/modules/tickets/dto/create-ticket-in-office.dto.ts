@@ -23,11 +23,18 @@ export class CreateTicketInOfficeDto {
   @Type(() => SeatSelectionDto)
   seatSelections: SeatSelectionDto[];
 
-  @ApiProperty({ example: 'John Doe' })
+  /*   @ApiProperty({ example: 'John Doe' })
   @IsString()
   customerName: string;
 
   @ApiProperty({ example: '1234567890' })
   @IsString()
-  customerCI: string;
+  customerCI: string; */
+
+  @ApiProperty({
+    description: 'Customer UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  customerUUID: string;
 }

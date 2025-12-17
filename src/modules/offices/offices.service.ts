@@ -23,7 +23,8 @@ export class OfficesService {
     try {
       const newOffice = this.officeRepository.create({
         ...createOfficeDto,
-        company: { id: companyUUID }, //! se añade la company del user que crea la office
+        company: { id: companyUUID }, //! se añade la company del user que crea la
+        place: { id: createOfficeDto.place },
       });
       return await this.officeRepository.save(newOffice);
     } catch (error) {

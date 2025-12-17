@@ -1,25 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString, IsUUID } from 'class-validator';
-import { PlacesEnum } from '../enums/places.enum';
+
+import { CitiesEnum } from '../enums/places.enum';
 
 export class CreateOfficeDto {
-  @ApiProperty({ example: 'Office 1' })
+  @ApiProperty({ example: 'url' })
   @IsString()
-  name: string;
-
-  /*   @ApiProperty({
-    description: 'Company UUID',
-    example: '1acd78b9-2eb5-4bdd-8ebb-b87dac87b85a',
-  })
-  @IsUUID()
-  @IsString()
-  company: string; */
+  url_gps: string;
 
   @ApiProperty({
-    enum: PlacesEnum,
-    example: PlacesEnum.SANTA_CRUZ_DE_LA_SIERRA,
+    enum: CitiesEnum,
+    example: CitiesEnum.SANTA_CRUZ_DE_LA_SIERRA,
   })
-  @IsEnum(PlacesEnum)
+  @IsEnum(CitiesEnum)
   @IsString()
-  place: PlacesEnum;
+  city: CitiesEnum;
+
+  @ApiProperty({
+    description: 'Place UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  place: string;
 }

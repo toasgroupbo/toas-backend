@@ -21,27 +21,13 @@ export class CustomersService {
   //?                                         Create                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async create(
-    createCustomerNotVerifiedDto: CreateCustomerNotVerifiedDto,
-    manager?: EntityManager,
-  ) {
-    const repository = manager
-      ? manager.getRepository(Customer)
-      : this.customerRepository;
-
-    const { ci, name } = createCustomerNotVerifiedDto;
-
+  async create(createCustomerNotVerifiedDto: CreateCustomerNotVerifiedDto) {
     try {
-      const customerExists = await repository.findOne({ where: { ci } });
+      const newCustomer = await this.customerRepository.create(
+        createCustomerNotVerifiedDto,
+      );
 
-      if (!customerExists) {
-        const newCustomer = repository.create(createCustomerNotVerifiedDto);
-        return await repository.save(newCustomer);
-      }
-
-      //! se actualiza el nombre completo si el cliente ya existe
-      customerExists.name = name.trim();
-      return await repository.save(customerExists);
+      return await this.customerRepository.save(newCustomer);
     } catch (error) {
       handleDBExceptions(error);
     }
@@ -70,8 +56,18 @@ export class CustomersService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string) {
-    const customer = await this.customerRepository.findOne({ where: { id } });
+  async findOne(id: string, manager?: EntityManager) {
+    const repository = manager
+      ? manager.getRepository(Customer)
+      : this.customerRepository;
+
+    const customer = await repository.findOne({ where: { id } });
+    if (!customer) throw new NotFoundException('Customer not found');
+    return customer;
+  }
+
+  async findOneByCi(ci: string) {
+    const customer = await this.customerRepository.findOne({ where: { ci } });
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
   }

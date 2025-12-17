@@ -30,10 +30,11 @@ export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
   //? ---------------------------------------------------------------------------------------------- */
-  //?                                        Create                                                  */
+  //?                                CASHIER:Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
   //!
+  @Resource(ValidResourses.CASHIER_TICKET)
   @Auth(ValidPermissions.CREATE)
   //!
   @Post('in-office')
@@ -43,6 +44,8 @@ export class TicketsController {
   ) {
     return this.ticketsService.createTicketInOffice(createTicketDto, user);
   }
+
+  //? ---------------------------------------------------------------------------------------------- */
 
   //!
   @Auth(ValidPermissions.CREATE)
@@ -56,10 +59,11 @@ export class TicketsController {
   }
 
   //? ---------------------------------------------------------------------------------------------- */
-  //?                                        Confirm                                                 */
+  //?                                CASHIER:Confirm                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
   //!
+  @Resource(ValidResourses.CASHIER_TICKET)
   @Auth(ValidPermissions.CONFIRM)
   //!
   @Post('confirm/:id')
@@ -71,10 +75,11 @@ export class TicketsController {
   }
 
   //? ---------------------------------------------------------------------------------------------- */
-  //?                                         Cancel                                                 */
+  //?                                 CASHIER:Cancel                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
   //!
+  @Resource(ValidResourses.CASHIER_TICKET)
   @Auth(ValidPermissions.CANCEL)
   //!
   @Post('cancel/:id')
@@ -86,10 +91,11 @@ export class TicketsController {
   }
 
   //? ---------------------------------------------------------------------------------------------- */
-  //?                                        FindAll                                                 */
+  //?                                CASHIER:FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
   //!
+  @Resource(ValidResourses.CASHIER_TICKET)
   @Auth(ValidPermissions.READ)
   //!
   @Get()
@@ -98,10 +104,11 @@ export class TicketsController {
   }
 
   //? ---------------------------------------------------------------------------------------------- */
-  //?                                        FindOne                                                 */
+  //?                                CASHIER:FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
   //!
+  @Resource(ValidResourses.CASHIER_TICKET)
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
