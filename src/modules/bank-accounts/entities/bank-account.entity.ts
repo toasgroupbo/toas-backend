@@ -20,7 +20,7 @@ export class BankAccount {
   @Column('text', { nullable: true })
   bank: Bank;
 
-  @Column('text')
+  @Column('text', { nullable: true })
   typeAccount: BankAccountType;
 
   @Column('text', { unique: true }) //! unique
