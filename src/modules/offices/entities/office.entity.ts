@@ -25,7 +25,6 @@ export class Office {
 
   @Column({
     type: 'text',
-    nullable: true,
   })
   city: CitiesEnum;
 

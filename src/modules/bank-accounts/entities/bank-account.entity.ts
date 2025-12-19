@@ -17,10 +17,10 @@ export class BankAccount {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('text', { nullable: true })
+  @Column('text')
   bank: Bank;
 
-  @Column('text', { nullable: true })
+  @Column('text')
   typeAccount: BankAccountType;
 
   @Column('text', { unique: true }) //! unique
