@@ -9,8 +9,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { CreateBankAccountDto } from 'src/modules/bank-accounts/dto/create-bank-account.dto';
 import { CreateUserDto } from 'src/modules/users/dto';
+import { CreateBankAccountDto } from 'src/modules/bank-accounts/dto/create-bank-account.dto';
 
 export class CreateCompanyDto {
   @ApiProperty({ example: 'Empresa XYZ' })
@@ -52,7 +52,7 @@ export class CreateCompanyDto {
   bankAccount: CreateBankAccountDto;
 
   //* ---------------------------------------------------------------------------------------------- */
-  //*                              Create User Manager                                               */
+  //*                              Create_User_Manager                                               */
   //* ---------------------------------------------------------------------------------------------- */
 
   @ApiProperty({

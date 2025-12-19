@@ -1,27 +1,27 @@
 import {
   Column,
-  CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   ManyToOne,
   OneToMany,
+  CreateDateColumn,
+  DeleteDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { SelectedSeatsDto } from '../dto';
 
-import { TicketStatus } from '../enums/ticket-status.enum';
 import { TicketType } from '../enums/ticket-type.enum';
+import { TicketStatus } from '../enums/ticket-status.enum';
 
-import { TravelSeat } from 'src/modules/travels/entities/travel-seat.entity';
-import { Customer } from 'src/modules/customers/entities/customer.entity';
-import { Travel } from 'src/modules/travels/entities/travel.entity';
 import { User } from 'src/modules/users/entities/user.entity';
+import { Travel } from 'src/modules/travels/entities/travel.entity';
+import { Customer } from 'src/modules/customers/entities/customer.entity';
+import { TravelSeat } from 'src/modules/travels/entities/travel-seat.entity';
 
 @Entity('tickets')
 export class Ticket {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ type: 'text', default: TicketType.IN_OFFICE })
   type: TicketType;
@@ -38,7 +38,9 @@ export class Ticket {
   @Column({ type: 'timestamptz', nullable: true })
   reserve_expiresAt?: Date | null;
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

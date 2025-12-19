@@ -11,15 +11,15 @@ import * as bcrypt from 'bcrypt';
 
 import { AuthProviders } from 'src/auth/enums';
 
-import { Ticket } from '../../../modules/tickets/entities/ticket.entity';
 import { Balance } from 'src/modules/balances/entities/balance.entity';
+import { Ticket } from '../../../modules/tickets/entities/ticket.entity';
 
 @Entity('customers')
 export class Customer {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column('text', { unique: true, nullable: true }) //! unique, nullable
+  @Column('text', { unique: true, nullable: true })
   email: string;
 
   @Column('text', {
@@ -28,25 +28,27 @@ export class Customer {
   })
   password?: string;
 
-  @Column('text') //! null
+  @Column('text')
   name: string;
 
-  @Column('text', { unique: true, nullable: true }) //! unique
+  @Column('text', { unique: true, nullable: true })
   ci?: string;
 
-  @Column('text', { nullable: true }) //! null
+  @Column('text', { nullable: true })
   phone?: string;
 
   @Column('boolean', { default: false })
   is_verified: boolean;
 
-  @Column({ type: 'enum', enum: AuthProviders, nullable: true }) //! null
+  @Column({ type: 'enum', enum: AuthProviders, nullable: true })
   provider?: AuthProviders;
 
-  @Column('text', { nullable: true }) //! null
+  @Column('text', { nullable: true })
   idProvider?: string;
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

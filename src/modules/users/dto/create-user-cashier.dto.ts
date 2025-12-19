@@ -9,10 +9,10 @@ export class CreateUserCashierDto extends CreateUserDto {
   //* ---------------------------------------------------------------------------------------------- */
 
   @ApiProperty({
-    description: 'Office UUID',
+    description: 'Office ID',
     example: '1acd78b9-2eb5-4bdd-8ebb-b87dac87b85a',
   })
   @IsString()
   @IsUUID()
-  office: string;
+  officeId: number;
 }

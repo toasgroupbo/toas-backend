@@ -10,13 +10,13 @@ import {
   DeleteDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Office } from '../../../modules/offices/entities/office.entity';
-import { Travel } from '../../../modules/travels/entities/travel.entity';
+import { Office } from 'src/modules/offices/entities/office.entity';
+import { Travel } from 'src/modules/travels/entities/travel.entity';
 
 @Entity('routes')
 export class Route {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
@@ -24,7 +24,9 @@ export class Route {
   @Column('text', { array: true, default: [] })
   pass_by: string[];
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

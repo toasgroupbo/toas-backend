@@ -7,17 +7,17 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { SeatStatus, SeatType } from '../../../common/enums';
-import { TravelStatus } from '../enums/travel-status.enum';
 import { SaleType } from '../enums/sale_type-enum';
+import { TravelStatus } from '../enums/travel-status.enum';
+import { SeatStatus, SeatType } from '../../../common/enums';
 
-import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { Travel } from './travel.entity';
+import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 
 @Entity('travel_seats')
 export class TravelSeat {
   @PrimaryGeneratedColumn()
-  id: string;
+  id: number;
 
   @Column('int')
   row: number;
@@ -49,7 +49,9 @@ export class TravelSeat {
   @Column({ type: 'timestamptz', nullable: true })
   reserve_expiresAt?: Date | null;
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

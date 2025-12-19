@@ -7,8 +7,8 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { User } from '../../users/entities/user.entity';
 import { Permission } from './permission.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('roles')
 export class Rol {
@@ -21,7 +21,9 @@ export class Rol {
   @Column({ type: 'boolean', default: false })
   isStatic: boolean; //! indica si es inmutable
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

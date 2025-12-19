@@ -1,34 +1,36 @@
 import {
   Column,
+  Entity,
+  OneToOne,
+  OneToMany,
+  ManyToMany,
+  JoinColumn,
   CreateDateColumn,
   DeleteDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToMany,
-  OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
-import { Company } from 'src/modules/companies/entities/company.entity';
 import { Bus } from 'src/modules/buses/entities/bus.entity';
+import { Company } from 'src/modules/companies/entities/company.entity';
+import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
 
 @Entity('owners')
 export class Owner {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column('text')
   name: string;
 
-  @Column('text', { unique: true }) //! unique
+  @Column('text', { unique: true })
   ci: string;
 
   @Column('text')
   phone: string;
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

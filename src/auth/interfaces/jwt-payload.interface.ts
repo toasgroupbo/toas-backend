@@ -1,6 +1,6 @@
 import { LoginType } from '../../common/enums/login-type.enum';
 
 export interface IJwtPayload {
-  id: string;
+  id: number;
   type: LoginType;
 }

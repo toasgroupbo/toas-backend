@@ -1,16 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID, ValidateNested } from 'class-validator';
+import { IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 import { SeatSelectionDto } from './selected-seats.dto';
 
 export class CreateTicketInOfficeDto {
   @ApiProperty({
-    description: 'Travel UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Travel ID',
+    example: '1',
   })
   @IsUUID()
-  travelUUID: string;
+  travelId: number;
 
   @ApiProperty({
     type: [SeatSelectionDto],
@@ -23,18 +23,9 @@ export class CreateTicketInOfficeDto {
   @Type(() => SeatSelectionDto)
   seatSelections: SeatSelectionDto[];
 
-  /*   @ApiProperty({ example: 'John Doe' })
-  @IsString()
-  customerName: string;
-
-  @ApiProperty({ example: '1234567890' })
-  @IsString()
-  customerCI: string; */
-
   @ApiProperty({
-    description: 'Customer UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Customer ID',
+    example: '1',
   })
-  @IsUUID()
-  customerUUID: string;
+  customerId: number;
 }

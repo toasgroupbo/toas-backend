@@ -16,19 +16,19 @@ import {
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { TravelStatus } from '../travels/enums/travel-status.enum';
-import { SaleType } from '../travels/enums/sale_type-enum';
-import { TicketStatus } from './enums/ticket-status.enum';
-import { TicketType } from './enums/ticket-type.enum';
 import { SeatStatus } from 'src/common/enums';
+import { TicketType } from './enums/ticket-type.enum';
+import { TicketStatus } from './enums/ticket-status.enum';
+import { SaleType } from '../travels/enums/sale_type-enum';
+import { TravelStatus } from '../travels/enums/travel-status.enum';
 
 import { CustomersService } from '../customers/customers.service';
 
-import { TravelSeat } from '../travels/entities/travel-seat.entity';
-import { Customer } from '../customers/entities/customer.entity';
-import { Travel } from '../travels/entities/travel.entity';
-import { User } from '../users/entities/user.entity';
 import { Ticket } from './entities/ticket.entity';
+import { User } from '../users/entities/user.entity';
+import { Travel } from '../travels/entities/travel.entity';
+import { Customer } from '../customers/entities/customer.entity';
+import { TravelSeat } from '../travels/entities/travel-seat.entity';
 
 @Injectable()
 export class TicketsService {
@@ -83,7 +83,7 @@ export class TicketsService {
     user?: User;
     type: TicketType;
   }) {
-    const { travelUUID, seatSelections } = dto;
+    const { travelId, seatSelections } = dto;
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -95,7 +95,7 @@ export class TicketsService {
       // --------------------------------------------------------------------------
 
       const travel = await queryRunner.manager.findOne(Travel, {
-        where: { id: travelUUID },
+        where: { id: travelId },
         relations: { bus: true },
       });
 
@@ -112,7 +112,7 @@ export class TicketsService {
         .createQueryBuilder(TravelSeat, 'seat')
         .setLock('pessimistic_write')
         .where('seat.id IN (:...seatIds)', { seatIds })
-        .andWhere('seat.travelId = :travelUUID', { travelUUID })
+        .andWhere('seat.travelId = :travelUUID', { travelId })
         .andWhere('seat.deletedAt IS NULL')
         .andWhere('seat.travel_status = :active', {
           active: TravelStatus.ACTIVE,
@@ -151,14 +151,9 @@ export class TicketsService {
       if (type === TicketType.IN_OFFICE && !buyer) {
         const officeDto = dto as CreateTicketInOfficeDto;
         buyer = await this.customersService.findOne(
-          officeDto.customerUUID,
+          officeDto.customerId,
           queryRunner.manager,
         );
-
-        /* create(
-          { ci: officeDto.customerCI, name: officeDto.customerName },
-          queryRunner.manager,
-        ); */
       }
 
       // --------------------------------------------------------------------------
@@ -447,7 +442,7 @@ export class TicketsService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string, user: User) {
+  async findOne(id: number, user: User) {
     const ticket = await this.ticketRepository.findOneBy({
       id,
       travel: {

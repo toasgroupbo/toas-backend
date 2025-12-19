@@ -68,9 +68,9 @@ export class CreateBusDto {
   busType: CreateBusTypeDto;
 
   @ApiProperty({
-    description: 'Owner UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Owner ID',
+    example: '1',
   })
   @IsUUID()
-  ownerUUID: string;
+  ownerId: number;
 }

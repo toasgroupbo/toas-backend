@@ -6,11 +6,11 @@ import { SeatSelectionDto } from './selected-seats.dto';
 
 export class CreateTicketInAppDto {
   @ApiProperty({
-    description: 'Travel UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Travel ID',
+    example: '1',
   })
   @IsUUID()
-  travelUUID: string;
+  travelId: number;
 
   @ApiProperty({
     type: [SeatSelectionDto],

@@ -1,32 +1,34 @@
 import {
   Column,
-  CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   OneToOne,
+  CreateDateColumn,
+  DeleteDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { Bank, BankAccountType } from '../enums';
 
-import { Company } from 'src/modules/companies/entities/company.entity';
 import { Owner } from 'src/modules/owners/entities/owner.entity';
+import { Company } from 'src/modules/companies/entities/company.entity';
 
 @Entity('bank_accounts')
 export class BankAccount {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column('text', { nullable: true })
+  @Column('text')
   bank: Bank;
 
-  @Column('text', { nullable: true })
+  @Column('text')
   typeAccount: BankAccountType;
 
   @Column('text', { unique: true }) //! unique
   account: string;
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

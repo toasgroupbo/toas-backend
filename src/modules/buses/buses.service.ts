@@ -16,33 +16,33 @@ export class BusesService {
     private readonly busRepository: Repository<Bus>,
   ) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Create                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
-  async create(createBusDto: CreateBusDto, companyUUID: string) {
+  async create(createBusDto: CreateBusDto, companyId: number) {
     try {
       const { busType, ...data } = createBusDto;
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 1. Determina si un bus tiene o no decks
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       let decks: boolean = false;
       if (busType.decks.length > 1) {
         decks = true;
       }
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 2. Se crea el Bus
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const newBus = this.busRepository.create({
         ...data,
-        owner: { id: createBusDto.ownerUUID },
+        owner: { id: createBusDto.ownerId },
         busType,
         decks,
-        company: { id: companyUUID },
+        company: { id: companyId },
       });
       return await this.busRepository.save(newBus);
     } catch (error) {
@@ -50,14 +50,14 @@ export class BusesService {
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
-  async findAll(companyUUID: string) {
+  async findAll(companyId: number) {
     const buses = await this.busRepository.find({
       where: {
-        company: { id: companyUUID },
+        company: { id: companyId },
       },
       relations: { owner: true, busType: true },
     });
@@ -76,15 +76,15 @@ export class BusesService {
     return buses;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
-  async findOne(id: string, companyUUID: string) {
+  async findOne(id: number, companyId: number) {
     const bus = await this.busRepository.findOne({
       where: {
         id,
-        company: { id: companyUUID },
+        company: { id: companyId },
       },
       relations: { owner: true, busType: true },
     });
@@ -92,12 +92,12 @@ export class BusesService {
     return bus;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Update                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
-  async update(id: string, updateBusDto: UpdateBusDto, companyUUID: string) {
-    const bus = await this.findOne(id, companyUUID);
+  async update(id: number, updateBusDto: UpdateBusDto, companyId: number) {
+    const bus = await this.findOne(id, companyId);
     try {
       Object.assign(bus, updateBusDto);
       return await this.busRepository.save(bus);
@@ -106,12 +106,12 @@ export class BusesService {
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
-  async remove(id: string, companyUUID: string) {
-    const bus = await this.findOne(id, companyUUID);
+  async remove(id: number, companyId: number) {
+    const bus = await this.findOne(id, companyId);
     try {
       await this.busRepository.softRemove(bus);
       return {

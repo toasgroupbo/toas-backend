@@ -1,11 +1,11 @@
 import {
+  Put,
+  Get,
   Post,
   Body,
   Param,
   Controller,
-  ParseUUIDPipe,
-  Put,
-  Get,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -47,8 +47,8 @@ export class CashiersController {
   //!
   @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Get()
-  findAll(@GetCompany() companyUUID: string) {
-    return this.usersService.findAllCashiers(companyUUID); //! GetCompany
+  findAll(@GetCompany() companyId: number) {
+    return this.usersService.findAllCashiers(companyId); //! GetCompany
   }
   //? ---------------------------------------------------------------------------------------------- */
   //?                                        FindOne                                                 */
@@ -57,13 +57,13 @@ export class CashiersController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Get(':id')
   findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @GetCompany() companyUUID: string,
+    @Param('id', ParseIntPipe) id: number,
+    @GetCompany() companyId: number,
   ) {
-    return this.usersService.findOneCashier(id, companyUUID); //! GetCompany
+    return this.usersService.findOneCashier(id, companyId); //! GetCompany
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -76,10 +76,10 @@ export class CashiersController {
   @ApiQuery({ name: 'companyUUID', required: false, type: String })
   @Put('office/:id')
   updateOffice(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUserOfficeDto: UpdateUserOfficeDto,
-    @GetCompany() companyUUID: string,
+    @GetCompany() companyId: number,
   ) {
-    return this.usersService.updateOffice(id, updateUserOfficeDto, companyUUID); //! GetCompany
+    return this.usersService.updateOffice(id, updateUserOfficeDto, companyId); //! GetCompany
   }
 }

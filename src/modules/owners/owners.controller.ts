@@ -6,7 +6,7 @@ import {
   Patch,
   Param,
   Delete,
-  ParseUUIDPipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -14,7 +14,7 @@ import { CreateOwnerDto, UpdateOwnerDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetCompany, GetUser, Resource } from 'src/auth/decorators';
+import { Auth, GetCompany, Resource } from 'src/auth/decorators';
 
 import { OwnersService } from './owners.service';
 
@@ -28,81 +28,81 @@ import { OwnersService } from './owners.service';
 export class OwnersController {
   constructor(private readonly ownersService: OwnersService) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Create                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.CREATE)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Post()
   create(
     @Body() createOwnerDto: CreateOwnerDto,
-    @GetCompany() companyUUID: string,
+    @GetCompany() companyId: number,
   ) {
-    return this.ownersService.create(createOwnerDto, companyUUID); //! GetCompany
+    return this.ownersService.create(createOwnerDto, companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Get()
-  findAll(@GetCompany() companyUUID: string) {
-    return this.ownersService.findAll(companyUUID); //! GetCompany
+  findAll(@GetCompany() companyId: number) {
+    return this.ownersService.findAll(companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Get(':id')
   findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @GetCompany() companyUUID: string,
+    @Param('id', ParseIntPipe) id: number,
+    @GetCompany() companyId: number,
   ) {
-    return this.ownersService.findOne(id, companyUUID); //! GetCompany
+    return this.ownersService.findOne(id, companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Update                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Patch(':id')
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateOwnerDto: UpdateOwnerDto,
-    @GetCompany() companyUUID: string,
+    @GetCompany() companyId: number,
   ) {
-    return this.ownersService.update(id, updateOwnerDto, companyUUID); //! GetCompany
+    return this.ownersService.update(id, updateOwnerDto, companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.DELETE)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Delete(':id')
   remove(
-    @Param('id', ParseUUIDPipe) id: string,
-    @GetCompany() companyUUID: string,
+    @Param('id', ParseIntPipe) id: number,
+    @GetCompany() companyId: number,
   ) {
-    return this.ownersService.remove(id, companyUUID); //! GetCompany
+    return this.ownersService.remove(id, companyId); //! GetCompany
   }
 }

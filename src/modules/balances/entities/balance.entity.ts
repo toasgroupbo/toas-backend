@@ -1,9 +1,9 @@
 import {
-  BeforeInsert,
   Column,
-  CreateDateColumn,
   Entity,
   ManyToOne,
+  BeforeInsert,
+  CreateDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -27,7 +27,9 @@ export class Balance {
   @Column({ type: 'timestamptz', nullable: true }) //! nullable
   expiresAt: Date | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   //* ---------------------------------------------------------------------------------------------- */

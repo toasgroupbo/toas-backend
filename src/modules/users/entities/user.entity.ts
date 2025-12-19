@@ -1,25 +1,25 @@
 import {
   Column,
   Entity,
+  OneToOne,
   ManyToOne,
   OneToMany,
   BeforeInsert,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
-  OneToOne,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
-import { Company } from 'src/modules/companies/entities/company.entity';
+import { Rol } from '../../roles/entities/rol.entity';
 import { Office } from 'src/modules/offices/entities/office.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
-import { Rol } from '../../roles/entities/rol.entity';
+import { Company } from 'src/modules/companies/entities/company.entity';
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column('text', { unique: true }) //! unique
   email: string;
@@ -38,7 +38,9 @@ export class User {
   @Column('text')
   phone: string;
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

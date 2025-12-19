@@ -75,7 +75,7 @@ export class CompanyService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const company = await this.companyRepository.findOne({
       where: { id },
       relations: { bankAccount: true, admin: true },
@@ -88,7 +88,7 @@ export class CompanyService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async update(id: string, updateCompanyDto: UpdateCompanyDto) {
+  async update(id: number, updateCompanyDto: UpdateCompanyDto) {
     const company = await this.findOne(id);
     try {
       Object.assign(company, updateCompanyDto);
@@ -102,7 +102,7 @@ export class CompanyService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string) {
+  async remove(id: number) {
     const company = await this.findOne(id);
 
     // --------------------------------------------------------------------------

@@ -17,8 +17,8 @@ import { BusType } from './bus-type.entity';
 
 @Entity('buses')
 export class Bus {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column('text')
   name: string;
@@ -47,7 +47,9 @@ export class Bus {
   @Column('boolean', { default: false })
   decks: boolean;
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

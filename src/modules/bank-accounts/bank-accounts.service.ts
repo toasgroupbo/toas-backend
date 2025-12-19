@@ -43,7 +43,7 @@ export class BankAccountsService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const bankAccount = await this.bankAccountRepository.findOne({
       where: { id },
     });
@@ -57,7 +57,7 @@ export class BankAccountsService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async update(id: string, updateBankAccountDto: UpdateBankAccountDto) {
+  async update(id: number, updateBankAccountDto: UpdateBankAccountDto) {
     const bankAccount = await this.findOne(id);
     try {
       Object.assign(bankAccount, updateBankAccountDto);
@@ -71,7 +71,7 @@ export class BankAccountsService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string) {
+  async remove(id: number) {
     const bankAccount = await this.findOne(id);
     try {
       await this.bankAccountRepository.softRemove(bankAccount);

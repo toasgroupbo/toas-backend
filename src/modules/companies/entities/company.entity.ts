@@ -1,40 +1,42 @@
 import {
   Entity,
   Column,
+  OneToOne,
   OneToMany,
+  JoinTable,
+  JoinColumn,
+  ManyToMany,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
-  OneToOne,
-  JoinColumn,
-  ManyToMany,
-  JoinTable,
 } from 'typeorm';
 
-import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
-import { Office } from 'src/modules/offices/entities/office.entity';
-import { Owner } from 'src/modules/owners/entities/owner.entity';
-import { User } from 'src/modules/users/entities/user.entity';
 import { Bus } from 'src/modules/buses/entities/bus.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Owner } from 'src/modules/owners/entities/owner.entity';
+import { Office } from 'src/modules/offices/entities/office.entity';
+import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
 
 @Entity('companies')
 export class Company {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column('text')
   name: string;
 
-  @Column('text', { default: '' })
+  @Column('text')
   logo: string;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'int' })
   commission: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'int' })
   hours_before_closing: number;
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })
@@ -63,13 +65,13 @@ export class Company {
 
   @ManyToMany(() => Owner, (owner) => owner.companies, {})
   @JoinTable({
-    name: 'company_owners', // nombre de la tabla intermedia
+    name: 'company_owners',
     joinColumn: {
-      name: 'companyId', // columna FK hacia Outfit
+      name: 'companyId',
       referencedColumnName: 'id',
     },
     inverseJoinColumn: {
-      name: 'ownerId', // columna FK hacia Variant
+      name: 'ownerId',
       referencedColumnName: 'id',
     },
   })

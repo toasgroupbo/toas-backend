@@ -40,14 +40,14 @@ export class TravelsService {
     await queryRunner.startTransaction();
 
     try {
-      const { busUUID, routeUUID, ...data } = createTravelDto;
+      const { busId, routeId, ...data } = createTravelDto;
 
       // --------------------------------------------------------------------------
       // 1. Obtener el Bus con tipo y su layout
       // --------------------------------------------------------------------------
 
       const busEntity = await queryRunner.manager.findOne(Bus, {
-        where: { id: busUUID },
+        where: { id: busId },
         relations: { busType: true },
       });
       if (!busEntity) throw new NotFoundException('Bus not found');
@@ -70,7 +70,7 @@ export class TravelsService {
 
       const newTravel = queryRunner.manager.create(Travel, {
         ...data,
-        route: { id: routeUUID },
+        route: { id: routeId },
         bus: busEntity,
         travelSeats,
       });
@@ -118,9 +118,9 @@ export class TravelsService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(companyUUID: string) {
+  async findAll(companyId: number) {
     const travels = await this.travelRepository.find({
-      where: { bus: { company: { id: companyUUID } } },
+      where: { bus: { company: { id: companyId } } },
 
       relations: {
         bus: true,
@@ -149,9 +149,9 @@ export class TravelsService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string, companyUUID: string) {
+  async findOne(id: number, companyId: number) {
     const travel = await this.travelRepository.findOne({
-      where: { id, bus: { company: { id: companyUUID } } },
+      where: { id, bus: { company: { id: companyId } } },
 
       relations: {
         bus: true,
@@ -167,8 +167,8 @@ export class TravelsService {
   //?                                        Cancel                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async cancel(id: string, companyUUID: string) {
-    const travel = await this.findOne(id, companyUUID);
+  async cancel(id: number, companyId: number) {
+    const travel = await this.findOne(id, companyId);
 
     try {
       travel.travel_status = TravelStatus.CANCELLED;
@@ -187,8 +187,8 @@ export class TravelsService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string, companyUUID: string) {
-    const travel = await this.findOne(id, companyUUID);
+  async remove(id: number, companyId: number) {
+    const travel = await this.findOne(id, companyId);
 
     try {
       //! Verificar si algún asiento está en estado 'sold' o 'reserved'

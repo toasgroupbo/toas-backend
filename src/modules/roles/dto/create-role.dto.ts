@@ -1,7 +1,8 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsArray, IsString, ValidateNested } from 'class-validator';
+
 import { CreateRolePermissionDto } from './create-role_permissions.dto';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateRoleDto {
   @ApiProperty({

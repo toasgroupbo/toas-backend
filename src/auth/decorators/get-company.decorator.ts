@@ -1,18 +1,19 @@
 import {
-  createParamDecorator,
   ExecutionContext,
   ForbiddenException,
-  InternalServerErrorException,
   BadRequestException,
+  createParamDecorator,
+  InternalServerErrorException,
 } from '@nestjs/common';
+import { isNumber } from 'class-validator';
+
 import { User } from 'src/modules/users/entities/user.entity';
-import { validate as isUUID } from 'uuid';
 
 export const GetCompany = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     const user: User = request.user;
-    const companyUUID = request.query.companyUUID;
+    const companyId: number = request.query.companyId;
 
     if (!user) {
       throw new InternalServerErrorException('User not found in request');
@@ -28,11 +29,11 @@ export const GetCompany = createParamDecorator(
     // 2. Si hay companyUUID en query, valida que sea un UUID válido
     // --------------------------------------------------------------------------
 
-    if (companyUUID) {
-      if (typeof companyUUID !== 'string' || !isUUID(companyUUID)) {
-        throw new BadRequestException('Invalid companyUUID format');
+    if (companyId) {
+      if (typeof companyId !== 'number' || !isNumber(companyId)) {
+        throw new BadRequestException('Invalid companyId format');
       }
-      return companyUUID;
+      return companyId;
     }
 
     // --------------------------------------------------------------------------

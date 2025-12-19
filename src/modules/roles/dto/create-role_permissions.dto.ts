@@ -1,10 +1,10 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { ArrayUnique, IsArray, IsEnum } from 'class-validator';
+
 import {
   ValidPermissions,
-  ValidResourses,
   ValidResoursesForAdmins,
 } from '../../../common/enums';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateRolePermissionDto {
   @ApiProperty({
@@ -13,7 +13,7 @@ export class CreateRolePermissionDto {
     example: ValidResoursesForAdmins.COMPANY,
   })
   @IsEnum(ValidResoursesForAdmins)
-  resourse: ValidResoursesForAdmins; //ValidResourses; //! para los admins
+  resourse: ValidResoursesForAdmins;
 
   @ApiProperty({
     description: 'permissions',

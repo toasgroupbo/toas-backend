@@ -5,6 +5,7 @@ import {
   Param,
   Controller,
   ParseUUIDPipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
@@ -112,7 +113,7 @@ export class TicketsController {
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+  findOne(@Param('id', ParseIntPipe) id: number, @GetUser() user: User) {
     return this.ticketsService.findOne(id, user); //! GetUser
   }
 }

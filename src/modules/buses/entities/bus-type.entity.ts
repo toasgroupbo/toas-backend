@@ -13,8 +13,8 @@ import { Bus } from './bus.entity';
 
 @Entity('bus_types')
 export class BusType {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column('text')
   name: string;
@@ -22,7 +22,9 @@ export class BusType {
   @Column('json')
   decks: DeckLayoutDto[];
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

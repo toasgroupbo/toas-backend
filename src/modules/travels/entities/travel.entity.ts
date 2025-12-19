@@ -17,8 +17,8 @@ import { TravelSeat } from './travel-seat.entity';
 
 @Entity('travels')
 export class Travel {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ type: 'timestamptz' })
   departure_time: Date;

@@ -10,15 +10,15 @@ import {
 
 import { CitiesEnum } from '../enums/places.enum';
 
-import { Company } from 'src/modules/companies/entities/company.entity';
-import { Route } from 'src/modules/routes/entities/route.entity';
-import { User } from 'src/modules/users/entities/user.entity';
 import { Place } from './place.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Route } from 'src/modules/routes/entities/route.entity';
+import { Company } from 'src/modules/companies/entities/company.entity';
 
 @Entity('offices')
 export class Office {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column('text', { nullable: true })
   url_gps: string;
@@ -28,7 +28,9 @@ export class Office {
   })
   city: CitiesEnum;
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })
@@ -40,9 +42,8 @@ export class Office {
 
   @ManyToOne(
     () => Company,
-    (company) => company.offices /* {
-    onDelete: 'SET NULL',
-  } */,
+    (company) => company.offices,
+    //{onDelete: 'SET NULL'},
   )
   company: Company;
 

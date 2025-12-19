@@ -6,8 +6,7 @@ import {
   Param,
   Delete,
   Controller,
-  ParseUUIDPipe,
-  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -29,81 +28,81 @@ import { OfficesService } from './offices.service';
 export class OfficesController {
   constructor(private readonly officesService: OfficesService) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Create                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.CREATE)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Post()
   create(
     @Body() createOfficeDto: CreateOfficeDto,
-    @GetCompany() companyUUID: string,
+    @GetCompany() companyId: number,
   ) {
-    return this.officesService.create(createOfficeDto, companyUUID); //! GetCompany
+    return this.officesService.create(createOfficeDto, companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Get()
-  findAll(@GetCompany() companyUUID: string) {
-    return this.officesService.findAll(companyUUID); //! GetCompany
+  findAll(@GetCompany() companyId: number) {
+    return this.officesService.findAll(companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Get(':id')
   findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @GetCompany() companyUUID: string,
+    @Param('id', ParseIntPipe) id: number,
+    @GetCompany() companyId: number,
   ) {
-    return this.officesService.findOne(id, companyUUID); //! GetCompany
+    return this.officesService.findOne(id, companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Update                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Patch(':id')
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateOfficeDto: UpdateOfficeDto,
-    @GetCompany() companyUUID: string,
+    @GetCompany() companyId: number,
   ) {
-    return this.officesService.update(id, updateOfficeDto, companyUUID); //! GetCompany
+    return this.officesService.update(id, updateOfficeDto, companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.DELETE)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Delete(':id')
   remove(
-    @Param('id', ParseUUIDPipe) id: string,
-    @GetCompany() companyUUID: string,
+    @Param('id', ParseIntPipe) id: number,
+    @GetCompany() companyId: number,
   ) {
-    return this.officesService.remove(id, companyUUID); //! GetCompany
+    return this.officesService.remove(id, companyId); //! GetCompany
   }
 }

@@ -78,7 +78,7 @@ export class UsersService {
   // --------------------------------------------------------------------------
 
   async createCashier(createUserDto: CreateUserCashierDto) {
-    const { office, ...data } = createUserDto;
+    const { officeId, ...data } = createUserDto;
     //! busqueda del rol de Cashier
     const rol = await this.rolService.findOneByName(StaticRoles.CASHIER);
     if (!rol) {
@@ -89,7 +89,7 @@ export class UsersService {
       const newCashier = this.userRepository.create({
         ...data,
         rol,
-        office: { id: office },
+        office: { id: officeId },
       });
       return await this.userRepository.save(newCashier);
     } catch (error) {
@@ -110,10 +110,10 @@ export class UsersService {
 
   // --------------------------------------------------------------------------
 
-  async findAllCashiers(companyUUID: string) {
+  async findAllCashiers(companyId: number) {
     const cashiers = await this.userRepository.find({
       where: {
-        office: { company: { id: companyUUID } },
+        office: { company: { id: companyId } },
         rol: { name: StaticRoles.CASHIER },
       },
       relations: { rol: true, office: true, company: true },
@@ -125,7 +125,7 @@ export class UsersService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const user = await this.userRepository.findOne({
       where: { id },
       relations: { rol: true, office: true, company: true },
@@ -136,9 +136,9 @@ export class UsersService {
 
   // --------------------------------------------------------------------------
 
-  async findOneCashier(id: string, companyUUID: string) {
+  async findOneCashier(id: number, companyId: number) {
     const cashier = await this.userRepository.findOne({
-      where: { id, office: { company: { id: companyUUID } } },
+      where: { id, office: { company: { id: companyId } } },
       relations: { rol: true, office: true, company: true },
     });
     if (!cashier) throw new NotFoundException('Cashier not found');
@@ -147,7 +147,7 @@ export class UsersService {
 
   // --------------------------------------------------------------------------
 
-  async findById(id: string) {
+  async findById(id: number) {
     const user = await this.userRepository.findOne({
       where: { id },
       relations: { rol: true, company: true },
@@ -190,7 +190,7 @@ export class UsersService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: number, updateUserDto: UpdateUserDto) {
     try {
       const user = await this.findOne(id);
 
@@ -232,7 +232,7 @@ export class UsersService {
   //? ---------------------------------------------------------------------------------------------- */
 
   async changePassword(
-    id: string,
+    id: number,
     updateUserPasswordDto: UpdateUserPasswordDto,
   ) {
     const user = await this.userRepository.findOneBy({ id });
@@ -247,12 +247,12 @@ export class UsersService {
   //? ---------------------------------------------------------------------------------------------- */
 
   async updateOffice(
-    id: string,
+    id: number,
     updateUserOfficeDto: UpdateUserOfficeDto,
-    companyUUID: string,
+    companyId: number,
   ) {
     try {
-      const user = await this.findOneCashier(id, companyUUID);
+      const user = await this.findOneCashier(id, companyId);
       if (user.rol.name !== StaticRoles.CASHIER) {
         throw new NotFoundException('The user is not a Cashier');
       }
@@ -271,7 +271,7 @@ export class UsersService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string) {
+  async remove(id: number) {
     const user = await this.findOne(id);
 
     if (user.rol.isStatic) {

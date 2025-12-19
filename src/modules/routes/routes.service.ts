@@ -25,18 +25,18 @@ export class RoutesService {
 
   async create(createRouteDto: CreateRouteDto) {
     try {
-      const { officeOriginUUID, officeDestinationUUID } = createRouteDto;
+      const { officeOriginId, officeDestinationId } = createRouteDto;
 
       //! Validar que las oficinas de origen y destino sean diferentes
-      if (officeOriginUUID == officeDestinationUUID)
+      if (officeOriginId == officeDestinationId)
         throw new ConflictException(
           'The origin and destination offices must be different',
         );
 
       const newRoute = this.routeRepository.create({
         ...createRouteDto,
-        officeOrigin: { id: officeOriginUUID },
-        officeDestination: { id: officeDestinationUUID },
+        officeOrigin: { id: officeOriginId },
+        officeDestination: { id: officeDestinationId },
       });
       return await this.routeRepository.save(newRoute);
     } catch (error) {
@@ -48,9 +48,9 @@ export class RoutesService {
   //?                                        FindAll                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findAll(companyUUID: string) {
+  async findAll(companyId: number) {
     const routes = await this.routeRepository.find({
-      where: { officeOrigin: { company: { id: companyUUID } } },
+      where: { officeOrigin: { company: { id: companyId } } },
       relations: {
         officeOrigin: true,
         officeDestination: true,
@@ -63,9 +63,9 @@ export class RoutesService {
   //?                                        FindOne                                                 */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async findOne(id: string, companyUUID: string) {
+  async findOne(id: number, companyId: number) {
     const Route = await this.routeRepository.findOne({
-      where: { id, officeOrigin: { company: { id: companyUUID } } },
+      where: { id, officeOrigin: { company: { id: companyId } } },
       relations: {
         officeOrigin: true,
         officeDestination: true,
@@ -79,12 +79,8 @@ export class RoutesService {
   //?                                        Update                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async update(
-    id: string,
-    updateRouteDto: UpdateRouteDto,
-    companyUUID: string,
-  ) {
-    const route = await this.findOne(id, companyUUID);
+  async update(id: number, updateRouteDto: UpdateRouteDto, companyId: number) {
+    const route = await this.findOne(id, companyId);
     try {
       Object.assign(route, updateRouteDto);
       return await this.routeRepository.save(route);
@@ -97,8 +93,8 @@ export class RoutesService {
   //?                                        Delete                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async remove(id: string, companyUUID: string) {
-    const route = await this.findOne(id, companyUUID);
+  async remove(id: number, companyId: number) {
+    const route = await this.findOne(id, companyId);
     try {
       await this.routeRepository.softRemove(route);
       return {

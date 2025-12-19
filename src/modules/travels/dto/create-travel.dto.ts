@@ -2,7 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDate,
-  IsDateString,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -12,18 +11,16 @@ import {
 
 export class CreateTravelDto {
   @ApiProperty({
-    description: 'Bus UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Bus ID',
+    example: '1',
   })
-  @IsUUID()
-  busUUID: string;
+  busId: number;
 
   @ApiProperty({
-    description: 'Route UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Route ID',
+    example: '1',
   })
-  @IsUUID()
-  routeUUID: string;
+  routeId: number;
 
   @ApiProperty({
     example: '10.00',

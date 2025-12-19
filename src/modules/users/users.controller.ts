@@ -8,6 +8,7 @@ import {
   Controller,
   ParseUUIDPipe,
   Put,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
@@ -71,7 +72,7 @@ export class UsersController {
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOne(id);
   }
 
@@ -84,7 +85,7 @@ export class UsersController {
   //!
   @Patch(':id')
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(id, updateUserDto);
@@ -99,7 +100,7 @@ export class UsersController {
   //!
   @Put(':id')
   updatePassword(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUserPasswordDto: UpdateUserPasswordDto,
   ) {
     return this.usersService.changePassword(id, updateUserPasswordDto);
@@ -113,7 +114,7 @@ export class UsersController {
   @Auth(ValidPermissions.DELETE)
   //!
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
   }
 }

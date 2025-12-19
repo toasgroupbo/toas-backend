@@ -19,26 +19,26 @@ import {
 import { Rol } from './rol.entity';
 
 @Entity('permissions')
-@Unique(['rol', 'resourse']) //! para que no se repita la combinacion de rol y recurso
+@Unique(['rol', 'resourse']) //! Unicidad por rol y recurso
 export class Permission {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({
     type: 'text',
-    //enum: ValidResourses,
   })
-  resourse: ValidResourses | ValidResoursesForAdmins; // Ej: 'users', 'products', etc.
+  resourse: ValidResourses | ValidResoursesForAdmins; //* Ej: 'users', 'products', etc.
 
   @Column({
     type: 'text',
-    //enum: ValidPermissions,
     array: true,
     default: [],
   })
-  permissions: ValidPermissions[]; // Ej: 'create', 'update', etc.
+  permissions: ValidPermissions[]; //* Ej: 'create', 'update', etc.
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })

@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseUUIDPipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
@@ -62,7 +63,7 @@ export class BankAccountsController {
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.bankAccountsService.findOne(id);
   }
 
@@ -75,7 +76,7 @@ export class BankAccountsController {
   //!
   @Patch(':id')
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateBankAccountDto: UpdateBankAccountDto,
   ) {
     return this.bankAccountsService.update(id, updateBankAccountDto);
@@ -89,7 +90,7 @@ export class BankAccountsController {
   @Auth(ValidPermissions.DELETE)
   //!
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.bankAccountsService.remove(id);
   }
 }
