@@ -17,7 +17,7 @@ export class BankAccount {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('text')
+  @Column('text', { nullable: true })
   bank: Bank;
 
   @Column('text')
