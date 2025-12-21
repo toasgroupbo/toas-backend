@@ -13,7 +13,7 @@ export const GetCompany = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     const user: User = request.user;
-    const companyId: number = request.query.companyId;
+    const companyId: number = Number(request.query.companyId);
 
     if (!user) {
       throw new InternalServerErrorException('User not found in request');
