@@ -39,10 +39,10 @@ export class UsersController {
   //?                                        Create                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  /* @Post('super-admin')
+  @Post('super-admin')
   create(@Body() createUser: CreateUserDto) {
     return this.usersService.createAdmin(createUser);
-  } */
+  }
 
   //!
   @Auth(ValidPermissions.CREATE)
