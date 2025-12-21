@@ -80,15 +80,15 @@ export class OwnersService {
   //? ============================================================================================== */
 
   async findAll(companyId: number) {
-    const owners = await this.ownerRepository.find({
-      where: {
-        companies: { id: companyId },
-        buses: { company: { id: companyId } },
-      },
-      relations: { bankAccount: true, buses: true },
-    });
-
-    return owners;
+    return this.ownerRepository
+      .createQueryBuilder('owner')
+      .leftJoinAndSelect('owner.bankAccount', 'bankAccount')
+      .leftJoinAndSelect('owner.buses', 'bus', 'bus.companyId = :companyId', {
+        companyId,
+      })
+      .leftJoin('owner.companies', 'company')
+      .where('company.id = :companyId', { companyId })
+      .getMany();
   }
 
   //? ============================================================================================== */
