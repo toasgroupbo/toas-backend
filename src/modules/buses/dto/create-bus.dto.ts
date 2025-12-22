@@ -4,7 +4,6 @@ import {
   IsArray,
   IsEnum,
   IsString,
-  IsUUID,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -71,6 +70,5 @@ export class CreateBusDto {
     description: 'Owner ID',
     example: '1',
   })
-  @IsUUID()
   ownerId: number;
 }

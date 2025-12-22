@@ -4,7 +4,6 @@ import {
   Body,
   Param,
   Controller,
-  ParseUUIDPipe,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -69,10 +68,10 @@ export class TicketsController {
   //!
   @Post('confirm/:id')
   confirmManual(
-    @Param('id', ParseUUIDPipe) ticketUUID: string,
+    @Param('id', ParseIntPipe) ticketId: number,
     @GetUser() user: User,
   ) {
-    return this.ticketsService.confirmTicketManual(ticketUUID, user); //! GetUser
+    return this.ticketsService.confirmTicketManual(ticketId, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */
@@ -85,10 +84,10 @@ export class TicketsController {
   //!
   @Post('cancel/:id')
   cancelManual(
-    @Param('id', ParseUUIDPipe) ticketUUID: string,
+    @Param('id', ParseIntPipe) ticketId: number,
     @GetUser() user: User,
   ) {
-    return this.ticketsService.cancelTicket(ticketUUID, user); //! GetUser
+    return this.ticketsService.cancelTicket(ticketId, user); //! GetUser
   }
 
   //? ---------------------------------------------------------------------------------------------- */

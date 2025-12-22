@@ -24,5 +24,5 @@ export class CreateOfficeDto {
     description: 'Place ID',
     example: '1',
   })
-  place: number;
+  placeId: number;
 }

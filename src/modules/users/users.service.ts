@@ -258,7 +258,7 @@ export class UsersService {
       }
 
       Object.assign(user, {
-        office: { id: updateUserOfficeDto.NewOfficeUUID },
+        office: { id: updateUserOfficeDto.NewOfficeId },
       });
 
       return await this.userRepository.save(user);

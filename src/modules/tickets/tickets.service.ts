@@ -112,7 +112,7 @@ export class TicketsService {
         .createQueryBuilder(TravelSeat, 'seat')
         .setLock('pessimistic_write')
         .where('seat.id IN (:...seatIds)', { seatIds })
-        .andWhere('seat.travelId = :travelUUID', { travelId })
+        .andWhere('seat.travelId = :travelId', { travelId })
         .andWhere('seat.deletedAt IS NULL')
         .andWhere('seat.travel_status = :active', {
           active: TravelStatus.ACTIVE,
@@ -247,7 +247,7 @@ export class TicketsService {
   //?                         Confirm_Ticket_Manual                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async confirmTicketManual(ticketUUID: string, user: User) {
+  async confirmTicketManual(ticketId: number, user: User) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -262,7 +262,7 @@ export class TicketsService {
         .setLock('pessimistic_write')
         .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
         .innerJoinAndSelect('ticket.travel', 'travel')
-        .where('ticket.id = :ticketUUID', { ticketUUID })
+        .where('ticket.id = :ticketId', { ticketId })
 
         .andWhere('ticket.travel.bus.owner.company = :company', {
           company: user.company?.id, //! solo de la misma empresa
@@ -328,7 +328,7 @@ export class TicketsService {
   //?                                 Cancel_Ticket                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async cancelTicket(ticketUUID: string, user: User) {
+  async cancelTicket(ticketId: number, user: User) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -343,7 +343,7 @@ export class TicketsService {
         .setLock('pessimistic_write')
         .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
         .innerJoinAndSelect('ticket.travel', 'travel')
-        .where('ticket.id = :ticketUUID', { ticketUUID })
+        .where('ticket.id = :ticketId', { ticketId })
 
         .andWhere('ticket.travel.bus.owner.company = :company', {
           company: user.company?.id, //! solo de la misma empresa

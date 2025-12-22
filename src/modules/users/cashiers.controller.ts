@@ -45,7 +45,7 @@ export class CashiersController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Get()
   findAll(@GetCompany() companyId: number) {
     return this.usersService.findAllCashiers(companyId); //! GetCompany
@@ -73,7 +73,7 @@ export class CashiersController {
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
-  @ApiQuery({ name: 'companyUUID', required: false, type: String })
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Put('office/:id')
   updateOffice(
     @Param('id', ParseIntPipe) id: number,

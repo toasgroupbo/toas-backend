@@ -6,7 +6,6 @@ import {
   Query,
   Delete,
   Controller,
-  ParseUUIDPipe,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';

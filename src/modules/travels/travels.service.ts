@@ -90,7 +90,7 @@ export class TravelsService {
   //?                           Get_Seats_Available                                                  */
   //? ---------------------------------------------------------------------------------------------- */
 
-  async getSeatsAvailable(travelId: string) {
+  async getSeatsAvailable(travelId: number) {
     return await this.travelSeatRepository
       .createQueryBuilder('seat')
       .where('seat.travelId = :travelId', { travelId })
@@ -132,10 +132,10 @@ export class TravelsService {
   }
 
   async findAllForCashier(office: Office) {
-    const officeUUID = office.id;
+    const officeId = office.id;
 
     const travels = await this.travelRepository.find({
-      where: { route: { officeOrigin: { id: officeUUID } } },
+      where: { route: { officeOrigin: { id: officeId } } },
       relations: {
         bus: true,
         route: { officeOrigin: true, officeDestination: true },

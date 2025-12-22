@@ -5,7 +5,6 @@ import {
   Param,
   Delete,
   Controller,
-  ParseUUIDPipe,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
@@ -55,7 +54,7 @@ export class TravelsController {
   @Auth(ValidPermissions.READ)
   //!
   @Get('seats-available:id')
-  getSeatsAvailable(@Param('id', ParseUUIDPipe) id: string) {
+  getSeatsAvailable(@Param('id', ParseIntPipe) id: number) {
     return this.travelsService.getSeatsAvailable(id);
   }
 

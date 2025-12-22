@@ -6,7 +6,6 @@ import {
   Param,
   Delete,
   Controller,
-  ParseUUIDPipe,
   Put,
   ParseIntPipe,
 } from '@nestjs/common';

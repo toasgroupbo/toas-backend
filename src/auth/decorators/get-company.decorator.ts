@@ -26,7 +26,7 @@ export const GetCompany = createParamDecorator(
     if (user.company) return user.company.id;
 
     // --------------------------------------------------------------------------
-    // 2. Si hay companyUUID en query, valida que sea un UUID válido
+    // 2. Si hay companyId en query, valida que sea un Id válido
     // --------------------------------------------------------------------------
 
     if (companyId) {

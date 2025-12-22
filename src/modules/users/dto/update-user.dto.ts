@@ -6,7 +6,7 @@ export class UpdateUserDto extends PartialType(
   OmitType(CreateUserDto, [/* 'email',  */ 'password'] as const),
 ) {
   @ApiPropertyOptional({
-    description: 'Role UUID',
+    description: 'Role ID',
     example: '1',
   })
   @IsOptional()
