@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ValidateNested } from 'class-validator';
+import { IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 import { SeatSelectionDto } from './selected-seats.dto';
@@ -9,6 +9,7 @@ export class CreateTicketInOfficeDto {
     description: 'Travel ID',
     example: '1',
   })
+  @IsString()
   travelId: number;
 
   @ApiProperty({
@@ -26,5 +27,6 @@ export class CreateTicketInOfficeDto {
     description: 'Customer ID',
     example: '1',
   })
+  @IsString()
   customerId: number;
 }

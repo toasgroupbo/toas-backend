@@ -18,11 +18,13 @@ export class CreateRouteDto {
     description: 'Office ID',
     example: '1',
   })
+  @IsString()
   officeOriginId: number;
 
   @ApiProperty({
     description: 'Office ID',
     example: '2',
   })
+  @IsString()
   officeDestinationId: number;
 }

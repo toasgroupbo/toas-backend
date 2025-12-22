@@ -24,5 +24,6 @@ export class CreateOfficeDto {
     description: 'Place ID',
     example: '1',
   })
+  @IsString()
   placeId: number;
 }

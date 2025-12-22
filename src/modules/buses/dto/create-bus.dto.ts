@@ -70,5 +70,6 @@ export class CreateBusDto {
     description: 'Owner ID',
     example: '1',
   })
+  @IsString()
   ownerId: number;
 }

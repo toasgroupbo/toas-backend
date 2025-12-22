@@ -13,12 +13,14 @@ export class CreateTravelDto {
     description: 'Bus ID',
     example: '1',
   })
+  @IsString()
   busId: number;
 
   @ApiProperty({
     description: 'Route ID',
     example: '1',
   })
+  @IsString()
   routeId: number;
 
   @ApiProperty({
