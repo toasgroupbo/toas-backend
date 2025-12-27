@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsString } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 import { CreateUserDto } from './create-user.dto';
 
 export class CreateUserAdminDto extends CreateUserDto {
@@ -12,6 +12,6 @@ export class CreateUserAdminDto extends CreateUserDto {
     description: 'Role ID',
     example: '1',
   })
-  @IsString()
+  @IsNumber()
   rol: number;
 }

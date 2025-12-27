@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateRouteDto {
   @ApiPropertyOptional({
@@ -18,13 +18,13 @@ export class CreateRouteDto {
     description: 'Office ID',
     example: '1',
   })
-  @IsString()
+  @IsNumber()
   officeOriginId: number;
 
   @ApiProperty({
     description: 'Office ID',
     example: '2',
   })
-  @IsString()
+  @IsNumber()
   officeDestinationId: number;
 }

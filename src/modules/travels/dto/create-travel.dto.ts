@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsDate,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Matches,
@@ -13,14 +14,14 @@ export class CreateTravelDto {
     description: 'Bus ID',
     example: '1',
   })
-  @IsString()
+  @IsNumber()
   busId: number;
 
   @ApiProperty({
     description: 'Route ID',
     example: '1',
   })
-  @IsString()
+  @IsNumber()
   routeId: number;
 
   @ApiProperty({

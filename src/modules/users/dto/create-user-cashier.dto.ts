@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsString } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 import { CreateUserDto } from './create-user.dto';
 
 export class CreateUserCashierDto extends CreateUserDto {
@@ -12,6 +12,6 @@ export class CreateUserCashierDto extends CreateUserDto {
     description: 'Office ID',
     example: '1',
   })
-  @IsString()
+  @IsNumber()
   officeId: number;
 }

@@ -1,4 +1,11 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 import { Office } from './office.entity';
 
@@ -9,6 +16,14 @@ export class Place {
 
   @Column('text')
   name: string;
+
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
+  createdAt: Date;
+
+  @DeleteDateColumn({ nullable: true, select: false })
+  deletedAt: Date;
 
   //* ---------------------------------------------------------------------------------------------- */
   //*                                        Relations                                               */

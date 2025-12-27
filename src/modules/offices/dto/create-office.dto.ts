@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsString } from 'class-validator';
 
 import { CitiesEnum } from '../enums/places.enum';
 
@@ -24,6 +24,6 @@ export class CreateOfficeDto {
     description: 'Place ID',
     example: '1',
   })
-  @IsString()
+  @IsNumber()
   placeId: number;
 }

@@ -3,6 +3,7 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsEnum,
+  IsNumber,
   IsString,
   ValidateNested,
 } from 'class-validator';
@@ -70,6 +71,6 @@ export class CreateBusDto {
     description: 'Owner ID',
     example: '1',
   })
-  @IsString()
+  @IsNumber()
   ownerId: number;
 }
