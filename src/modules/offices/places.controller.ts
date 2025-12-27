@@ -19,7 +19,6 @@ import { PlacesService } from './places.service';
 
 //!
 @Resource(ValidResourses.PLACE)
-@ApiBearerAuth('access-token')
 //!
 
 @ApiTags('Places')
@@ -33,6 +32,7 @@ export class PlaceController {
 
   //!
   @Auth(ValidPermissions.CREATE)
+  @ApiBearerAuth('access-token')
   //!
   @Post()
   create(@Body() createPlaceDto: CreatePlaceDto) {
@@ -44,7 +44,8 @@ export class PlaceController {
   //? ============================================================================================== */
 
   //!
-  @Auth(ValidPermissions.READ)
+  @Auth()
+  @ApiBearerAuth('access-token')
   //!
   @Get()
   findAll() {
@@ -56,7 +57,8 @@ export class PlaceController {
   //? ============================================================================================== */
 
   //!
-  @Auth(ValidPermissions.READ)
+  @Auth()
+  @ApiBearerAuth('access-token')
   //!
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
@@ -69,6 +71,7 @@ export class PlaceController {
 
   //!
   @Auth(ValidPermissions.DELETE)
+  @ApiBearerAuth('access-token')
   //!
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {

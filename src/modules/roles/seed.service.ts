@@ -154,11 +154,7 @@ export class SeedService implements OnModuleInit {
 
           {
             resourse: ValidResourses.PLACE,
-            permissions: [
-              ValidPermissions.CREATE,
-              ValidPermissions.READ,
-              ValidPermissions.DELETE,
-            ],
+            permissions: [ValidPermissions.CREATE, ValidPermissions.DELETE],
           },
         ],
       },
