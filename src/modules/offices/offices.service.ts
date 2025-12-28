@@ -39,6 +39,7 @@ export class OfficesService {
   async findAll(companyId: number) {
     const offices = await this.officeRepository.find({
       where: { company: { id: companyId } },
+      relations: { place: true },
     });
     return offices;
   }
@@ -50,6 +51,7 @@ export class OfficesService {
   async findOne(id: number, companyId: number) {
     const office = await this.officeRepository.findOne({
       where: { id, company: { id: companyId } },
+      relations: { place: true },
     });
     if (!office) throw new NotFoundException('Office not found');
     return office;
