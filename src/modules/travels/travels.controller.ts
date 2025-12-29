@@ -51,6 +51,7 @@ export class TravelsController {
   //? ---------------------------------------------------------------------------------------------- */
 
   //!
+  @Resource(ValidResourses.CASHIER_TRAVEL)
   @Auth(ValidPermissions.READ)
   //!
   @Get('seats-available:id')
