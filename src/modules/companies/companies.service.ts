@@ -2,16 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { CreateCompanyDto, UpdateCompanyDto } from './dto';
-
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
+
+import { CreateCompanyDto, UpdateCompanyDto } from './dto';
 
 import { StaticRoles } from 'src/auth/enums/roles.enum';
 
 import { RolesService } from '../roles/roles.service';
 
-import { User } from '../users/entities/user.entity';
 import { Company } from './entities/company.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class CompanyService {
@@ -25,17 +25,17 @@ export class CompanyService {
     private readonly rolService: RolesService,
   ) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Create                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async create(createCompanyDto: CreateCompanyDto) {
     try {
       const { bankAccount, manager, ...data } = createCompanyDto;
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 1. Busqueda del rol de COMPANY_ADMIN
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const rol = await this.rolService.findOneByName(
         StaticRoles.COMPANY_ADMIN,
@@ -44,9 +44,9 @@ export class CompanyService {
         throw new NotFoundException('Role COMPANY_ADMIN not found');
       }
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 2. Creacion de la compania
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const newCompany = this.companyRepository.create({
         ...data,
@@ -60,9 +60,9 @@ export class CompanyService {
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async findAll() {
     const companies = await this.companyRepository.find({
@@ -71,9 +71,9 @@ export class CompanyService {
     return companies;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async findOne(id: number) {
     const company = await this.companyRepository.findOne({
@@ -84,9 +84,9 @@ export class CompanyService {
     return company;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Update                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async update(id: number, updateCompanyDto: UpdateCompanyDto) {
     const company = await this.findOne(id);
@@ -98,16 +98,16 @@ export class CompanyService {
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async remove(id: number) {
     const company = await this.findOne(id);
 
-    // --------------------------------------------------------------------------
+    // --------------------------------------------
     // 1. SoftDelete de Admin de la company
-    // --------------------------------------------------------------------------
+    // --------------------------------------------
 
     await this.userRepository
       .createQueryBuilder()
@@ -115,9 +115,9 @@ export class CompanyService {
       .where('id = :id', { id: company.admin.id })
       .execute();
 
-    // --------------------------------------------------------------------------
+    // --------------------------------------------
     // 2. Delete de la company
-    // --------------------------------------------------------------------------
+    // --------------------------------------------
 
     await this.companyRepository
       .createQueryBuilder()

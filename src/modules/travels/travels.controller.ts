@@ -13,15 +13,10 @@ import { CreateTravelDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import {
-  Auth,
-  GetCompany,
-  GetOffice,
-  GetUser,
-  Resource,
-} from 'src/auth/decorators';
+import { Auth, GetCompany, GetOffice, Resource } from 'src/auth/decorators';
 
 import { TravelsService } from './travels.service';
+
 import { Office } from '../offices/entities/office.entity';
 
 //!
@@ -34,9 +29,9 @@ import { Office } from '../offices/entities/office.entity';
 export class TravelsController {
   constructor(private readonly travelsService: TravelsService) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Create                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.CREATE)
@@ -46,31 +41,31 @@ export class TravelsController {
     return this.travelsService.create(createTravelDto);
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                           Get_Seats_Available                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Resource(ValidResourses.CASHIER_TRAVEL)
   @Auth(ValidPermissions.READ)
   //!
-  @Get('seats-available:id')
+  @Get('seats-available/for-cashier/:id')
   getSeatsAvailable(@Param('id', ParseIntPipe) id: number) {
     return this.travelsService.getSeatsAvailable(id);
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                 Closed_Travel                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.CLOSE)
   //!
   closed() {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
@@ -81,21 +76,20 @@ export class TravelsController {
     return this.travelsService.findAll(companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Resource(ValidResourses.CASHIER_TRAVEL)
   @Auth(ValidPermissions.READ)
-  @ApiBearerAuth('access-token')
   //!
-  @Get('cashier')
+  @Get('for-cashier')
   findAllTravelsforCashier(@GetOffice() office: Office) {
     return this.travelsService.findAllForCashier(office); //! GetOffice object
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
@@ -109,9 +103,23 @@ export class TravelsController {
     return this.travelsService.findOne(id, companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+
+  //!
+  @Resource(ValidResourses.CASHIER_TRAVEL)
+  @Auth(ValidPermissions.READ)
+  //!
+  @Get('for-cashier/:id')
+  findOneTravelsforCashier(
+    @Param('id', ParseIntPipe) id: number,
+    @GetOffice() office: Office,
+  ) {
+    return this.travelsService.findOneForCashier(id, office); //! GetOffice object
+  }
+
+  //? ============================================================================================== */
   //?                                        Cancel                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.CANCEL)
@@ -125,9 +133,9 @@ export class TravelsController {
     return this.travelsService.cancel(id, companyId); //! GetCompany
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.DELETE)

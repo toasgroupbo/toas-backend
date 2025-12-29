@@ -6,9 +6,9 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { CreateRouteDto, UpdateRouteDto } from './dto';
-
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
+
+import { CreateRouteDto, UpdateRouteDto } from './dto';
 
 import { Route } from './entities/route.entity';
 

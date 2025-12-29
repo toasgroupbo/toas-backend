@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 
-import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
-import { UpdateCustomerDto, CreateCustomerNotVerifiedDto } from './dto';
-import { paginate } from 'src/common/pagination/paginate';
-
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
+
+import { paginate } from 'src/common/pagination/paginate';
+import { UpdateCustomerDto, CreateCustomerNotVerifiedDto } from './dto';
+import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
 
 import { Customer } from './entities/customer.entity';
 
@@ -21,9 +21,11 @@ export class CustomersService {
   //?                                         Create                                                 */
   //? ============================================================================================== */
 
-  async create(createCustomerNotVerifiedDto: CreateCustomerNotVerifiedDto) {
+  async createNotVerified(
+    createCustomerNotVerifiedDto: CreateCustomerNotVerifiedDto,
+  ) {
     try {
-      const newCustomer = await this.customerRepository.create(
+      const newCustomer = this.customerRepository.create(
         createCustomerNotVerifiedDto,
       );
 
@@ -65,7 +67,7 @@ export class CustomersService {
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
   }
-  //? ============================================================================================== */
+
   //? ============================================================================================== */
 
   async findOneByCi(ci: string) {
@@ -74,8 +76,6 @@ export class CustomersService {
     return customer;
   }
 
-  //? ============================================================================================== */
-  //?                                    FindOneByEmail                                              */
   //? ============================================================================================== */
 
   async findOneByEmail(email: string): Promise<Customer> {
@@ -87,8 +87,6 @@ export class CustomersService {
     return customer;
   }
 
-  //? ============================================================================================== */
-  //?                                 FindOneByEmail                                                 */
   //? ============================================================================================== */
 
   async findOneByEmailLogin(email: string) {

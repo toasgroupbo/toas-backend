@@ -1,17 +1,17 @@
 import {
-  Controller,
   Get,
   Body,
   Patch,
   Param,
   Delete,
   Query,
+  Controller,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationDto } from 'src/common/pagination/pagination.dto';
 import { CreateBankAccountDto, UpdateBankAccountDto } from './dto';
+import { PaginationDto } from 'src/common/pagination/pagination.dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
@@ -29,9 +29,9 @@ import { BankAccountsService } from './bank-accounts.service';
 export class BankAccountsController {
   constructor(private readonly bankAccountsService: BankAccountsService) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Create                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   /*//!
   @Auth(ValidPermissions.CREATE)
@@ -41,9 +41,9 @@ export class BankAccountsController {
     return this.bankAccountsService.create(createBankAccountDto);
   }*/
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
@@ -53,9 +53,9 @@ export class BankAccountsController {
     return this.bankAccountsService.findAll(pagination);
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
@@ -65,9 +65,9 @@ export class BankAccountsController {
     return this.bankAccountsService.findOne(id);
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Update                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.UPDATE)
@@ -80,9 +80,9 @@ export class BankAccountsController {
     return this.bankAccountsService.update(id, updateBankAccountDto);
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.DELETE)

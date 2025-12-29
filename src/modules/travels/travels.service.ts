@@ -6,17 +6,17 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
-import { CreateTravelDto } from './dto';
-
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { TravelStatus } from './enums/travel-status.enum';
-import { SeatStatus } from 'src/common/enums';
+import { CreateTravelDto } from './dto';
 
-import { Office } from '../offices/entities/office.entity';
-import { TravelSeat } from './entities/travel-seat.entity';
-import { Bus } from '../buses/entities/bus.entity';
+import { SeatStatus } from 'src/common/enums';
+import { TravelStatus } from './enums/travel-status.enum';
+
 import { Travel } from './entities/travel.entity';
+import { Bus } from '../buses/entities/bus.entity';
+import { TravelSeat } from './entities/travel-seat.entity';
+import { Office } from '../offices/entities/office.entity';
 
 @Injectable()
 export class TravelsService {
@@ -30,9 +30,9 @@ export class TravelsService {
     private dataSource: DataSource,
   ) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Create                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async create(createTravelDto: CreateTravelDto) {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -42,9 +42,9 @@ export class TravelsService {
     try {
       const { busId, routeId, ...data } = createTravelDto;
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 1. Obtener el Bus con tipo y su layout
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const busEntity = await queryRunner.manager.findOne(Bus, {
         where: { id: busId },
@@ -52,9 +52,9 @@ export class TravelsService {
       });
       if (!busEntity) throw new NotFoundException('Bus not found');
 
-      // --------------------------------------------------------------------------
-      // 2. Generar asientos del viaje segun la maquetacion del Bus
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
+      // 2. Generar seas segun maquetacion
+      // --------------------------------------------
 
       const travelSeats = busEntity.busType.decks.flatMap((deck) =>
         deck.seats.map((seat) => ({
@@ -64,9 +64,9 @@ export class TravelsService {
         })),
       );
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 3. Creacion del Travel
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const newTravel = queryRunner.manager.create(Travel, {
         ...data,
@@ -86,9 +86,9 @@ export class TravelsService {
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                           Get_Seats_Available                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async getSeatsAvailable(travelId: number) {
     return await this.travelSeatRepository
@@ -107,16 +107,16 @@ export class TravelsService {
       .getMany();
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                 Closed_Travel                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //! cerrar la salida del viaje, marcar como cerrado los asientos, marcar los asientos reservados como no vendidos, etc
   async closed() {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async findAll(companyId: number) {
     const travels = await this.travelRepository.find({
@@ -131,6 +131,8 @@ export class TravelsService {
     return travels;
   }
 
+  //? ============================================================================================== */
+
   async findAllForCashier(office: Office) {
     const officeId = office.id;
 
@@ -139,15 +141,15 @@ export class TravelsService {
       relations: {
         bus: true,
         route: { officeOrigin: true, officeDestination: true },
-        travelSeats: true,
+        //travelSeats: true,
       },
     });
     return travels;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async findOne(id: number, companyId: number) {
     const travel = await this.travelRepository.findOne({
@@ -163,9 +165,26 @@ export class TravelsService {
     return travel;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+
+  async findOneForCashier(travelId: number, office: Office) {
+    const officeId = office.id;
+
+    const travel = await this.travelRepository.findOne({
+      where: { id: travelId, route: { officeOrigin: { id: officeId } } },
+      relations: {
+        bus: true,
+        route: { officeOrigin: true, officeDestination: true },
+        travelSeats: true,
+      },
+    });
+    if (!travel) throw new NotFoundException('Travel not found');
+    return travel;
+  }
+
+  //? ============================================================================================== */
   //?                                        Cancel                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async cancel(id: number, companyId: number) {
     const travel = await this.findOne(id, companyId);
@@ -183,9 +202,9 @@ export class TravelsService {
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async remove(id: number, companyId: number) {
     const travel = await this.findOne(id, companyId);

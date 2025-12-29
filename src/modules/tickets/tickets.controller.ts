@@ -16,8 +16,8 @@ import { Auth, GetUser, Resource } from '../../auth/decorators';
 
 import { TicketsService } from './tickets.service';
 
-import { Customer } from '../customers/entities/customer.entity';
 import { User } from '../users/entities/user.entity';
+import { Customer } from '../customers/entities/customer.entity';
 
 //!
 @Resource(ValidResourses.TICKET)
@@ -29,9 +29,9 @@ import { User } from '../users/entities/user.entity';
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                CASHIER:Create                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                                        Create                                                  */
+  //? ============================================================================================== */
 
   //!
   @Resource(ValidResourses.CASHIER_TICKET)
@@ -45,7 +45,7 @@ export class TicketsController {
     return this.ticketsService.createTicketInOffice(createTicketDto, user);
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.CREATE)
@@ -58,9 +58,9 @@ export class TicketsController {
     return this.ticketsService.createTicketInApp(createTicketDto, customer);
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                CASHIER:Confirm                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                                        Confirm                                                 */
+  //? ============================================================================================== */
 
   //!
   @Resource(ValidResourses.CASHIER_TICKET)
@@ -74,9 +74,9 @@ export class TicketsController {
     return this.ticketsService.confirmTicketManual(ticketId, user); //! GetUser
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                 CASHIER:Cancel                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                                         Cancel                                                 */
+  //? ============================================================================================== */
 
   //!
   @Resource(ValidResourses.CASHIER_TICKET)
@@ -90,9 +90,9 @@ export class TicketsController {
     return this.ticketsService.cancelTicket(ticketId, user); //! GetUser
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                CASHIER:FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                                        FindAll                                                 */
+  //? ============================================================================================== */
 
   //!
   @Resource(ValidResourses.CASHIER_TICKET)
@@ -103,9 +103,9 @@ export class TicketsController {
     return this.ticketsService.findAll(user); //! GetUser
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                CASHIER:FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                                        FindOne                                                 */
+  //? ============================================================================================== */
 
   //!
   @Resource(ValidResourses.CASHIER_TICKET)

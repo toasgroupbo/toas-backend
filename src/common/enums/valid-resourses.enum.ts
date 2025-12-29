@@ -39,9 +39,14 @@ export enum ValidResourses {
 
   //! solo el cashier
   CASHIER_BUS = 'CASHIER_BUS',
+
   CASHIER_ROUTE = 'CASHIER_ROUTE',
 
   CASHIER_TRAVEL = 'CASHIER_TRAVEL',
+
   CASHIER_TICKET = 'CASHIER_TICKET',
+
+  CASHIER_CUSTOMER = 'CASHIER_CUSTOMER',
+
   //customer
 }

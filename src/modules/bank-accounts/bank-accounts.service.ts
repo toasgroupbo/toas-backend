@@ -2,10 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { PaginationDto } from 'src/common/pagination/pagination.dto';
-import { CreateBankAccountDto, UpdateBankAccountDto } from './dto';
-
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
+
+import { CreateBankAccountDto, UpdateBankAccountDto } from './dto';
+import { PaginationDto } from 'src/common/pagination/pagination.dto';
 
 import { BankAccount } from './entities/bank-account.entity';
 
@@ -16,9 +16,9 @@ export class BankAccountsService {
     private readonly bankAccountRepository: Repository<BankAccount>,
   ) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Create                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async create(createBankAccountDto: CreateBankAccountDto) {
     try {
@@ -30,18 +30,18 @@ export class BankAccountsService {
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async findAll(pagination: PaginationDto) {
     const bankAccounts = await this.bankAccountRepository.find({});
     return bankAccounts;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async findOne(id: number) {
     const bankAccount = await this.bankAccountRepository.findOne({
@@ -53,9 +53,9 @@ export class BankAccountsService {
     return bankAccount;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Update                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async update(id: number, updateBankAccountDto: UpdateBankAccountDto) {
     const bankAccount = await this.findOne(id);
@@ -67,9 +67,9 @@ export class BankAccountsService {
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async remove(id: number) {
     const bankAccount = await this.findOne(id);
