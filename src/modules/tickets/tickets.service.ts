@@ -8,13 +8,13 @@ import { DataSource, Repository } from 'typeorm';
 
 import { envs } from 'src/config/environments/environments';
 
+import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
+
 import {
   CreateTicketInOfficeDto,
   CreateTicketInAppDto,
   SelectedSeatsDto,
 } from './dto';
-
-import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { SeatStatus } from 'src/common/enums';
 import { TicketType } from './enums/ticket-type.enum';
@@ -185,7 +185,6 @@ export class TicketsService {
         };
       });
 
-      //! Crear ticket
       const ticket = queryRunner.manager.create(Ticket, {
         type,
         travel,
@@ -268,32 +267,16 @@ export class TicketsService {
 
         .where('ticket.id = :ticketId', { ticketId })
         .andWhere('bus.companyId = :companyId', {
-          companyId: cashier.office?.company.id, //! solo de la misma empresa
+          companyId: cashier.office?.company.id, //! Solo de la misma empresa
         })
         .andWhere('ticket.status = :status', {
-          status: TicketStatus.RESERVED, //! solo los reservados
+          status: TicketStatus.RESERVED, //! Solo los reservados
         })
         .andWhere('ticket.type = :type', {
-          type: TicketType.IN_OFFICE, //! solo en office
+          type: TicketType.IN_OFFICE, //! Solo en office
         })
-        .andWhere('(ticket.reserve_expiresAt > NOW())')
+        .andWhere('(ticket.reserve_expiresAt > NOW())') //! No expirado
         .getOne();
-
-      /*const ticket = await queryRunner.manager
-        .createQueryBuilder(Ticket, 'ticket')
-        .setLock('pessimistic_write')
-        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
-        .innerJoinAndSelect('ticket.travel', 'travel')
-        .where('ticket.id = :ticketId', { ticketId })
-        .andWhere('ticket.travel.bus.owner.company = :company', {
-          company: user.company?.id, //! solo de la misma empresa
-        })
-        .andWhere('ticket.status = :status', { status: TicketStatus.RESERVED })
-        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! solo en office
-        .andWhere(
-          '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
-        )
-        .getOne(); */
 
       if (!ticket)
         throw new NotFoundException(
@@ -369,33 +352,18 @@ export class TicketsService {
         .innerJoin('bus.owner', 'owner')
         .innerJoin('owner.companies', 'company')
 
-        .where('ticket.id = :ticketId', { ticketId })
+        .where('ticket.id = :ticketId', { ticketId }) //! Por ID
         .andWhere('company.id = :companyId', {
-          companyId: cashier.office?.company.id,
+          companyId: cashier.office?.company.id, //! Solo de la misma empresa
         })
-        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE })
+        .andWhere('ticket.status IN (:...statuses)', {
+          statuses: [TicketStatus.SOLD, TicketStatus.RESERVED], //! Solo los vendidos o reservados
+        })
+        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! Solo en office
         .andWhere(
-          '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
+          '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())', //! No expirado
         )
         .getOne();
-
-      /*const ticket = await queryRunner.manager
-        .createQueryBuilder(Ticket, 'ticket')
-        .setLock('pessimistic_write')
-        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
-        .innerJoinAndSelect('ticket.travel', 'travel')
-        .where('ticket.id = :ticketId', { ticketId })
-
-        .andWhere('ticket.travel.bus.owner.company = :company', {
-          company: user.company?.id, //! solo de la misma empresa
-        })
-
-        //.andWhere('travel.departure_time > NOW()')
-        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! solo en office
-        .andWhere(
-          '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
-        )
-        .getOne();*/
 
       if (!ticket) throw new NotFoundException('Ticket not found or expired');
 
@@ -416,16 +384,26 @@ export class TicketsService {
       } */
 
       // --------------------------------------------
-      // 3. Actualizar estados (delegado a métodos dedicados)
+      // 3. Actualizar estados
       // --------------------------------------------
 
-      ticket.status = TicketStatus.CANCELLED;
-      ticket.reserve_expiresAt = null;
+      switch (ticket.status) {
+        case TicketStatus.SOLD:
+          ticket.status = TicketStatus.CANCELLED;
+          ticket.reserve_expiresAt = null;
+          break;
+
+        case TicketStatus.RESERVED:
+          ticket.status = TicketStatus.CANCELLED;
+          ticket.reserve_expiresAt = null;
+          ticket.deletedAt = new Date();
+          break;
+      }
 
       for (const seat of ticket.travelSeats) {
         seat.status = SeatStatus.AVAILABLE;
         seat.sale_type = SaleType.UNSOLD;
-        seat.reserve_expiresAt = null; //! opcional, (para la limpieza)
+        seat.reserve_expiresAt = null;
         seat.ticket = null; //! desasociar el asiento del ticket
         seat.price = '0'; //! resetear el precio
       }
