@@ -90,9 +90,9 @@ export class TicketsService {
     await queryRunner.startTransaction();
 
     try {
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 1. Obtener Viaje
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const travel = await queryRunner.manager.findOne(Travel, {
         where: { id: travelId },
@@ -103,9 +103,9 @@ export class TicketsService {
       if (travel.travel_status !== TravelStatus.ACTIVE)
         throw new BadRequestException('Travel is not active');
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 2. Obtener Seats
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const seatIds = seatSelections.map((s) => s.seatId);
       const seats = await queryRunner.manager
@@ -124,9 +124,9 @@ export class TicketsService {
         )
         .getMany();
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 3. Validar disponibilidad de asientos y que no sean espacios
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       //! valida que los asientos no sean "0" (espacios sin asiento)
       const seatsCleaned = [...seats];
@@ -144,9 +144,9 @@ export class TicketsService {
         );
       }
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 4. Obtener el customer
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       if (type === TicketType.IN_OFFICE && !buyer) {
         const officeDto = dto as CreateTicketInOfficeDto;
@@ -156,9 +156,9 @@ export class TicketsService {
         );
       }
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 5. Calcular precios y marcar asientos como reservados
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const expires = this.getReservationExpiry();
       let totalPrice = 0;
@@ -174,9 +174,9 @@ export class TicketsService {
         totalPrice += finalPrice;
       }
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 6. Crear ticket
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const seatsArray: SelectedSeatsDto[] = seats.map((s) => {
         return {
@@ -197,9 +197,9 @@ export class TicketsService {
         reserve_expiresAt: expires,
       });
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 7. Persistir cambios
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       await queryRunner.manager.save(ticket);
       await queryRunner.commitTransaction();
@@ -213,9 +213,9 @@ export class TicketsService {
     }
   }
 
-  // ------------------------------------------------------------------
+  // --------------------------------------------
   // get reservation expiry
-  // ------------------------------------------------------------------
+  // --------------------------------------------
 
   private getReservationExpiry(): Date {
     const minutes = envs.RESERVATION_EXPIRE_MINUTES || 10;
@@ -223,9 +223,9 @@ export class TicketsService {
     return new Date(now.getTime() + minutes * 60 * 1000);
   }
 
-  // ------------------------------------------------------------------
+  // --------------------------------------------
   // resolve seat price
-  // ------------------------------------------------------------------
+  // --------------------------------------------
 
   private resolveSeatPrice(
     selection: { seatId: string; price?: string } | undefined,
@@ -243,9 +243,9 @@ export class TicketsService {
       : Number(travel.price_deck_1);
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                         Confirm_Ticket_Manual                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async confirmTicketManual(ticketId: number, user: User) {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -253,9 +253,9 @@ export class TicketsService {
     await queryRunner.startTransaction();
 
     try {
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 1. Buscar ticket con sus relaciones
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const ticket = await queryRunner.manager
         .createQueryBuilder(Ticket, 'ticket')
@@ -265,18 +265,16 @@ export class TicketsService {
         .innerJoinAndSelect('ticket.travel', 'travel')
 
         .innerJoin('travel.bus', 'bus')
-        .innerJoin('bus.owner', 'owner')
-        .innerJoin('owner.company', 'company')
 
         .where('ticket.id = :ticketId', { ticketId })
-        .andWhere('company.id = :companyId', {
-          companyId: user.company?.id,
+        .andWhere('bus.companyId = :companyId', {
+          companyId: user.company?.id, //! solo de la misma empresa
         })
         .andWhere('ticket.status = :status', {
-          status: TicketStatus.RESERVED,
+          status: TicketStatus.RESERVED, //! solo los reservados
         })
         .andWhere('ticket.type = :type', {
-          type: TicketType.IN_OFFICE,
+          type: TicketType.IN_OFFICE, //! solo en office
         })
         .andWhere(
           '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
@@ -288,9 +286,9 @@ export class TicketsService {
           'Ticket not found, expired, or not in a confirmable state',
         );
 
-      // --------------------------------------------------------------------------
-      // 2. Actualizar estados (delegado a métodos dedicados)
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
+      // 2. Actualizar estados
+      // --------------------------------------------
 
       ticket.status = TicketStatus.SOLD;
       ticket.reserve_expiresAt = null; //! (para la limpieza)
@@ -301,9 +299,9 @@ export class TicketsService {
         seat.reserve_expiresAt = null; //! (para la limpieza)
       }
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 3. Persistir cambios
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       await queryRunner.manager.save(Ticket, ticket);
       await queryRunner.commitTransaction();
@@ -320,21 +318,21 @@ export class TicketsService {
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                    Generate_Qr                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   generateQr() {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                              Confirm_Ticket_QR                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async confirmOrderQr(qrDataInterface: any) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                 Cancel_Ticket                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async cancelTicket(ticketId: number, user: User) {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -342,9 +340,9 @@ export class TicketsService {
     await queryRunner.startTransaction();
 
     try {
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 1. Buscar ticket con sus relaciones
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       const ticket = await queryRunner.manager
         .createQueryBuilder(Ticket, 'ticket')
@@ -366,9 +364,9 @@ export class TicketsService {
 
       if (!ticket) throw new NotFoundException('Ticket not found or expired');
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 2. Validaciones de negocio
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       if (!this.isTicketCancelable(ticket)) {
         throw new BadRequestException(
@@ -382,9 +380,9 @@ export class TicketsService {
         );
       } */
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 3. Actualizar estados (delegado a métodos dedicados)
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       ticket.status = TicketStatus.CANCELLED;
       ticket.reserve_expiresAt = null;
@@ -397,9 +395,9 @@ export class TicketsService {
         seat.price = '0'; //! resetear el precio
       }
 
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
       // 4. Persistir cambios
-      // --------------------------------------------------------------------------
+      // --------------------------------------------
 
       await queryRunner.manager.save(Ticket, ticket);
       await queryRunner.commitTransaction();
@@ -416,24 +414,24 @@ export class TicketsService {
     }
   }
 
-  // ------------------------------------------------------------------
+  // --------------------------------------------
   // is ticket cancelable
-  // ------------------------------------------------------------------
+  // --------------------------------------------
 
   private isTicketCancelable(ticket: Ticket): boolean {
     return [TicketStatus.RESERVED, TicketStatus.SOLD].includes(ticket.status);
   }
-  // ------------------------------------------------------------------
+  // --------------------------------------------
   // has travel departed
-  // ------------------------------------------------------------------
+  // --------------------------------------------
 
   private hasTravelDeparted(travel: Travel): boolean {
     return travel.departure_time <= new Date();
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async findAll(user: User) {
     const tickets = await this.ticketRepository.find({
@@ -446,9 +444,9 @@ export class TicketsService {
     return tickets;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async findOne(id: number, user: User) {
     const ticket = await this.ticketRepository.findOneBy({
