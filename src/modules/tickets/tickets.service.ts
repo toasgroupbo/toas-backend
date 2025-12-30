@@ -279,11 +279,26 @@ export class TicketsService {
         .andWhere('(ticket.reserve_expiresAt > NOW())')
         .getOne();
 
+      /*const ticket = await queryRunner.manager
+        .createQueryBuilder(Ticket, 'ticket')
+        .setLock('pessimistic_write')
+        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
+        .innerJoinAndSelect('ticket.travel', 'travel')
+        .where('ticket.id = :ticketId', { ticketId })
+        .andWhere('ticket.travel.bus.owner.company = :company', {
+          company: user.company?.id, //! solo de la misma empresa
+        })
+        .andWhere('ticket.status = :status', { status: TicketStatus.RESERVED })
+        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! solo en office
+        .andWhere(
+          '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
+        )
+        .getOne(); */
+
       if (!ticket)
         throw new NotFoundException(
           'Ticket not found, expired, or not in a confirmable state',
         );
-      //ticket.reserve_expiresAt IS NULL OR
 
       // --------------------------------------------
       // 2. Actualizar estados
