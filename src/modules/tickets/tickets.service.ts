@@ -268,7 +268,7 @@ export class TicketsService {
 
         .where('ticket.id = :ticketId', { ticketId })
         .andWhere('bus.companyId = :companyId', {
-          companyId: user.company?.id, //! solo de la misma empresa
+          companyId: user.office?.company.id, //! solo de la misma empresa
         })
         .andWhere('ticket.status = :status', {
           status: TicketStatus.RESERVED, //! solo los reservados
