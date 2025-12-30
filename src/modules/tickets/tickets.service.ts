@@ -260,16 +260,24 @@ export class TicketsService {
       const ticket = await queryRunner.manager
         .createQueryBuilder(Ticket, 'ticket')
         .setLock('pessimistic_write')
+
         .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
         .innerJoinAndSelect('ticket.travel', 'travel')
+
+        .innerJoin('travel.bus', 'bus')
+        .innerJoin('bus.owner', 'owner')
+        .innerJoin('owner.company', 'company')
+
         .where('ticket.id = :ticketId', { ticketId })
-
-        .andWhere('ticket.travel.bus.owner.company = :company', {
-          company: user.company?.id, //! solo de la misma empresa
+        .andWhere('company.id = :companyId', {
+          companyId: user.company?.id,
         })
-
-        .andWhere('ticket.status = :status', { status: TicketStatus.RESERVED })
-        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! solo en office
+        .andWhere('ticket.status = :status', {
+          status: TicketStatus.RESERVED,
+        })
+        .andWhere('ticket.type = :type', {
+          type: TicketType.IN_OFFICE,
+        })
         .andWhere(
           '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
         )
