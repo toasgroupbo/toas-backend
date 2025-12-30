@@ -276,15 +276,14 @@ export class TicketsService {
         .andWhere('ticket.type = :type', {
           type: TicketType.IN_OFFICE, //! solo en office
         })
-        .andWhere(
-          '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
-        )
+        .andWhere('(ticket.reserve_expiresAt > NOW())')
         .getOne();
 
       if (!ticket)
         throw new NotFoundException(
           'Ticket not found, expired, or not in a confirmable state',
         );
+      //ticket.reserve_expiresAt IS NULL OR
 
       // --------------------------------------------
       // 2. Actualizar estados
