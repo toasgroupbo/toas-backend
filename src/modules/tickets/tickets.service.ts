@@ -247,7 +247,7 @@ export class TicketsService {
   //?                         Confirm_Ticket_Manual                                                  */
   //? ============================================================================================== */
 
-  async confirmTicketManual(ticketId: number, user: User) {
+  async confirmTicketManual(ticketId: number, cashier: User) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -268,7 +268,7 @@ export class TicketsService {
 
         .where('ticket.id = :ticketId', { ticketId })
         .andWhere('bus.companyId = :companyId', {
-          companyId: user.office?.company.id, //! solo de la misma empresa
+          companyId: cashier.office?.company.id, //! solo de la misma empresa
         })
         .andWhere('ticket.status = :status', {
           status: TicketStatus.RESERVED, //! solo los reservados
@@ -348,7 +348,7 @@ export class TicketsService {
   //?                                 Cancel_Ticket                                                  */
   //? ============================================================================================== */
 
-  async cancelTicket(ticketId: number, user: User) {
+  async cancelTicket(ticketId: number, cashier: User) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -359,6 +359,27 @@ export class TicketsService {
       // --------------------------------------------
 
       const ticket = await queryRunner.manager
+        .createQueryBuilder(Ticket, 'ticket')
+        .setLock('pessimistic_write')
+
+        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
+        .innerJoinAndSelect('ticket.travel', 'travel')
+
+        .innerJoin('travel.bus', 'bus')
+        .innerJoin('bus.owner', 'owner')
+        .innerJoin('owner.companies', 'company')
+
+        .where('ticket.id = :ticketId', { ticketId })
+        .andWhere('company.id = :companyId', {
+          companyId: cashier.office?.company.id,
+        })
+        .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE })
+        .andWhere(
+          '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
+        )
+        .getOne();
+
+      /*const ticket = await queryRunner.manager
         .createQueryBuilder(Ticket, 'ticket')
         .setLock('pessimistic_write')
         .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
@@ -374,7 +395,7 @@ export class TicketsService {
         .andWhere(
           '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
         )
-        .getOne();
+        .getOne();*/
 
       if (!ticket) throw new NotFoundException('Ticket not found or expired');
 

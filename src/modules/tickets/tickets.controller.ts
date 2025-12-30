@@ -69,9 +69,9 @@ export class TicketsController {
   @Post('confirm/:id')
   confirmManual(
     @Param('id', ParseIntPipe) ticketId: number,
-    @GetUser() user: User,
+    @GetUser() cashier: User,
   ) {
-    return this.ticketsService.confirmTicketManual(ticketId, user); //! GetUser
+    return this.ticketsService.confirmTicketManual(ticketId, cashier); //! GetCashier
   }
 
   //? ============================================================================================== */
@@ -85,9 +85,9 @@ export class TicketsController {
   @Post('cancel/:id')
   cancelManual(
     @Param('id', ParseIntPipe) ticketId: number,
-    @GetUser() user: User,
+    @GetUser() cashier: User,
   ) {
-    return this.ticketsService.cancelTicket(ticketId, user); //! GetUser
+    return this.ticketsService.cancelTicket(ticketId, cashier); //! GetCashier
   }
 
   //? ============================================================================================== */
