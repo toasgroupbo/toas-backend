@@ -11,7 +11,9 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 import { CreateTravelDto } from './dto';
 
 import { SeatStatus } from 'src/common/enums';
+import { SaleType } from './enums/sale_type-enum';
 import { TravelStatus } from './enums/travel-status.enum';
+import { TicketStatus } from '../tickets/enums/ticket-status.enum';
 
 import { Travel } from './entities/travel.entity';
 import { Bus } from '../buses/entities/bus.entity';
@@ -53,7 +55,7 @@ export class TravelsService {
       if (!busEntity) throw new NotFoundException('Bus not found');
 
       // --------------------------------------------
-      // 2. Generar seas segun maquetacion
+      // 2. Generar seats segun maquetacion
       // --------------------------------------------
 
       const travelSeats = busEntity.busType.decks.flatMap((deck) =>
@@ -112,7 +114,70 @@ export class TravelsService {
   //? ============================================================================================== */
 
   //! cerrar la salida del viaje, marcar como cerrado los asientos, marcar los asientos reservados como no vendidos, etc
-  async closed() {}
+  async closed(travelId: number) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const travel = await queryRunner.manager.findOne(Travel, {
+        where: {
+          id: travelId,
+          travel_status: TravelStatus.ACTIVE,
+        },
+        relations: {
+          tickets: { travelSeats: true },
+          travelSeats: true,
+        },
+      });
+
+      if (!travel) {
+        throw new NotFoundException('Travel active not found');
+      }
+
+      //! Cerrar viaje
+      travel.travel_status = TravelStatus.CLOSED;
+
+      //! Procesar tickets
+      for (const ticket of travel.tickets) {
+        if (
+          ticket.status !== TicketStatus.SOLD &&
+          ticket.status !== TicketStatus.CANCELLED
+        ) {
+          ticket.status = TicketStatus.CANCELLED_FOR_CLOSE;
+          ticket.reserve_expiresAt = null;
+          //ticket.deletedAt = new Date();
+        }
+      }
+
+      //! Procesar asientos
+      for (const seat of travel.travelSeats) {
+        if (
+          seat.status === SeatStatus.RESERVED ||
+          seat.status === SeatStatus.AVAILABLE
+        ) {
+          seat.status = SeatStatus.UNSOLD;
+          seat.sale_type = SaleType.UNSOLD;
+          seat.price = '0';
+          seat.ticket = null;
+          seat.reserve_expiresAt = null;
+        }
+      }
+
+      //! Guardar todo
+      await queryRunner.manager.save(travel);
+      await queryRunner.manager.save(travel.tickets);
+      await queryRunner.manager.save(travel.travelSeats);
+
+      await queryRunner.commitTransaction();
+      return travel;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      handleDBExceptions(error);
+    } finally {
+      await queryRunner.release();
+    }
+  }
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */
@@ -141,7 +206,6 @@ export class TravelsService {
       relations: {
         bus: true,
         route: { officeOrigin: true, officeDestination: true },
-        //travelSeats: true,
       },
     });
     return travels;
@@ -191,10 +255,10 @@ export class TravelsService {
 
     try {
       travel.travel_status = TravelStatus.CANCELLED;
-      travel.travelSeats.forEach((s) => {
+      /* travel.travelSeats.forEach((s) => {
         s.travel_status = TravelStatus.CANCELLED; //! se cancela el asiento
         s.deletedAt = new Date(); //! se elimina el asiento
-      });
+      }); */
 
       return await this.travelRepository.save(travel);
     } catch (error) {

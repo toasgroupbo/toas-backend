@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { CreateTicketInAppDto, CreateTicketInOfficeDto } from './dto';
+import { CreateTicketInOfficeDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
@@ -17,16 +17,15 @@ import { Auth, GetUser, Resource } from '../../auth/decorators';
 import { TicketsService } from './tickets.service';
 
 import { User } from '../users/entities/user.entity';
-import { Customer } from '../customers/entities/customer.entity';
 
 //!
-@Resource(ValidResourses.TICKET)
+@Resource(ValidResourses.CASHIER_TICKET)
 @ApiBearerAuth('access-token')
 //!
 
-@ApiTags('Tickets')
-@Controller('tickets')
-export class TicketsController {
+@ApiTags('Tickets: For Cashiers')
+@Controller('tickets/for-cashier')
+export class TicketsForCashiersController {
   constructor(private readonly ticketsService: TicketsService) {}
 
   //? ============================================================================================== */
@@ -36,35 +35,41 @@ export class TicketsController {
   //!
   @Auth(ValidPermissions.CREATE)
   //!
-  @Post('in-app')
-  createInApp(
-    @Body() createTicketDto: CreateTicketInAppDto,
-    @GetUser() customer: Customer,
+  @Post()
+  createInOffice(
+    @Body() createTicketDto: CreateTicketInOfficeDto,
+    @GetUser() user: User,
   ) {
-    return this.ticketsService.createTicketInApp(createTicketDto, customer);
+    return this.ticketsService.createTicketInOffice(createTicketDto, user);
   }
 
   //? ============================================================================================== */
-  //?                                        FindAll                                                 */
+  //?                                        Confirm                                                 */
   //? ============================================================================================== */
 
   //!
-  @Auth(ValidPermissions.READ)
+  @Auth(ValidPermissions.CONFIRM)
   //!
-  @Get()
-  findAll(@GetUser() admin: User) {
-    return this.ticketsService.findAll(admin); //! GetUser
+  @Post('confirm/:id')
+  confirmManual(
+    @Param('id', ParseIntPipe) ticketId: number,
+    @GetUser() cashier: User,
+  ) {
+    return this.ticketsService.confirmTicketManual(ticketId, cashier); //! GetCashier
   }
 
   //? ============================================================================================== */
-  //?                                        FindOne                                                 */
+  //?                                         Cancel                                                 */
   //? ============================================================================================== */
 
   //!
-  @Auth(ValidPermissions.READ)
+  @Auth(ValidPermissions.CANCEL)
   //!
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @GetUser() admin: User) {
-    return this.ticketsService.findOne(id, admin); //! GetUser
+  @Post('cancel/:id')
+  cancelManual(
+    @Param('id', ParseIntPipe) ticketId: number,
+    @GetUser() cashier: User,
+  ) {
+    return this.ticketsService.cancelTicket(ticketId, cashier); //! GetCashier
   }
 }

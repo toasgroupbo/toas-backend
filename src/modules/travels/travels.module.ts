@@ -6,10 +6,11 @@ import { TravelsService } from './travels.service';
 import { Travel } from './entities/travel.entity';
 
 import { TravelSeat } from './entities/travel-seat.entity';
+import { TravelsForCashiersController } from './travels-for-cashiers.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Travel, TravelSeat])],
-  controllers: [TravelsController],
+  controllers: [TravelsController, TravelsForCashiersController],
   providers: [TravelsService],
   exports: [TravelsService, TypeOrmModule],
 })

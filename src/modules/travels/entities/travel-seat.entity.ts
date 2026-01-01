@@ -8,7 +8,6 @@ import {
 } from 'typeorm';
 
 import { SaleType } from '../enums/sale_type-enum';
-import { TravelStatus } from '../enums/travel-status.enum';
 import { SeatStatus, SeatType } from '../../../common/enums';
 
 import { Travel } from './travel.entity';
@@ -38,13 +37,10 @@ export class TravelSeat {
   type: SeatType; // 'seat' | 'aisle' | 'space'
 
   @Column({ type: 'text', default: SaleType.UNSOLD })
-  sale_type: SaleType; // 'office' | 'app'
+  sale_type: SaleType; // 'office' | 'app' | 'unsold'
 
   @Column({ type: 'text', default: SeatStatus.AVAILABLE })
-  status: SeatStatus; // 'available' | 'reserved' | 'sold'
-
-  @Column({ type: 'text', default: TravelStatus.ACTIVE })
-  travel_status: TravelStatus; // 'active' | 'cancelled' | 'completed' | 'closed'
+  status: SeatStatus; // 'available' | 'reserved' | 'sold' | 'unsold'
 
   @Column({ type: 'timestamptz', nullable: true })
   reserve_expiresAt?: Date | null;

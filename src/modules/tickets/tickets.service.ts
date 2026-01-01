@@ -99,7 +99,9 @@ export class TicketsService {
         relations: { bus: true },
       });
 
+      //! Validaciones de Travel
       if (!travel) throw new NotFoundException('Travel not found');
+      //! El travel debe estar activo
       if (travel.travel_status !== TravelStatus.ACTIVE)
         throw new BadRequestException('Travel is not active');
 
@@ -114,9 +116,6 @@ export class TicketsService {
         .where('seat.id IN (:...seatIds)', { seatIds })
         .andWhere('seat.travelId = :travelId', { travelId })
         .andWhere('seat.deletedAt IS NULL')
-        .andWhere('seat.travel_status = :active', {
-          active: TravelStatus.ACTIVE,
-        })
         .andWhere(
           `(seat.status = :available OR 
               (seat.status = :reserved AND seat.reserve_expiresAt <= NOW()))`,
@@ -128,7 +127,7 @@ export class TicketsService {
       // 3. Validar disponibilidad de asientos y que no sean espacios
       // --------------------------------------------
 
-      //! valida que los asientos no sean "0" (espacios sin asiento)
+      //! Valida que los asientos no sean "0" (espacios sin asiento)
       const seatsCleaned = [...seats];
       for (const seat of seats) {
         if (seat.seatNumber === '0') {
@@ -156,12 +155,13 @@ export class TicketsService {
         );
       }
 
-      // --------------------------------------------
-      // 5. Calcular precios y marcar asientos como reservados
-      // --------------------------------------------
-
+      //! Marcar los asientos como reservados
       const expires = this.getReservationExpiry();
       let totalPrice = 0;
+
+      // --------------------------------------------
+      // 5. Calcular precios
+      // --------------------------------------------
 
       for (const seat of seats) {
         const selection = seatSelections.find(
@@ -175,11 +175,12 @@ export class TicketsService {
       }
 
       // --------------------------------------------
-      // 6. Crear ticket
+      // 6. Crear ticket y actualizar seats
       // --------------------------------------------
 
       const seatsArray: SelectedSeatsDto[] = seats.map((s) => {
         return {
+          id: s.id,
           seatNumber: s.seatNumber,
           price: s.price,
         };
@@ -212,19 +213,14 @@ export class TicketsService {
     }
   }
 
-  // --------------------------------------------
-  // get reservation expiry
-  // --------------------------------------------
+  //? ============================================================================================== */
 
   private getReservationExpiry(): Date {
     const minutes = envs.RESERVATION_EXPIRE_MINUTES || 10;
     const now = new Date();
     return new Date(now.getTime() + minutes * 60 * 1000);
   }
-
-  // --------------------------------------------
-  // resolve seat price
-  // --------------------------------------------
+  //? ============================================================================================== */
 
   private resolveSeatPrice(
     selection: { seatId: string; price?: string } | undefined,
@@ -427,16 +423,13 @@ export class TicketsService {
     }
   }
 
-  // --------------------------------------------
-  // is ticket cancelable
-  // --------------------------------------------
+  //? ============================================================================================== */
 
   private isTicketCancelable(ticket: Ticket): boolean {
     return [TicketStatus.RESERVED, TicketStatus.SOLD].includes(ticket.status);
   }
-  // --------------------------------------------
-  // has travel departed
-  // --------------------------------------------
+
+  //? ============================================================================================== */
 
   private hasTravelDeparted(travel: Travel): boolean {
     return travel.departure_time <= new Date();
@@ -446,11 +439,11 @@ export class TicketsService {
   //?                                        FindAll                                                 */
   //? ============================================================================================== */
 
-  async findAll(user: User) {
+  async findAll(admin: User) {
     const tickets = await this.ticketRepository.find({
       where: {
         travel: {
-          bus: { owner: { companies: user.company /* user.company */ } },
+          bus: { owner: { companies: admin.company } },
         },
       },
     });
@@ -461,11 +454,11 @@ export class TicketsService {
   //?                                        FindOne                                                 */
   //? ============================================================================================== */
 
-  async findOne(id: number, user: User) {
+  async findOne(id: number, admin: User) {
     const ticket = await this.ticketRepository.findOneBy({
       id,
       travel: {
-        bus: { owner: { companies: user.company /* user.company */ } },
+        bus: { owner: { companies: admin.company } },
       },
     });
     if (!ticket) throw new NotFoundException('Ticket not found');

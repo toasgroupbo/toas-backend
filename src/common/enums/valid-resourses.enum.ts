@@ -7,11 +7,11 @@ export enum ValidResoursesForAdmins {
   CASHIER = 'CASHIER',
   OWNER = 'OWNER',
   BUS = 'BUS',
+  PLACES = 'PLACES',
   OFFICE = 'OFFICE',
   ROUTE = 'ROUTE',
   TRAVEL = 'TRAVEL',
   //TICKET = 'TICKET',
-  PLACES = 'PLACES',
 
   FILE = 'FILE',
 }
@@ -29,24 +29,16 @@ export enum ValidResourses {
   CASHIER = 'CASHIER',
   OWNER = 'OWNER',
   BUS = 'BUS',
+  PLACE = 'PLACE',
   OFFICE = 'OFFICE',
   ROUTE = 'ROUTE',
   TRAVEL = 'TRAVEL',
   TICKET = 'TICKET',
-  PLACE = 'PLACE',
 
   FILE = 'FILE',
 
   //! solo el cashier
-  CASHIER_BUS = 'CASHIER_BUS',
-
-  CASHIER_ROUTE = 'CASHIER_ROUTE',
-
   CASHIER_TRAVEL = 'CASHIER_TRAVEL',
-
   CASHIER_TICKET = 'CASHIER_TICKET',
-
   CASHIER_CUSTOMER = 'CASHIER_CUSTOMER',
-
-  //customer
 }

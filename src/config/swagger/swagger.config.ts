@@ -18,6 +18,30 @@ export function setupSwagger(app: INestApplication): void {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+
+  document.tags = [
+    { name: 'Auth' },
+    { name: 'Roles' },
+    { name: 'Users' },
+    { name: 'Bank Accounts' },
+    { name: 'Companies' },
+    { name: 'Owners' },
+    { name: 'Places' },
+    { name: 'Offices' },
+    { name: 'Cashiers' },
+    { name: 'Routes' },
+    { name: 'Buses' },
+    { name: 'Travels' },
+    { name: 'Travels: For Cashiers' },
+    { name: 'Tickets' },
+    { name: 'Tickets: For Cashiers' },
+    { name: 'Customers' },
+    { name: 'Customers: For Cashiers' },
+
+    { name: 'Transactions' },
+    { name: 'Files' },
+  ];
+
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true, // Mantiene el token cuando se recarga

@@ -7,7 +7,6 @@ import { CreateBusDto, UpdateBusDto } from './dto';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { Bus } from './entities/bus.entity';
-import { Office } from '../offices/entities/office.entity';
 
 @Injectable()
 export class BusesService {
@@ -58,18 +57,6 @@ export class BusesService {
     const buses = await this.busRepository.find({
       where: {
         company: { id: companyId },
-      },
-      relations: { owner: true, busType: true },
-    });
-    return buses;
-  }
-
-  async findAllforCashier(office: Office) {
-    const company = office.company;
-
-    const buses = await this.busRepository.find({
-      where: {
-        company: { id: company.id },
       },
       relations: { owner: true, busType: true },
     });

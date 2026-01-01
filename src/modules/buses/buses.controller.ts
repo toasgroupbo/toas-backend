@@ -55,19 +55,6 @@ export class BusesController {
   }
 
   //? ============================================================================================== */
-  //? ============================================================================================== */
-
-  /*//!
-  @Resource(ValidResourses.CASHIER_BUS)
-  @Auth(ValidPermissions.READ)
-  @ApiBearerAuth('access-token')
-  //!
-  @Get('cashier')
-  findAllBusesforCashier(@GetOffice() office: Office) {
-    return this.busesService.findAllforCashier(office); //! GetOffice object
-  }*/
-
-  //? ============================================================================================== */
   //?                                        FindOne                                                 */
   //? ============================================================================================== */
 

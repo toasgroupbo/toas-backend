@@ -28,7 +28,7 @@ export class SeedService implements OnModuleInit {
 
   private async seedRolesAndPermissions() {
     const staticRoles = [
-      //! SUPER-USER
+      //! SUPER-ADMIN
 
       {
         name: StaticRoles.SUPER_ADMIN,
@@ -212,7 +212,6 @@ export class SeedService implements OnModuleInit {
               ValidPermissions.READ,
               ValidPermissions.UPDATE,
               ValidPermissions.DELETE,
-
               ValidPermissions.CLOSE,
               ValidPermissions.CANCEL,
             ],
@@ -247,11 +246,6 @@ export class SeedService implements OnModuleInit {
         isStatic: true,
         permissions: [
           {
-            resourse: ValidResourses.CASHIER_BUS,
-            permissions: [ValidPermissions.READ],
-          },
-
-          {
             resourse: ValidResourses.CASHIER_TRAVEL,
             permissions: [ValidPermissions.READ, ValidPermissions.CLOSE],
           },
@@ -260,8 +254,6 @@ export class SeedService implements OnModuleInit {
             resourse: ValidResourses.CASHIER_TICKET,
             permissions: [
               ValidPermissions.CREATE,
-              ValidPermissions.READ,
-
               ValidPermissions.CONFIRM,
               ValidPermissions.CANCEL,
             ],

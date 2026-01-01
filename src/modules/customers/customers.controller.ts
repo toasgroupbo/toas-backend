@@ -1,6 +1,5 @@
 import {
   Get,
-  Post,
   Body,
   Patch,
   Param,
@@ -11,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { CreateCustomerNotVerifiedDto, UpdateCustomerDto } from './dto';
+import { UpdateCustomerDto } from './dto';
 import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
@@ -29,23 +28,6 @@ import { CustomersService } from './customers.service';
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
-
-  //? ============================================================================================== */
-  //?                                         Create                                                 */
-  //? ============================================================================================== */
-
-  //!
-  @Resource(ValidResourses.CASHIER_CUSTOMER)
-  @Auth(ValidPermissions.CREATE)
-  //!
-  @Post('for-cashier')
-  createForCustomer(
-    @Body() createCustomerNotVerifiedDto: CreateCustomerNotVerifiedDto,
-  ) {
-    return this.customersService.createNotVerified(
-      createCustomerNotVerifiedDto,
-    );
-  }
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */
@@ -77,17 +59,6 @@ export class CustomersController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.customersService.findOne(id);
-  }
-
-  //? ============================================================================================== */
-
-  //!
-  @Resource(ValidResourses.CASHIER_CUSTOMER)
-  @Auth(ValidPermissions.READ)
-  //!
-  @Get('for-cashier/:ci')
-  findOneByCi(@Param('ci') ci: string) {
-    return this.customersService.findOneByCi(ci);
   }
 
   //? ============================================================================================== */

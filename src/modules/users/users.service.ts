@@ -36,10 +36,6 @@ export class UsersService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  // --------------------------------------------
-  // 1. Creacion de un usuario Super-Admin
-  // --------------------------------------------
-
   async createAdmin(createUserDto: CreateUserDto) {
     //! busqueda del rol de Super-Admin
     const rol = await this.rolService.findOneByName(StaticRoles.SUPER_ADMIN);
@@ -58,9 +54,7 @@ export class UsersService {
     }
   }
 
-  // --------------------------------------------
-  // 2. Creacion de un usuario Admin-App
-  // --------------------------------------------
+  //? ============================================================================================== */
 
   async createAppAdmin(createUserDto: CreateUserAdminDto) {
     try {
@@ -74,9 +68,7 @@ export class UsersService {
     }
   }
 
-  // --------------------------------------------
-  // 3. Creacion de un usuario Cashier
-  // --------------------------------------------
+  //? ============================================================================================== */
 
   async createCashier(createUserDto: CreateUserCashierDto) {
     const { officeId, ...data } = createUserDto;
