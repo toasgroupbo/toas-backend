@@ -5,15 +5,15 @@ import { envs } from './config/environments/environments';
 import { setupSwagger } from './config/swagger/swagger.config';
 
 async function main() {
-  const app = await NestFactory.create(AppModule);
-
-  const logger = new Logger('TOAS');
-
   //! errores de version de node en dockploy
   if (!globalThis.crypto) {
     // @ts-ignores
     globalThis.crypto = { randomUUID };
   }
+
+  const app = await NestFactory.create(AppModule);
+
+  const logger = new Logger('TOAS');
 
   //! cors global enable
   app.enableCors();
