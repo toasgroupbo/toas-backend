@@ -3,11 +3,12 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetOffice, Resource } from 'src/auth/decorators';
+import { Auth, GetOffice, GetUser, Resource } from 'src/auth/decorators';
 
 import { TravelsService } from './travels.service';
 
 import { Office } from '../offices/entities/office.entity';
+import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.CASHIER_TRAVEL)
@@ -39,8 +40,8 @@ export class TravelsForCashiersController {
   @Auth(ValidPermissions.CLOSE)
   //!
   @Post('closed/:id')
-  closed(@Param('id', ParseIntPipe) id: number) {
-    return this.travelsService.closed(id);
+  closed(@Param('id', ParseIntPipe) id: number, @GetUser() cashier: User) {
+    return this.travelsService.close(id, cashier);
   }
 
   //? ============================================================================================== */

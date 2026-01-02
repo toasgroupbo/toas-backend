@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
+  Index,
 } from 'typeorm';
 
 import { SelectedSeatsDto } from '../dto';
@@ -35,6 +36,7 @@ export class Ticket {
   @Column('json')
   seats: SelectedSeatsDto[];
 
+  @Index()
   @Column({ type: 'timestamptz', nullable: true })
   reserve_expiresAt?: Date | null;
 

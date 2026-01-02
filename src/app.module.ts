@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { envs } from './config/environments/environments';
 
 import { AuthModule } from './auth/auth.module';
@@ -20,6 +21,7 @@ import { CompaniesModule } from './modules/companies/companies.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { BankAccountsModule } from './modules/bank-accounts/bank-accounts.module';
 import { LoggerModule } from './logger/logger.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -34,6 +36,9 @@ import { LoggerModule } from './logger/logger.module';
       synchronize: true,
       //migrations: [process.env.NODE_ENV === 'production' ? 'dist/migrations/*.js' : 'src/migrations/*.ts'],
     }),
+
+    SchedulerModule,
+
     AuthModule,
     RolesModule,
 

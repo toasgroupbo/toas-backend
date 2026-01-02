@@ -14,6 +14,7 @@ import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { Route } from 'src/modules/routes/entities/route.entity';
 import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { TravelSeat } from './travel-seat.entity';
+import { User } from 'src/modules/users/entities/user.entity';
 
 @Entity('travels')
 export class Travel {
@@ -40,6 +41,12 @@ export class Travel {
   @Column({ type: 'text', default: TravelStatus.ACTIVE })
   travel_status: TravelStatus;
 
+  @Column({ type: 'boolean', default: false })
+  closedAutomatically: boolean;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  closedAt?: Date;
+
   @CreateDateColumn({ select: false })
   createdAt: Date;
 
@@ -63,4 +70,7 @@ export class Travel {
 
   @ManyToOne(() => Route, (route) => route.travel)
   route: Route;
+
+  @ManyToOne(() => User, { nullable: true })
+  closedBy?: User | null;
 }

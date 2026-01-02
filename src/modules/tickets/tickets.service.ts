@@ -373,11 +373,11 @@ export class TicketsService {
         );
       }
 
-      /* if (this.hasTravelDeparted(ticket.travel)) {
+      if (this.hasTravelDeparted(ticket.travel)) {
         throw new BadRequestException(
           'Cannot cancel a ticket for a travel that has already departed',
         );
-      } */
+      }
 
       // --------------------------------------------
       // 3. Actualizar estados
