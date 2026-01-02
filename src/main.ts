@@ -9,6 +9,12 @@ async function main() {
 
   const logger = new Logger('TOAS');
 
+  //! errores de version de node en dockploy
+  if (!globalThis.crypto) {
+    // @ts-ignores
+    globalThis.crypto = { randomUUID };
+  }
+
   //! cors global enable
   app.enableCors();
 
