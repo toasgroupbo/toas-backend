@@ -102,7 +102,7 @@ export class TicketsService {
       //! Validaciones de Travel
       if (!travel) throw new NotFoundException('Travel not found');
       //! El travel debe estar activo
-      if (travel.travel_status !== TravelStatus.ACTIVE)
+      if (travel.status !== TravelStatus.ACTIVE)
         throw new BadRequestException('Travel is not active');
 
       // --------------------------------------------
@@ -213,14 +213,15 @@ export class TicketsService {
     }
   }
 
-  //? ============================================================================================== */
+  //* ============================================================================================== */
 
   private getReservationExpiry(): Date {
     const minutes = envs.RESERVATION_EXPIRE_MINUTES || 10;
     const now = new Date();
     return new Date(now.getTime() + minutes * 60 * 1000);
   }
-  //? ============================================================================================== */
+
+  //* ============================================================================================== */
 
   private resolveSeatPrice(
     selection: { seatId: string; price?: string } | undefined,
@@ -423,13 +424,13 @@ export class TicketsService {
     }
   }
 
-  //? ============================================================================================== */
+  //* ============================================================================================== */
 
   private isTicketCancelable(ticket: Ticket): boolean {
     return [TicketStatus.RESERVED, TicketStatus.SOLD].includes(ticket.status);
   }
 
-  //? ============================================================================================== */
+  //* ============================================================================================== */
 
   private hasTravelDeparted(travel: Travel): boolean {
     return travel.departure_time <= new Date();
@@ -450,6 +451,17 @@ export class TicketsService {
     return tickets;
   }
 
+  //? ============================================================================================== */
+
+  async findAllForCashier(ticketId: number, cashier: User) {
+    const tickets = await this.ticketRepository.find({
+      where: {
+        id: ticketId,
+        soldBy: { id: cashier.id },
+      },
+    });
+    return tickets;
+  }
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
   //? ============================================================================================== */

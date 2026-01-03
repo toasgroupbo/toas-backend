@@ -28,7 +28,7 @@ export class TravelAutoCloseService {
       const travels = await queryRunner.manager
         .createQueryBuilder(Travel, 'travel')
         .setLock('pessimistic_write')
-        .where('travel.travel_status = :status', {
+        .where('travel.status = :status', {
           status: TravelStatus.ACTIVE,
         })
         .andWhere(
@@ -61,7 +61,7 @@ export class TravelAutoCloseService {
     closedBy?: User,
     isAutomatic = false,
   ) {
-    travel.travel_status = TravelStatus.CLOSED;
+    travel.status = TravelStatus.CLOSED;
     travel.closedAt = new Date();
     travel.closedBy = closedBy ?? null;
     travel.closedAutomatically = isAutomatic;

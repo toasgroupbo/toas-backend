@@ -128,7 +128,7 @@ export class TravelsService {
         .leftJoinAndSelect('ticket.travelSeats', 'ticketSeats')
         .leftJoinAndSelect('travel.travelSeats', 'travelSeats')
         .where('travel.id = :id', { id: travelId })
-        .andWhere('travel.travel_status = :status', {
+        .andWhere('travel.status = :status', {
           status: TravelStatus.ACTIVE,
         })
         .getOne();
@@ -138,7 +138,7 @@ export class TravelsService {
       }
 
       //! Cerrar viaje
-      travel.travel_status = TravelStatus.CLOSED;
+      travel.status = TravelStatus.CLOSED;
       travel.closedAt = new Date();
       travel.closedBy = cashier;
 
@@ -211,7 +211,7 @@ export class TravelsService {
     const travels = await this.travelRepository.find({
       where: {
         route: { officeOrigin: { id: officeId } },
-        travel_status: TravelStatus.ACTIVE, //! solo lista los viajes activos
+        status: TravelStatus.ACTIVE, //! solo lista los viajes activos
       },
       relations: {
         bus: true,
@@ -264,9 +264,9 @@ export class TravelsService {
     const travel = await this.findOne(id, companyId);
 
     try {
-      travel.travel_status = TravelStatus.CANCELLED;
+      travel.status = TravelStatus.CANCELLED;
       /* travel.travelSeats.forEach((s) => {
-        s.travel_status = TravelStatus.CANCELLED; //! se cancela el asiento
+        s.status = TravelStatus.CANCELLED; //! se cancela el asiento
         s.deletedAt = new Date(); //! se elimina el asiento
       }); */
 

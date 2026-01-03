@@ -72,4 +72,19 @@ export class TicketsForCashiersController {
   ) {
     return this.ticketsService.cancelTicket(ticketId, cashier); //! GetCashier
   }
+
+  //? ============================================================================================== */
+  //?                                        FindAll                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
+  @Get()
+  findAll(
+    @Param('id', ParseIntPipe) ticketId: number,
+    @GetUser() cashier: User,
+  ) {
+    return this.ticketsService.findAllForCashier(ticketId, cashier); //! GetCashier
+  }
 }

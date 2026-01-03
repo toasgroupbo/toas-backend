@@ -254,6 +254,7 @@ export class SeedService implements OnModuleInit {
             resourse: ValidResourses.CASHIER_TICKET,
             permissions: [
               ValidPermissions.CREATE,
+              ValidPermissions.READ,
               ValidPermissions.CONFIRM,
               ValidPermissions.CANCEL,
             ],
