@@ -128,7 +128,7 @@ export class TravelsService {
         .leftJoinAndSelect('ticket.travelSeats', 'ticketSeats')
         .leftJoinAndSelect('travel.travelSeats', 'travelSeats')
         .where('travel.id = :id', { id: travelId })
-        .andWhere('travel.status = :status', {
+        .andWhere('travel.travel_status = :status', {
           status: TravelStatus.ACTIVE,
         })
         .getOne();

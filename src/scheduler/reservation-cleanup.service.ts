@@ -29,7 +29,7 @@ export class ReservationCleanupService {
           status: TicketStatus.RESERVED,
         })
         .andWhere('ticket.reserve_expiresAt < NOW()')
-        .andWhere('travel.status = :active', {
+        .andWhere('travel.travel_status = :active', {
           active: TravelStatus.ACTIVE,
         })
         .getMany();
