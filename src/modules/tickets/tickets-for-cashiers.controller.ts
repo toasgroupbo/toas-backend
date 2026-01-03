@@ -80,7 +80,7 @@ export class TicketsForCashiersController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @Get()
+  @Get(':id')
   findAll(
     @Param('id', ParseIntPipe) ticketId: number,
     @GetUser() cashier: User,
