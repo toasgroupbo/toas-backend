@@ -102,7 +102,7 @@ export class TicketsService {
       //! Validaciones de Travel
       if (!travel) throw new NotFoundException('Travel not found');
       //! El travel debe estar activo
-      if (travel.status !== TravelStatus.ACTIVE)
+      if (travel.travel_status !== TravelStatus.ACTIVE)
         throw new BadRequestException('Travel is not active');
 
       // --------------------------------------------

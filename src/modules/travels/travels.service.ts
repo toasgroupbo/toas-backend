@@ -138,7 +138,7 @@ export class TravelsService {
       }
 
       //! Cerrar viaje
-      travel.status = TravelStatus.CLOSED;
+      travel.travel_status = TravelStatus.CLOSED;
       travel.closedAt = new Date();
       travel.closedBy = cashier;
 
@@ -211,7 +211,7 @@ export class TravelsService {
     const travels = await this.travelRepository.find({
       where: {
         route: { officeOrigin: { id: officeId } },
-        status: TravelStatus.ACTIVE, //! solo lista los viajes activos
+        travel_status: TravelStatus.ACTIVE, //! solo lista los viajes activos
       },
       relations: {
         bus: true,
@@ -264,7 +264,7 @@ export class TravelsService {
     const travel = await this.findOne(id, companyId);
 
     try {
-      travel.status = TravelStatus.CANCELLED;
+      travel.travel_status = TravelStatus.CANCELLED;
       /* travel.travelSeats.forEach((s) => {
         s.status = TravelStatus.CANCELLED; //! se cancela el asiento
         s.deletedAt = new Date(); //! se elimina el asiento

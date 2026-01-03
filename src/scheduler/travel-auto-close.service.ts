@@ -61,7 +61,7 @@ export class TravelAutoCloseService {
     closedBy?: User,
     isAutomatic = false,
   ) {
-    travel.status = TravelStatus.CLOSED;
+    travel.travel_status = TravelStatus.CLOSED;
     travel.closedAt = new Date();
     travel.closedBy = closedBy ?? null;
     travel.closedAutomatically = isAutomatic;

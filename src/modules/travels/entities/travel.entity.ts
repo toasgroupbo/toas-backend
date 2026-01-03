@@ -39,7 +39,7 @@ export class Travel {
   price_deck_2?: string;
 
   @Column({ type: 'text', default: TravelStatus.ACTIVE })
-  status: TravelStatus;
+  travel_status: TravelStatus;
 
   @Column({ type: 'boolean', default: false })
   closedAutomatically: boolean;
