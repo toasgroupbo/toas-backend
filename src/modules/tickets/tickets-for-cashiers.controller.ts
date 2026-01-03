@@ -82,9 +82,9 @@ export class TicketsForCashiersController {
   //!
   @Get(':id')
   findAll(
-    @Param('id', ParseIntPipe) ticketId: number,
+    @Param('id', ParseIntPipe) travelId: number,
     @GetUser() cashier: User,
   ) {
-    return this.ticketsService.findAllForCashier(ticketId, cashier); //! GetCashier
+    return this.ticketsService.findAllForCashier(travelId, cashier); //! GetCashier
   }
 }

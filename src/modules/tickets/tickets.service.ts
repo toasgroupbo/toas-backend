@@ -453,15 +453,16 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  async findAllForCashier(ticketId: number, cashier: User) {
+  async findAllForCashier(travelId: number, cashier: User) {
     const tickets = await this.ticketRepository.find({
       where: {
-        id: ticketId,
+        travel: { id: travelId },
         soldBy: { id: cashier.id },
       },
     });
     return tickets;
   }
+
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
   //? ============================================================================================== */
