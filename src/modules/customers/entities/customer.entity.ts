@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 
 import { AuthProviders } from 'src/auth/enums';
 
+import { Passenger } from './passenger.entity';
 import { Balance } from 'src/modules/balances/entities/balance.entity';
 import { Ticket } from '../../../modules/tickets/entities/ticket.entity';
 
@@ -63,6 +64,9 @@ export class Customer {
 
   @OneToMany(() => Balance, (balance) => balance.customer)
   balances: Balance[];
+
+  @OneToMany(() => Passenger, (p) => p.customer)
+  passengers: Passenger[];
 
   //* ---------------------------------------------------------------------------------------------- */
   //*                                        Functions                                               */

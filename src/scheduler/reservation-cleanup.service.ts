@@ -25,8 +25,8 @@ export class ReservationCleanupService {
         .createQueryBuilder(Ticket, 'ticket')
         .leftJoinAndSelect('ticket.travelSeats', 'seat')
         .leftJoin('ticket.travel', 'travel')
-        .where('ticket.status = :status', {
-          status: TicketStatus.RESERVED,
+        .where('ticket.status IN (:...statuses)', {
+          statuses: [TicketStatus.RESERVED, TicketStatus.PENDING_PAYMENT],
         })
         .andWhere('ticket.reserve_expiresAt < NOW()')
         .andWhere('travel.travel_status = :active', {
@@ -36,14 +36,15 @@ export class ReservationCleanupService {
 
       for (const ticket of expiredTickets) {
         ticket.status = TicketStatus.EXPIRED;
-        ticket.reserve_expiresAt = null;
+        ticket.deletedAt = new Date();
+        //ticket.reserve_expiresAt = null;
 
         for (const seat of ticket.travelSeats) {
           seat.status = SeatStatus.AVAILABLE;
           seat.sale_type = SaleType.UNSOLD;
           seat.price = '0';
           seat.ticket = null;
-          seat.reserve_expiresAt = null;
+          seat.passenger = null;
         }
       }
 

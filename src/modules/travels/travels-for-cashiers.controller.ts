@@ -28,8 +28,8 @@ export class TravelsForCashiersController {
   @Auth(ValidPermissions.READ)
   //!
   @Get('seats-available/:id')
-  getSeatsAvailable(@Param('id', ParseIntPipe) id: number) {
-    return this.travelsService.getSeatsAvailable(id);
+  getSeatsAvailable(@Param('id', ParseIntPipe) travelId: number) {
+    return this.travelsService.getSeatsAvailable(travelId);
   }
 
   //? ============================================================================================== */

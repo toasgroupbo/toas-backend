@@ -7,17 +7,21 @@ import {
   Delete,
   Controller,
   ParseIntPipe,
+  Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { UpdateCustomerDto } from './dto';
+import { CreatePassengerInAppDto, UpdateCustomerDto } from './dto';
 import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, Resource } from 'src/auth/decorators';
+import { Auth, GetUser, Resource } from 'src/auth/decorators';
 
 import { CustomersService } from './customers.service';
+import { PassengersService } from './passengers.service';
+
+import { Customer } from './entities/customer.entity';
 
 //!
 @Resource(ValidResourses.CUSTOMER)
@@ -27,7 +31,38 @@ import { CustomersService } from './customers.service';
 @ApiTags('Customers')
 @Controller('customers')
 export class CustomersController {
-  constructor(private readonly customersService: CustomersService) {}
+  constructor(
+    private readonly customersService: CustomersService,
+
+    private readonly passengersService: PassengersService,
+  ) {}
+
+  //? ============================================================================================== */
+  //?                               Create_Passenger                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth()
+  //!
+  @Post('passengers/in-app')
+  createForApp(
+    @Body() dto: CreatePassengerInAppDto,
+    @GetUser() customer: Customer,
+  ) {
+    return this.passengersService.createInApp(dto, customer); //! GetUser
+  }
+
+  //? ============================================================================================== */
+  //?                             FindAll_Passengers                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth()
+  //!
+  @Get('passengers/in-app')
+  findAllPassengers(@GetUser() customer: Customer) {
+    return this.passengersService.findAllPassengersInApp(customer); //! GetUser
+  }
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */

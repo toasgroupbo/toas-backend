@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { CreateBankAccountDto, UpdateBankAccountDto } from './dto';
+import { UpdateBankAccountDto } from './dto';
 import { PaginationDto } from 'src/common/pagination/pagination.dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';

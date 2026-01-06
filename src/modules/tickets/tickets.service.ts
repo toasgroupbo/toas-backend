@@ -11,9 +11,11 @@ import { envs } from 'src/config/environments/environments';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import {
-  CreateTicketInOfficeDto,
-  CreateTicketInAppDto,
   SelectedSeatsDto,
+  CreateTicketInAppDto,
+  AssignPassengerInAppDto,
+  CreateTicketInOfficeDto,
+  AssignPassengerInOfficeDto,
 } from './dto';
 
 import { SeatStatus } from 'src/common/enums';
@@ -28,6 +30,7 @@ import { Ticket } from './entities/ticket.entity';
 import { User } from '../users/entities/user.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
+import { Passenger } from '../customers/entities/passenger.entity';
 import { TravelSeat } from '../travels/entities/travel-seat.entity';
 
 @Injectable()
@@ -36,14 +39,23 @@ export class TicketsService {
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
 
+    @InjectRepository(Customer)
+    private readonly customerRepository: Repository<Customer>,
+
+    @InjectRepository(TravelSeat)
+    private readonly travelSeatRepository: Repository<TravelSeat>,
+
+    @InjectRepository(Passenger)
+    private readonly passengerRepository: Repository<Passenger>,
+
     private readonly customersService: CustomersService,
 
     private dataSource: DataSource,
   ) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                         Create_Ticket_In_Office                                                */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                           Create_Ticket_Cashier                                                */
+  //? ============================================================================================== */
 
   async createTicketInOffice(dto: CreateTicketInOfficeDto, user: User) {
     return this.createTicketBase({
@@ -53,9 +65,9 @@ export class TicketsService {
     });
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                           Create_Ticket_In_App                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                              Create_Ticket_APP                                                 */
+  //? ============================================================================================== */
 
   async createTicketInApp(dto: CreateTicketInAppDto, buyer: Customer) {
     if (!(buyer instanceof Customer)) {
@@ -68,9 +80,7 @@ export class TicketsService {
     });
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                   Create_Base                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   private async createTicketBase({
     dto,
@@ -118,7 +128,7 @@ export class TicketsService {
         .andWhere('seat.deletedAt IS NULL')
         .andWhere(
           `(seat.status = :available OR 
-              (seat.status = :reserved AND seat.reserve_expiresAt <= NOW()))`,
+              (seat.status = :reserved))`,
           { available: SeatStatus.AVAILABLE, reserved: SeatStatus.RESERVED },
         )
         .getMany();
@@ -155,13 +165,11 @@ export class TicketsService {
         );
       }
 
-      //! Marcar los asientos como reservados
-      const expires = this.getReservationExpiry();
-      let totalPrice = 0;
+      // --------------------------------------------
+      // 5. Calcular precios y cambiar estados
+      // --------------------------------------------
 
-      // --------------------------------------------
-      // 5. Calcular precios
-      // --------------------------------------------
+      let totalPrice = 0;
 
       for (const seat of seats) {
         const selection = seatSelections.find(
@@ -170,7 +178,6 @@ export class TicketsService {
         const finalPrice = this.resolveSeatPrice(selection, seat, travel);
         seat.price = finalPrice.toFixed(2);
         seat.status = SeatStatus.RESERVED;
-        seat.reserve_expiresAt = expires;
         totalPrice += finalPrice;
       }
 
@@ -185,6 +192,9 @@ export class TicketsService {
           price: s.price,
         };
       });
+
+      //! obtener el tiempo de expiracion de reservas
+      const expires = this.getReservationExpiry();
 
       const ticket = queryRunner.manager.create(Ticket, {
         type,
@@ -290,7 +300,6 @@ export class TicketsService {
       for (const seat of ticket.travelSeats) {
         seat.status = SeatStatus.SOLD;
         seat.sale_type = SaleType.OFFICE;
-        seat.reserve_expiresAt = null; //! (para la limpieza)
       }
 
       // --------------------------------------------
@@ -400,9 +409,9 @@ export class TicketsService {
       for (const seat of ticket.travelSeats) {
         seat.status = SeatStatus.AVAILABLE;
         seat.sale_type = SaleType.UNSOLD;
-        seat.reserve_expiresAt = null;
         seat.ticket = null; //! desasociar el asiento del ticket
         seat.price = '0'; //! resetear el precio
+        seat.passenger = null; //! desasociar el pasajero
       }
 
       // --------------------------------------------
@@ -476,5 +485,87 @@ export class TicketsService {
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
+  }
+
+  //? ============================================================================================== */
+  //?                           Assign_Passenger_APP                                                 */
+  //? ============================================================================================== */
+
+  //!  APP
+  async assignPassengerForCustomer(
+    dto: AssignPassengerInAppDto,
+    customer: Customer,
+  ) {
+    return this.assignPassengerBase(
+      dto.ticketId,
+      dto.seatId,
+      dto.passengerId,
+      customer,
+    );
+  }
+
+  //? ============================================================================================== */
+  //?                       Assign_Passenger_Cashier                                                 */
+  //? ============================================================================================== */
+
+  //!  CASHIER
+  async assignPassengerForCashier(dto: AssignPassengerInOfficeDto) {
+    const customer = await this.customerRepository.findOne({
+      where: { id: dto.customerId },
+    });
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+    return this.assignPassengerBase(
+      dto.ticketId,
+      dto.seatId,
+      dto.passengerId,
+      customer,
+    );
+  }
+
+  //* ============================================================================================== */
+
+  private async assignPassengerBase(
+    ticketId: number,
+    seatId: number,
+    passengerId: number,
+    customer: Customer,
+  ) {
+    const seat = await this.travelSeatRepository
+      .createQueryBuilder('seat')
+      .leftJoinAndSelect('seat.ticket', 'ticket')
+      .where('seat.id = :seatId', { seatId })
+      .andWhere('ticket.id = :ticketId', { ticketId })
+      .andWhere('ticket.buyerId = :customerId', {
+        customerId: customer.id,
+      })
+      .andWhere('ticket.status IN (:...statuses)', {
+        statuses: [TicketStatus.RESERVED],
+      })
+      .getOne();
+
+    if (!seat) {
+      throw new BadRequestException('Seat not editable');
+    }
+
+    const passenger = await this.passengerRepository.findOne({
+      where: {
+        id: passengerId,
+        customer: { id: customer.id },
+      },
+    });
+
+    if (!passenger) {
+      throw new NotFoundException('Passenger not found');
+    }
+
+    seat.passenger = {
+      name: passenger.fullName,
+      ci: passenger.ci,
+    };
+
+    return this.travelSeatRepository.save(seat);
   }
 }

@@ -5,7 +5,6 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
-  Index,
 } from 'typeorm';
 
 import { SaleType } from '../enums/sale_type-enum';
@@ -43,14 +42,16 @@ export class TravelSeat {
   @Column({ type: 'text', default: SeatStatus.AVAILABLE })
   status: SeatStatus; // 'available' | 'reserved' | 'sold' | 'unsold'
 
-  @Index()
-  @Column({ type: 'timestamptz', nullable: true })
-  reserve_expiresAt?: Date | null;
-
   @CreateDateColumn({
     type: 'timestamptz',
   })
   createdAt: Date;
+
+  @Column('jsonb', { nullable: true })
+  passenger?: {
+    name: string;
+    ci: string;
+  } | null;
 
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;

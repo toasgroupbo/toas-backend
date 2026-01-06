@@ -5,10 +5,11 @@ import {
   Param,
   Controller,
   ParseIntPipe,
+  Patch,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { CreateTicketInOfficeDto } from './dto';
+import { AssignPassengerInOfficeDto, CreateTicketInOfficeDto } from './dto';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
@@ -80,11 +81,23 @@ export class TicketsForCashiersController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @Get(':id')
+  @Get(':travelId')
   findAll(
-    @Param('id', ParseIntPipe) travelId: number,
+    @Param('travelId', ParseIntPipe) travelId: number,
     @GetUser() cashier: User,
   ) {
     return this.ticketsService.findAllForCashier(travelId, cashier); //! GetCashier
+  }
+
+  //? ============================================================================================== */
+  //?                                Assign_Passenger                                                */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.UPDATE)
+  //!
+  @Patch('assign-passenger')
+  assignOccupantFromAdmin(@Body() dto: AssignPassengerInOfficeDto) {
+    return this.ticketsService.assignPassengerForCashier(dto);
   }
 }

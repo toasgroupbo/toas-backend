@@ -8,9 +8,10 @@ import { Ticket } from './entities/ticket.entity';
 import { CustomersModule } from '../customers/customers.module';
 import { CorrelationIdMiddleware } from 'src/logger/middlewares/correlation-id.middleware';
 import { TicketsForCashiersController } from './tickets-for-cashiers.controller';
+import { TravelsModule } from '../travels/travels.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Ticket]), CustomersModule],
+  imports: [TypeOrmModule.forFeature([Ticket]), CustomersModule, TravelsModule],
   controllers: [
     TicketsController,
     TicketsForCashiersController /* TestController */,

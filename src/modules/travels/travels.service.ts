@@ -100,7 +100,7 @@ export class TravelsService {
       .andWhere(
         `
       seat.status = :available
-      OR (seat.status = :reserved AND seat.reserve_expiresAt < NOW())
+      OR (seat.status = :reserved)
     `,
         {
           available: SeatStatus.AVAILABLE,
@@ -163,7 +163,6 @@ export class TravelsService {
           seat.sale_type = SaleType.UNSOLD;
           seat.price = '0';
           seat.ticket = null;
-          seat.reserve_expiresAt = null;
         }
       }
 
