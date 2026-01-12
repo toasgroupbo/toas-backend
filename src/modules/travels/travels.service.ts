@@ -9,6 +9,7 @@ import { DataSource, Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { CreateTravelDto } from './dto';
+import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 
 import { SeatStatus } from 'src/common/enums';
 import { SaleType } from './enums/sale_type-enum';
@@ -20,6 +21,7 @@ import { Bus } from '../buses/entities/bus.entity';
 import { User } from '../users/entities/user.entity';
 import { TravelSeat } from './entities/travel-seat.entity';
 import { Office } from '../offices/entities/office.entity';
+import { paginate } from 'src/common/pagination/paginate';
 
 @Injectable()
 export class TravelsService {
@@ -189,16 +191,31 @@ export class TravelsService {
   //?                                        FindAll                                                 */
   //? ============================================================================================== */
 
-  async findAll(companyId: number) {
-    const travels = await this.travelRepository.find({
-      where: { bus: { company: { id: companyId } } },
+  async findAll(pagination: TravelPaginationDto, companyId: number) {
+    const { status } = pagination;
 
-      relations: {
-        bus: true,
-        route: { officeOrigin: true, officeDestination: true },
-        travelSeats: true,
+    const options: any = {
+      where: { bus: { company: { id: companyId } } },
+    };
+
+    //! filtrar por status
+    if (status) {
+      options.where.travel_status = status;
+    }
+
+    const travels = await paginate(
+      this.travelRepository,
+      {
+        ...options,
+        order: { id: 'DESC' },
+        relations: {
+          bus: true,
+          route: { officeOrigin: true, officeDestination: true },
+          travelSeats: true,
+        },
       },
-    });
+      pagination,
+    );
     return travels;
   }
 

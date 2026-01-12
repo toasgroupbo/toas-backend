@@ -6,11 +6,14 @@ import {
   Delete,
   Controller,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CreateTravelDto } from './dto';
+import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 
+import { TravelStatus } from './enums/travel-status.enum';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { Auth, GetCompany, Resource } from 'src/auth/decorators';
@@ -47,9 +50,17 @@ export class TravelsController {
   @Auth(ValidPermissions.READ)
   //!
   @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: TravelStatus,
+  })
   @Get()
-  findAll(@GetCompany() companyId: number) {
-    return this.travelsService.findAll(companyId); //! GetCompany
+  findAll(
+    @Query() pagination: TravelPaginationDto,
+    @GetCompany() companyId: number,
+  ) {
+    return this.travelsService.findAll(pagination, companyId); //! GetCompany
   }
 
   //? ============================================================================================== */

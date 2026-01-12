@@ -111,7 +111,7 @@ export class TicketsService {
 
       //! Validaciones de Travel
       if (!travel) throw new NotFoundException('Travel not found');
-      //! El travel debe estar activo
+
       if (travel.travel_status !== TravelStatus.ACTIVE)
         throw new BadRequestException('Travel is not active');
 
@@ -137,7 +137,6 @@ export class TicketsService {
       // 3. Validar disponibilidad de asientos y que no sean espacios
       // --------------------------------------------
 
-      //! Valida que los asientos no sean "0" (espacios sin asiento)
       const seatsCleaned = [...seats];
       for (const seat of seats) {
         if (seat.seatNumber === '0') {
