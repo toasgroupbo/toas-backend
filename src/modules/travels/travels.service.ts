@@ -8,6 +8,8 @@ import { DataSource, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
+import { paginate } from 'src/common/pagination/paginate';
+
 import { CreateTravelDto } from './dto';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 
@@ -21,7 +23,6 @@ import { Bus } from '../buses/entities/bus.entity';
 import { User } from '../users/entities/user.entity';
 import { TravelSeat } from './entities/travel-seat.entity';
 import { Office } from '../offices/entities/office.entity';
-import { paginate } from 'src/common/pagination/paginate';
 
 @Injectable()
 export class TravelsService {
@@ -211,7 +212,6 @@ export class TravelsService {
         relations: {
           bus: true,
           route: { officeOrigin: true, officeDestination: true },
-          travelSeats: true,
         },
       },
       pagination,
@@ -281,10 +281,6 @@ export class TravelsService {
 
     try {
       travel.travel_status = TravelStatus.CANCELLED;
-      /* travel.travelSeats.forEach((s) => {
-        s.status = TravelStatus.CANCELLED; //! se cancela el asiento
-        s.deletedAt = new Date(); //! se elimina el asiento
-      }); */
 
       return await this.travelRepository.save(travel);
     } catch (error) {
