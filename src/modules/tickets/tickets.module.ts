@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { TicketsController } from './tickets.controller';
@@ -6,22 +6,19 @@ import { TicketsService } from './tickets.service';
 import { Ticket } from './entities/ticket.entity';
 
 import { CustomersModule } from '../customers/customers.module';
-import { CorrelationIdMiddleware } from 'src/logger/middlewares/correlation-id.middleware';
 import { TicketsForCashiersController } from './tickets-for-cashiers.controller';
 import { TravelsModule } from '../travels/travels.module';
+import { TicketsInAppController } from './tickets-in-app.controller';
+import { TicketsForCashierService } from './tickets-for-cashiers.service';
+import { TicketsInAppService } from './tickets-in-app.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Ticket]), CustomersModule, TravelsModule],
   controllers: [
     TicketsController,
-    TicketsForCashiersController /* TestController */,
+    TicketsInAppController,
+    TicketsForCashiersController,
   ],
-  providers: [TicketsService /* TestsService */],
+  providers: [TicketsService, TicketsInAppService, TicketsForCashierService],
 })
-export class TicketsModule {
-  /* configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(CorrelationIdMiddleware)
-      .forRoutes({ path: 'test', method: RequestMethod.POST });
-  } */
-}
+export class TicketsModule {}

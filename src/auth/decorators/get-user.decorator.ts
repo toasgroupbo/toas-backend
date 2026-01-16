@@ -1,19 +1,22 @@
 import {
   ExecutionContext,
+  UnauthorizedException,
   createParamDecorator,
-  InternalServerErrorException,
 } from '@nestjs/common';
+
+import { User } from 'src/modules/users/entities/user.entity';
 
 export const GetUser = createParamDecorator(
   (data: string, cxt: ExecutionContext) => {
     const req = cxt.switchToHttp().getRequest();
-    const user = req.user;
+    const user: User = req.user;
 
-    // el decorador se puede usar en el controlador para obtener el usuario
     if (!user)
-      throw new InternalServerErrorException(
-        /* return undefined; */ 'User not found (request)',
-      );
+      throw new UnauthorizedException('User or Customer not found (request)');
+
+    if (!(user instanceof User)) {
+      throw new UnauthorizedException('You need to be a user');
+    }
 
     return user;
   },

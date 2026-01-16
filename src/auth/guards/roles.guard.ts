@@ -10,7 +10,6 @@ import { META_PERMISSION } from '../decorators/permission.decorator';
 import { META_RESOURCE } from '../decorators/resourse.decorator';
 
 import { ValidResourses, ValidPermissions } from '../../common/enums';
-import { StaticRoles } from '../enums/roles.enum';
 
 import { User } from '../../modules/users/entities/user.entity';
 
@@ -45,7 +44,7 @@ export class RolesGuard implements CanActivate {
       this.reflector.get<ValidResourses>(META_RESOURCE, context.getClass());
 
     if (!MetaResource) {
-      throw new ForbiddenException('Recurso no definido para este endpoint');
+      throw new ForbiddenException('Resource not defined for this endpoint');
     }
 
     // --------------------------------------------------------------------------
@@ -65,7 +64,7 @@ export class RolesGuard implements CanActivate {
 
     if (!user?.rol?.permissions) {
       throw new ForbiddenException(
-        'El usuario no tiene rol o el rol no tiene permisos definidos',
+        'The user has no role or the role has no defined permissions',
       );
     }
 
@@ -94,7 +93,7 @@ export class RolesGuard implements CanActivate {
     // --------------------------------------------------------------------------
     if (!hasPermission) {
       throw new ForbiddenException(
-        `No tienes los permisos requeridos [${requiredPermissions.join(', ')}] sobre el recurso [${MetaResource}]`,
+        `You do not have the required permissions [${requiredPermissions.join(', ')}] about the resource [${MetaResource}]`,
       );
     }
 

@@ -26,10 +26,4 @@ export class CreateCustomerDto {
   @ApiHideProperty()
   @IsString()
   idProvider: string;
-
-  @ApiProperty({
-    example: 78926281,
-  })
-  @IsOptional()
-  phone?: string;
 }

@@ -14,24 +14,16 @@ import { CreateTravelDto } from './dto';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 
 import { SeatStatus } from 'src/common/enums';
-import { SaleType } from './enums/sale_type-enum';
 import { TravelStatus } from './enums/travel-status.enum';
-import { TicketStatus } from '../tickets/enums/ticket-status.enum';
 
 import { Travel } from './entities/travel.entity';
 import { Bus } from '../buses/entities/bus.entity';
-import { User } from '../users/entities/user.entity';
-import { TravelSeat } from './entities/travel-seat.entity';
-import { Office } from '../offices/entities/office.entity';
 
 @Injectable()
 export class TravelsService {
   constructor(
     @InjectRepository(Travel)
     private readonly travelRepository: Repository<Travel>,
-
-    @InjectRepository(TravelSeat)
-    private readonly travelSeatRepository: Repository<TravelSeat>,
 
     private dataSource: DataSource,
   ) {}
@@ -93,102 +85,6 @@ export class TravelsService {
   }
 
   //? ============================================================================================== */
-  //?                           Get_Seats_Available                                                  */
-  //? ============================================================================================== */
-
-  async getSeatsAvailable(travelId: number) {
-    return await this.travelSeatRepository
-      .createQueryBuilder('seat')
-      .where('seat.travelId = :travelId', { travelId })
-      .andWhere(
-        `
-      seat.status = :available
-      OR (seat.status = :reserved)
-    `,
-        {
-          available: SeatStatus.AVAILABLE,
-          reserved: SeatStatus.RESERVED,
-        },
-      )
-      .getMany();
-  }
-
-  //? ============================================================================================== */
-  //?                                 Closed_Travel                                                  */
-  //? ============================================================================================== */
-
-  async close(travelId: number, cashier: User) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      //! Bloquear viaje
-      const travel = await queryRunner.manager
-        .createQueryBuilder(Travel, 'travel')
-        .setLock('pessimistic_write')
-        .leftJoinAndSelect('travel.tickets', 'ticket')
-        .leftJoinAndSelect('ticket.travelSeats', 'ticketSeats')
-        .leftJoinAndSelect('travel.travelSeats', 'travelSeats')
-        .where('travel.id = :id', { id: travelId })
-        .andWhere('travel.travel_status = :status', {
-          status: TravelStatus.ACTIVE,
-        })
-        .getOne();
-
-      if (!travel) {
-        throw new NotFoundException('Active travel not found');
-      }
-
-      //! Cerrar viaje
-      travel.travel_status = TravelStatus.CLOSED;
-      travel.closedAt = new Date();
-      travel.closedBy = cashier;
-
-      const now = new Date();
-
-      //! Procesar tickets
-      for (const ticket of travel.tickets) {
-        if (ticket.status === TicketStatus.RESERVED) {
-          if (ticket.reserve_expiresAt && ticket.reserve_expiresAt < now) {
-            ticket.status = TicketStatus.EXPIRED;
-          } else {
-            ticket.status = TicketStatus.CANCELLED_FOR_CLOSE;
-          }
-          ticket.reserve_expiresAt = null;
-        }
-      }
-
-      //! Procesar asientos
-      for (const seat of travel.travelSeats) {
-        if (seat.status !== SeatStatus.SOLD) {
-          seat.status = SeatStatus.UNSOLD;
-          seat.sale_type = SaleType.UNSOLD;
-          seat.price = '0';
-          seat.ticket = null;
-        }
-      }
-
-      //! Persistir
-      await queryRunner.manager.save(travel);
-      await queryRunner.manager.save(travel.tickets);
-      await queryRunner.manager.save(travel.travelSeats);
-
-      await queryRunner.commitTransaction();
-
-      return {
-        message: 'Travel closed successfully',
-        travelId: travel.id,
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      handleDBExceptions(error);
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  //? ============================================================================================== */
   //?                                        FindAll                                                 */
   //? ============================================================================================== */
 
@@ -220,24 +116,6 @@ export class TravelsService {
   }
 
   //? ============================================================================================== */
-
-  async findAllForCashier(office: Office) {
-    const officeId = office.id;
-
-    const travels = await this.travelRepository.find({
-      where: {
-        route: { officeOrigin: { id: officeId } },
-        travel_status: TravelStatus.ACTIVE, //! solo lista los viajes activos
-      },
-      relations: {
-        bus: true,
-        route: { officeOrigin: true, officeDestination: true },
-      },
-    });
-    return travels;
-  }
-
-  //? ============================================================================================== */
   //?                                        FindOne                                                 */
   //? ============================================================================================== */
 
@@ -245,23 +123,6 @@ export class TravelsService {
     const travel = await this.travelRepository.findOne({
       where: { id, bus: { company: { id: companyId } } },
 
-      relations: {
-        bus: true,
-        route: { officeOrigin: true, officeDestination: true },
-        travelSeats: true,
-      },
-    });
-    if (!travel) throw new NotFoundException('Travel not found');
-    return travel;
-  }
-
-  //? ============================================================================================== */
-
-  async findOneForCashier(travelId: number, office: Office) {
-    const officeId = office.id;
-
-    const travel = await this.travelRepository.findOne({
-      where: { id: travelId, route: { officeOrigin: { id: officeId } } },
       relations: {
         bus: true,
         route: { officeOrigin: true, officeDestination: true },

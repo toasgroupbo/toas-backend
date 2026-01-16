@@ -10,11 +10,10 @@ import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { Auth, Resource } from 'src/auth/decorators';
 
-import { CustomersService } from './customers.service';
-import { PassengersService } from './passengers.service';
+import { CustomersForCashierService } from './customers-for-cashiers.service';
 
 //!
-@Resource(ValidResourses.CASHIER_CUSTOMER)
+@Resource(ValidResourses.CUSTOMER_CASHIER)
 @ApiBearerAuth('access-token')
 //!
 
@@ -22,8 +21,7 @@ import { PassengersService } from './passengers.service';
 @Controller('customers/for-cashier')
 export class CustomersForCashiersController {
   constructor(
-    private readonly customersService: CustomersService,
-    private readonly passengersService: PassengersService,
+    private readonly customersForCashierService: CustomersForCashierService,
   ) {}
 
   //? ============================================================================================== */
@@ -34,10 +32,8 @@ export class CustomersForCashiersController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
-  createForCustomer(
-    @Body() createCustomerNotVerifiedDto: CreateCustomerNotVerifiedDto,
-  ) {
-    return this.customersService.createNotVerified(
+  create(@Body() createCustomerNotVerifiedDto: CreateCustomerNotVerifiedDto) {
+    return this.customersForCashierService.createNotVerified(
       createCustomerNotVerifiedDto,
     );
   }
@@ -51,7 +47,7 @@ export class CustomersForCashiersController {
   //!
   @Get(':ci')
   findOneByCi(@Param('ci') ci: string) {
-    return this.customersService.findOneByCi(ci);
+    return this.customersForCashierService.findOneByCi(ci);
   }
 
   //? ============================================================================================== */
@@ -62,8 +58,8 @@ export class CustomersForCashiersController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post('passengers')
-  createForCashier(@Body() dto: CreatePassengerInOfficeDto) {
-    return this.passengersService.createInOffice(dto);
+  createPassenger(@Body() dto: CreatePassengerInOfficeDto) {
+    return this.customersForCashierService.createPassenger(dto);
   }
 
   //? ============================================================================================== */
@@ -75,6 +71,6 @@ export class CustomersForCashiersController {
   //!
   @Get('passengers/:customerId')
   findAllPassengers(@Param('customerId') customerId: number) {
-    return this.passengersService.findAllPassengersInOffice(customerId);
+    return this.customersForCashierService.findAllPassengers(customerId);
   }
 }

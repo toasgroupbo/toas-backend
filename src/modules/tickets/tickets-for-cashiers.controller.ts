@@ -15,19 +15,21 @@ import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { Auth, GetUser, Resource } from '../../auth/decorators';
 
-import { TicketsService } from './tickets.service';
+import { TicketsForCashierService } from './tickets-for-cashiers.service';
 
 import { User } from '../users/entities/user.entity';
 
 //!
-@Resource(ValidResourses.CASHIER_TICKET)
+@Resource(ValidResourses.TICKET_CASHIER)
 @ApiBearerAuth('access-token')
 //!
 
 @ApiTags('Tickets: For Cashiers')
 @Controller('tickets/for-cashier')
 export class TicketsForCashiersController {
-  constructor(private readonly ticketsService: TicketsService) {}
+  constructor(
+    private readonly ticketsForCashierService: TicketsForCashierService,
+  ) {}
 
   //? ============================================================================================== */
   //?                                        Create                                                  */
@@ -37,11 +39,11 @@ export class TicketsForCashiersController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
-  createInOffice(
+  create(
     @Body() createTicketDto: CreateTicketInOfficeDto,
     @GetUser() user: User,
   ) {
-    return this.ticketsService.createTicketInOffice(createTicketDto, user);
+    return this.ticketsForCashierService.create(createTicketDto, user);
   }
 
   //? ============================================================================================== */
@@ -52,11 +54,11 @@ export class TicketsForCashiersController {
   @Auth(ValidPermissions.CONFIRM)
   //!
   @Post('confirm/:id')
-  confirmManual(
+  confirm(
     @Param('id', ParseIntPipe) ticketId: number,
     @GetUser() cashier: User,
   ) {
-    return this.ticketsService.confirmTicketManual(ticketId, cashier); //! GetCashier
+    return this.ticketsForCashierService.confirm(ticketId, cashier); //! GetCashier
   }
 
   //? ============================================================================================== */
@@ -67,11 +69,11 @@ export class TicketsForCashiersController {
   @Auth(ValidPermissions.CANCEL)
   //!
   @Post('cancel/:id')
-  cancelManual(
+  cancel(
     @Param('id', ParseIntPipe) ticketId: number,
     @GetUser() cashier: User,
   ) {
-    return this.ticketsService.cancelTicket(ticketId, cashier); //! GetCashier
+    return this.ticketsForCashierService.cancel(ticketId, cashier); //! GetCashier
   }
 
   //? ============================================================================================== */
@@ -86,7 +88,7 @@ export class TicketsForCashiersController {
     @Param('travelId', ParseIntPipe) travelId: number,
     @GetUser() cashier: User,
   ) {
-    return this.ticketsService.findAllForCashier(travelId, cashier); //! GetCashier
+    return this.ticketsForCashierService.findAll(travelId, cashier); //! GetCashier
   }
 
   //? ============================================================================================== */
@@ -98,6 +100,6 @@ export class TicketsForCashiersController {
   //!
   @Patch('assign-passenger')
   assignOccupantFromAdmin(@Body() dto: AssignPassengerInOfficeDto) {
-    return this.ticketsService.assignPassengerForCashier(dto);
+    return this.ticketsForCashierService.assignPassenger(dto);
   }
 }

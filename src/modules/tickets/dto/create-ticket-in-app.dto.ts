@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-import { SeatSelectionDto } from './selected-seats.dto';
+import { SeatSelectionInAppDto } from './selected-seats.dto';
 
 export class CreateTicketInAppDto {
   @ApiProperty({
@@ -13,13 +13,10 @@ export class CreateTicketInAppDto {
   travelId: number;
 
   @ApiProperty({
-    type: [SeatSelectionDto],
-    example: [
-      { seatId: '1', price: '40.00' },
-      { seatId: '2' }, //! usa precio por defecto
-    ],
+    type: [SeatSelectionInAppDto],
+    example: [{ seatId: '1' }, { seatId: '2' }],
   })
   @ValidateNested({ each: true })
-  @Type(() => SeatSelectionDto)
-  seatSelections: SeatSelectionDto[];
+  @Type(() => SeatSelectionInAppDto)
+  seatSelections: SeatSelectionInAppDto[];
 }

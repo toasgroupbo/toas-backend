@@ -10,8 +10,8 @@ export class SelectedSeatsDto {
   price: string;
 }
 
-//! para la creacion del ticket
-export class SeatSelectionDto {
+//! para la creacion del ticket para el cajero
+export class SeatSelectionInOfficeDto {
   @ApiProperty({ example: '1' })
   @IsString()
   seatId: string;
@@ -20,4 +20,11 @@ export class SeatSelectionDto {
   @IsOptional()
   @IsNumberString()
   price?: string;
+}
+
+//! para la creacion del ticket para la app
+export class SeatSelectionInAppDto {
+  @ApiProperty({ example: '1' })
+  @IsString()
+  seatId: string;
 }

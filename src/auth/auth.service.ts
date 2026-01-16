@@ -1,7 +1,8 @@
 import {
-  BadRequestException,
   Injectable,
+  BadRequestException,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -11,12 +12,13 @@ import { IJwtPayload } from './interfaces/jwt-payload.interface';
 import { LoginUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
 
-import { UsersService } from '../modules/users/users.service';
-
 import { CreateCustomerDto } from 'src/modules/customers/dto';
 
 import { LoginType } from '../common/enums/login-type.enum';
+
 import { IGooglePayload } from './interfaces';
+
+import { UsersService } from '../modules/users/users.service';
 
 import { Customer } from '../modules/customers/entities/customer.entity';
 
@@ -30,32 +32,32 @@ export class AuthService {
     private readonly userService: UsersService,
   ) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                               SignInCustomer                                                   */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                              SignIn_Customer                                                   */
+  //? ============================================================================================== */
 
   async signIn(GooglePayload: IGooglePayload) {
     if (!GooglePayload) {
       throw new BadRequestException('Unauthenticated');
     }
 
-    const customerEntity = await this.findCustomerByEmail(GooglePayload.email);
+    const customer = await this.findCustomerByEmail(GooglePayload.email);
 
-    if (!customerEntity) {
+    if (!customer) {
       return await this.registerCustomer(GooglePayload);
     }
 
     return {
       token: this.generateJwt({
-        id: customerEntity.id,
+        id: customer.id,
         type: LoginType.customer,
       }),
     };
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                   Login User                                                   */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                                   Login_User                                                   */
+  //? ============================================================================================== */
 
   async loginUser(loginUserDto: LoginUserDto) {
     const { email, password } = loginUserDto;
@@ -82,9 +84,9 @@ export class AuthService {
     };
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
-  //?                                RegisterCustomer                                                */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                               Register_Customer                                                */
+  //? ============================================================================================== */
 
   async registerCustomer(createCustomerDto: CreateCustomerDto) {
     try {
@@ -105,11 +107,27 @@ export class AuthService {
     }
   }
 
-  //* ---------------------------------------------------------------------------------------------- */
-  //*                                        Functions                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
+  //?                                  Login_Customer                                                */
+  //? ============================================================================================== */
 
-  async findCustomerByEmail(email: string) {
+  async loginCustomer(email: string) {
+    const customer = await this.customerRepository.findOneBy({ email });
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    return {
+      token: this.generateJwt({
+        id: customer.id,
+        type: LoginType.customer,
+      }),
+    };
+  }
+
+  //* ============================================================================================== */
+
+  private async findCustomerByEmail(email: string) {
     const customer = await this.customerRepository.findOneBy({ email });
     if (!customer) {
       return null;
@@ -117,7 +135,9 @@ export class AuthService {
     return customer;
   }
 
-  generateJwt(JwtPayload: IJwtPayload) {
+  //* ============================================================================================== */
+
+  private generateJwt(JwtPayload: IJwtPayload) {
     return this.jwtService.sign(JwtPayload);
   }
 }

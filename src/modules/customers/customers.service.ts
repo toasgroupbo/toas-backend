@@ -5,7 +5,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { paginate } from 'src/common/pagination/paginate';
-import { UpdateCustomerDto, CreateCustomerNotVerifiedDto } from './dto';
+import { CreateCustomerNotVerifiedDto } from './dto';
 import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
 
 import { Customer } from './entities/customer.entity';
@@ -81,7 +81,7 @@ export class CustomersService {
   async findOneByEmail(email: string): Promise<Customer> {
     const customer = await this.customerRepository.findOne({
       where: { email },
-      select: { password: true, id: true, email: true, name: true },
+      select: { id: true, email: true, name: true },
     });
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
@@ -98,7 +98,7 @@ export class CustomersService {
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
-  async update(id: number, updateCustomerDto: UpdateCustomerDto) {
+  /*   async update(id: number, updateCustomerDto: UpdateCustomerDto) {
     const customer = await this.findOne(id);
     try {
       Object.assign(customer, updateCustomerDto);
@@ -106,7 +106,7 @@ export class CustomersService {
     } catch (error) {
       handleDBExceptions(error);
     }
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        Delete                                                  */

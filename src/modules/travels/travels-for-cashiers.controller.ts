@@ -5,44 +5,22 @@ import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { Auth, GetOffice, GetUser, Resource } from 'src/auth/decorators';
 
-import { TravelsService } from './travels.service';
+import { TravelsForCashierService } from './travels-for-cashiers.service';
 
 import { Office } from '../offices/entities/office.entity';
 import { User } from '../users/entities/user.entity';
 
 //!
-@Resource(ValidResourses.CASHIER_TRAVEL)
+@Resource(ValidResourses.TRAVEL_CASHIER)
 @ApiBearerAuth('access-token')
 //!
 
 @ApiTags('Travels: For Cashiers')
 @Controller('travels/for-cashier')
 export class TravelsForCashiersController {
-  constructor(private readonly travelsService: TravelsService) {}
-
-  //? ============================================================================================== */
-  //?                           Get_Seats_Available                                                  */
-  //? ============================================================================================== */
-
-  //!
-  @Auth(ValidPermissions.READ)
-  //!
-  @Get('seats-available/:id')
-  getSeatsAvailable(@Param('id', ParseIntPipe) travelId: number) {
-    return this.travelsService.getSeatsAvailable(travelId);
-  }
-
-  //? ============================================================================================== */
-  //?                                 Closed_Travel                                                  */
-  //? ============================================================================================== */
-
-  //!
-  @Auth(ValidPermissions.CLOSE)
-  //!
-  @Post('closed/:id')
-  closed(@Param('id', ParseIntPipe) id: number, @GetUser() cashier: User) {
-    return this.travelsService.close(id, cashier);
-  }
+  constructor(
+    private readonly travelsForCashierService: TravelsForCashierService,
+  ) {}
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */
@@ -52,8 +30,8 @@ export class TravelsForCashiersController {
   @Auth(ValidPermissions.READ)
   //!
   @Get('all')
-  findAllTravelsforCashier(@GetOffice() office: Office) {
-    return this.travelsService.findAllForCashier(office); //! GetOffice object
+  findAll(@GetOffice() office: Office) {
+    return this.travelsForCashierService.findAll(office); //! GetOffice object
   }
 
   //? ============================================================================================== */
@@ -65,10 +43,31 @@ export class TravelsForCashiersController {
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
-  findOneTravelsforCashier(
-    @Param('id', ParseIntPipe) id: number,
-    @GetOffice() office: Office,
-  ) {
-    return this.travelsService.findOneForCashier(id, office); //! GetOffice object
+  findOne(@Param('id', ParseIntPipe) id: number, @GetOffice() office: Office) {
+    return this.travelsForCashierService.findOne(id, office); //! GetOffice object
+  }
+
+  //? ============================================================================================== */
+  //?                           Get_Seats_Available                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
+  @Get('seats-available/:id')
+  getSeatsAvailable(@Param('id', ParseIntPipe) travelId: number) {
+    return this.travelsForCashierService.getSeatsAvailable(travelId);
+  }
+
+  //? ============================================================================================== */
+  //?                                        Closed                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.CLOSE)
+  //!
+  @Post('closed/:id')
+  closed(@Param('id', ParseIntPipe) id: number, @GetUser() cashier: User) {
+    return this.travelsForCashierService.close(id, cashier);
   }
 }

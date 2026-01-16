@@ -2,15 +2,17 @@ import {
   Column,
   Entity,
   OneToMany,
-  BeforeInsert,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 
 import { AuthProviders } from 'src/auth/enums';
 
+import { Penalty } from './penalty.entity';
+import { Billing } from './billing.entity';
 import { Passenger } from './passenger.entity';
 import { Balance } from 'src/modules/balances/entities/balance.entity';
 import { Ticket } from '../../../modules/tickets/entities/ticket.entity';
@@ -22,12 +24,6 @@ export class Customer {
 
   @Column('text', { unique: true, nullable: true })
   email: string;
-
-  @Column('text', {
-    select: false,
-    nullable: true,
-  })
-  password?: string;
 
   @Column('text')
   name: string;
@@ -47,6 +43,12 @@ export class Customer {
   @Column('text', { nullable: true })
   idProvider?: string;
 
+  @Column({ type: 'date', nullable: true })
+  birthDate?: Date;
+
+  @Column('text', { nullable: true })
+  photo?: string;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })
@@ -65,15 +67,20 @@ export class Customer {
   @OneToMany(() => Balance, (balance) => balance.customer)
   balances: Balance[];
 
-  @OneToMany(() => Passenger, (p) => p.customer)
+  @OneToMany(() => Passenger, (passenger) => passenger.customer)
   passengers: Passenger[];
 
-  //* ---------------------------------------------------------------------------------------------- */
-  //*                                        Functions                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  @OneToOne(() => Billing, (billing) => billing.customer, {
+    cascade: true,
+    nullable: true,
+  })
+  @JoinColumn()
+  billing?: Billing;
 
-  @BeforeInsert()
-  hashingPassword() {
-    if (this.password) this.password = bcrypt.hashSync(this.password, 10);
-  }
+  @OneToOne(() => Penalty, (penalty) => penalty.customer, {
+    cascade: true,
+    nullable: true,
+  })
+  @JoinColumn()
+  penalty?: Penalty;
 }
