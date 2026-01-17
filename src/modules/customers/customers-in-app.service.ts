@@ -60,6 +60,21 @@ export class CustomersInAppService {
   }
 
   //? ============================================================================================== */
+  //?                                 Get_Penalities                                                 */
+  //? ============================================================================================== */
+
+  async getPenalities(customer: Customer) {
+    const customerEntity = await this.customerRepository.findOne({
+      where: { id: customer.id },
+      relations: { penalty: true },
+    });
+
+    if (!customerEntity) throw new NotFoundException('Customer not found');
+
+    return customerEntity.penalty;
+  }
+
+  //? ============================================================================================== */
   //?                               Create_Passenger                                                 */
   //? ============================================================================================== */
 

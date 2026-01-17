@@ -7,12 +7,15 @@ import { TravelInAppFilterDto } from './pagination/travel-in-app-pagination.dto'
 import { TravelStatus } from './enums/travel-status.enum';
 
 import { Travel } from './entities/travel.entity';
+import { RoutesInAppService } from '../routes/routes-in-app.service';
 
 @Injectable()
 export class TravelsInAppService {
   constructor(
     @InjectRepository(Travel)
     private readonly travelRepository: Repository<Travel>,
+
+    private readonly routesInAppService: RoutesInAppService,
   ) {}
 
   //? ============================================================================================== */
@@ -20,12 +23,14 @@ export class TravelsInAppService {
   //? ============================================================================================== */
 
   async findAll(filters: TravelInAppFilterDto) {
-    const { origenId, destinationId, departure_time } = filters;
+    const { routeId, departure_time } = filters;
+
+    const route = await this.routesInAppService.findOne(routeId);
 
     const where: any = {
       route: {
-        officeDestination: { place: { id: destinationId } },
-        officeOrigin: { place: { id: origenId } },
+        officeOrigin: { place: { id: route.officeOrigin.place.id } },
+        officeDestination: { place: { id: route.officeDestination.place.id } },
       },
     };
     // --------------------------------------------
@@ -64,6 +69,7 @@ export class TravelsInAppService {
   async findOne(id: number) {
     return await this.travelRepository.findOne({
       where: { id },
+
       relations: {
         bus: true,
         route: {
@@ -71,6 +77,22 @@ export class TravelsInAppService {
           officeDestination: { place: true },
         },
         travelSeats: true,
+      },
+
+      select: {
+        travelSeats: {
+          id: true,
+          row: true,
+          column: true,
+          deck: true,
+          price: true,
+          seatNumber: true,
+          type: true,
+          sale_type: true,
+          status: true,
+          //createdAt: true,
+          //passenger: false,
+        },
       },
     });
   }

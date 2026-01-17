@@ -39,7 +39,9 @@ export class Route {
   @ManyToOne(() => Office, (office) => office.origenRoutes, { eager: true })
   officeOrigin: Office;
 
-  @ManyToOne(() => Office, (office) => office.destinationRoutes)
+  @ManyToOne(() => Office, (office) => office.destinationRoutes, {
+    eager: true,
+  })
   officeDestination: Office;
 
   @OneToMany(() => Travel, (travel) => travel.route)

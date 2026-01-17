@@ -47,7 +47,7 @@ export class Office {
   )
   company: Company;
 
-  @ManyToOne(() => Place, (place) => place.offices)
+  @ManyToOne(() => Place, (place) => place.offices, { eager: true })
   place: Place;
 
   @OneToMany(() => Route, (route) => route.officeOrigin)

@@ -12,9 +12,10 @@ import { TravelsForCashierService } from './travels-for-cashiers.service';
 
 import { TravelsInAppController } from './travels-in-app.controller';
 import { TravelsInAppService } from './travels-in-app.service';
+import { RoutesModule } from '../routes/routes.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Travel, TravelSeat])],
+  imports: [TypeOrmModule.forFeature([Travel, TravelSeat]), RoutesModule],
   controllers: [
     TravelsController,
     TravelsInAppController,

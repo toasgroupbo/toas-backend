@@ -151,7 +151,7 @@ export class TravelsForCashierService {
 
       return {
         message: 'Travel closed successfully',
-        travelId: travel.id,
+        travel: travel,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();

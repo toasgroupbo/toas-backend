@@ -20,7 +20,6 @@ import { TicketsService } from './tickets.service';
 import { Ticket } from './entities/ticket.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
-import { PenaltiesService } from '../customers/penalties.service';
 
 @Injectable()
 export class TicketsInAppService {
@@ -29,8 +28,6 @@ export class TicketsInAppService {
     private readonly ticketRepository: Repository<Ticket>,
 
     private readonly ticketsService: TicketsService,
-
-    private readonly penaltiesService: PenaltiesService,
 
     private dataSource: DataSource,
   ) {}
@@ -154,11 +151,11 @@ export class TicketsInAppService {
       // 4. Añadir Logica de penalizacion
       // --------------------------------------------
 
-      await this.penaltiesService.registerFailure(
+      /* await this.penaltiesService.registerFailure(
         customer,
         queryRunner.manager,
       );
-
+ */
       // --------------------------------------------
       // 5. Persistir cambios
       // --------------------------------------------
@@ -168,7 +165,7 @@ export class TicketsInAppService {
 
       return {
         message: 'Ticket canceled successfully',
-        ticketId: ticket.id,
+        ticket: ticket,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();

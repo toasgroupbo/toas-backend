@@ -42,12 +42,7 @@ export class TravelsInAppController {
     type: Date,
   })
   @ApiQuery({
-    name: 'origenId',
-    required: true,
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'destinationId',
+    name: 'routeId',
     required: true,
     type: Number,
   })

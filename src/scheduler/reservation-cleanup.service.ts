@@ -52,12 +52,12 @@ export class ReservationCleanupService {
         // Añadir Logica de penalizacion
         // --------------------------------------------
 
-        if (!ticket.soldBy) {
+        /* if (!ticket.soldBy) {
           await this.penaltiesService.registerFailure(
             ticket.buyer,
             queryRunner.manager,
           );
-        }
+        } */
 
         for (const seat of ticket.travelSeats) {
           seat.status = SeatStatus.AVAILABLE;

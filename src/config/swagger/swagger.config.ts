@@ -29,7 +29,10 @@ export function setupSwagger(app: INestApplication): void {
     { name: 'Places' },
     { name: 'Offices' },
     { name: 'Cashiers' },
+
     { name: 'Routes' },
+    { name: 'Routes: In App' },
+
     { name: 'Buses' },
 
     { name: 'Travels' },

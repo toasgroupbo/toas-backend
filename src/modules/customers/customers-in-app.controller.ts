@@ -13,11 +13,10 @@ import { IsVerifyGuard } from 'src/auth/guards';
 
 import { Auth, GetCustomer, Resource } from 'src/auth/decorators';
 
-import { CustomersInAppService } from './customers-in-app.service';
-
 import { Customer } from './entities/customer.entity';
 
 import { BillingsService } from './billings.service';
+import { CustomersInAppService } from './customers-in-app.service';
 
 //!
 @Resource(ValidResourses.CUSTOMER_APP)
@@ -59,6 +58,19 @@ export class CustomersInAppController {
     @GetCustomer() customer: Customer,
   ) {
     return this.customerInAppService.update(customer, updateCustomerDto); //! GetCustomer
+  }
+
+  //? ============================================================================================== */
+  //?                                 Get_Penalities                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @Get('penalities')
+  getPenalities(@GetCustomer() customer: Customer) {
+    return this.customerInAppService.getPenalities(customer); //! GetCustomer
   }
 
   //? ============================================================================================== */

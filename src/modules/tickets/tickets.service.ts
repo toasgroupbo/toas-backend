@@ -22,6 +22,7 @@ import { TicketStatus } from './enums/ticket-status.enum';
 import { TravelStatus } from '../travels/enums/travel-status.enum';
 
 import { CustomersService } from '../customers/customers.service';
+import { PenaltiesService } from '../customers/penalties.service';
 
 import { Ticket } from './entities/ticket.entity';
 import { User } from '../users/entities/user.entity';
@@ -43,6 +44,8 @@ export class TicketsService {
     private readonly passengerRepository: Repository<Passenger>,
 
     private readonly customersService: CustomersService,
+
+    private readonly penaltiesService: PenaltiesService,
 
     private dataSource: DataSource,
   ) {}
@@ -95,11 +98,9 @@ export class TicketsService {
         .where('seat.id IN (:...seatIds)', { seatIds })
         .andWhere('seat.travelId = :travelId', { travelId })
         .andWhere('seat.deletedAt IS NULL')
-        .andWhere(
-          `(seat.status = :available OR 
-              (seat.status = :reserved))`,
-          { available: SeatStatus.AVAILABLE, reserved: SeatStatus.RESERVED },
-        )
+        .andWhere(`(seat.status = :available )`, {
+          available: SeatStatus.AVAILABLE,
+        })
         .getMany();
 
       // --------------------------------------------
@@ -124,6 +125,8 @@ export class TicketsService {
       // --------------------------------------------
       // 4. Obtener el customer
       // --------------------------------------------
+
+      //let customer: Customer
 
       if (type === TicketType.IN_OFFICE && !buyer) {
         const officeDto = dto as CreateTicketInOfficeDto;
@@ -180,6 +183,14 @@ export class TicketsService {
       // --------------------------------------------
 
       await queryRunner.manager.save(ticket);
+
+      // --------------------------------------------
+      // 8. Logica de penalizacion
+      // --------------------------------------------
+
+      if (buyer && !user)
+        await this.penaltiesService.registerFailure(buyer, queryRunner.manager);
+
       await queryRunner.commitTransaction();
 
       return ticket;
@@ -244,21 +255,6 @@ export class TicketsService {
     });
     return tickets;
   }
-
-  //? ============================================================================================== */
-  //?                                        FindOne                                                 */
-  //? ============================================================================================== */
-
-  /* async findOne(id: number, admin: User) {
-    const ticket = await this.ticketRepository.findOneBy({
-      id,
-      travel: {
-        bus: { owner: { companies: admin.company } },
-      },
-    });
-    if (!ticket) throw new NotFoundException('Ticket not found');
-    return ticket;
-  } */
 
   //? ============================================================================================== */
   //?                               Assign_Passenger                                                 */

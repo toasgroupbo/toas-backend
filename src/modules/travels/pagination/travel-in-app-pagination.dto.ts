@@ -4,11 +4,7 @@ import { IsDateString, IsNumber, IsOptional } from 'class-validator';
 export class TravelInAppFilterDto {
   @Type(() => Number)
   @IsNumber()
-  origenId: number;
-
-  @Type(() => Number)
-  @IsNumber()
-  destinationId: number;
+  routeId: number;
 
   @IsOptional()
   @IsDateString()

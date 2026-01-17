@@ -110,7 +110,7 @@ export class TicketsForCashierService {
 
       return {
         message: 'Ticket payment confirmed successfully',
-        ticketId: ticket.id,
+        ticket: ticket,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
