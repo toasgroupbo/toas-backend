@@ -23,14 +23,12 @@ export class TravelsInAppService {
   //? ============================================================================================== */
 
   async findAll(filters: TravelInAppFilterDto) {
-    const { routeId, departure_time } = filters;
-
-    const route = await this.routesInAppService.findOne(routeId);
+    const { destination_placeId, origin_placeId, departure_time } = filters;
 
     const where: any = {
       route: {
-        officeOrigin: { place: { id: route.officeOrigin.place.id } },
-        officeDestination: { place: { id: route.officeDestination.place.id } },
+        officeOrigin: { place: { id: origin_placeId } },
+        officeDestination: { place: { id: destination_placeId } },
       },
     };
     // --------------------------------------------

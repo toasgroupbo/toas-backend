@@ -75,6 +75,26 @@ export class CustomersInAppService {
   }
 
   //? ============================================================================================== */
+  //?                              Delete_Penalities                                                 */
+  //? ============================================================================================== */
+
+  async deletePenalities(customer: Customer) {
+    const customerEntity = await this.customerRepository.findOne({
+      where: { id: customer.id },
+      relations: { penalty: true },
+    });
+
+    if (!customerEntity) throw new NotFoundException('Customer not found');
+
+    if (customerEntity.penalty) {
+      customerEntity.penalty.failedCount = 0;
+      customerEntity.penalty.blockedUntil = null;
+    }
+
+    return await this.customerRepository.save(customerEntity);
+  }
+
+  //? ============================================================================================== */
   //?                               Create_Passenger                                                 */
   //? ============================================================================================== */
 

@@ -1,4 +1,12 @@
-import { Get, Post, Body, Controller, Patch, UseGuards } from '@nestjs/common';
+import {
+  Get,
+  Post,
+  Body,
+  Controller,
+  Patch,
+  UseGuards,
+  Delete,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import {
@@ -71,6 +79,19 @@ export class CustomersInAppController {
   @Get('penalities')
   getPenalities(@GetCustomer() customer: Customer) {
     return this.customerInAppService.getPenalities(customer); //! GetCustomer
+  }
+
+  //? ============================================================================================== */
+  //?                               Delete_Penalities                                                */
+  //? ============================================================================================== */
+
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @Delete('penalities')
+  deletePenalities(@GetCustomer() customer: Customer) {
+    return this.customerInAppService.deletePenalities(customer); //! GetCustomer
   }
 
   //? ============================================================================================== */
