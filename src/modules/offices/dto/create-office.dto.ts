@@ -16,6 +16,12 @@ export class CreateOfficeDto {
   @IsString()
   city: CitiesEnum;
 
+  @ApiProperty({
+    example: 'central',
+  })
+  @IsString()
+  subsidiary: string;
+
   //* ---------------------------------------------------------------------------------------------- */
   //*                                     Relations                                                  */
   //* ---------------------------------------------------------------------------------------------- */

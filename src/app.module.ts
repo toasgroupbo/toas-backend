@@ -37,7 +37,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
       //migrations: [process.env.NODE_ENV === 'production' ? 'dist/migrations/*.js' : 'src/migrations/*.ts'],
     }),
 
-    SchedulerModule,
+    //SchedulerModule,
 
     AuthModule,
     RolesModule,

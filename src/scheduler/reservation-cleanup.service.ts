@@ -19,7 +19,7 @@ export class ReservationCleanupService {
     private readonly dataSource: DataSource,
   ) {}
 
-  @Cron('*/1 * * * *')
+  //@Cron('*/1 * * * *')
   async cleanExpiredReservations() {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();

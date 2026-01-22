@@ -1,9 +1,18 @@
-import { Get, Post, Param, Controller, ParseIntPipe } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  Get,
+  Post,
+  Param,
+  Controller,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { Auth, GetOffice, GetUser, Resource } from 'src/auth/decorators';
+
+import { TravelForCashierFilterDto } from './pagination';
 
 import { TravelsForCashierService } from './travels-for-cashiers.service';
 
@@ -29,9 +38,17 @@ export class TravelsForCashiersController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({
+    name: 'destination_placeId',
+    required: true,
+    type: Number,
+  })
   @Get('all')
-  findAll(@GetOffice() office: Office) {
-    return this.travelsForCashierService.findAll(office); //! GetOffice object
+  findAll(
+    @Query() filters: TravelForCashierFilterDto,
+    @GetOffice() office: Office,
+  ) {
+    return this.travelsForCashierService.findAll(filters, office); //! GetOffice object
   }
 
   //? ============================================================================================== */

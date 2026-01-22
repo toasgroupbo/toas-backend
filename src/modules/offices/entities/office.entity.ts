@@ -28,6 +28,12 @@ export class Office {
   })
   city: CitiesEnum;
 
+  @Column({
+    type: 'text',
+    default: 'central',
+  })
+  subsidiary: string;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })

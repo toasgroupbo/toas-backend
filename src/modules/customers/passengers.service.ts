@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -56,10 +56,13 @@ export class PassengersService {
   //?                                        FindAll                                                 */
   //? ============================================================================================== */
 
-  async findAllInOffice(customerId: number) {
-    return this.passengerRepository.find({
-      where: { customer: { id: customerId } },
+  async findOne(ci: string) {
+    const passenger = await this.passengerRepository.findOne({
+      where: { ci },
     });
+    if (!passenger) throw new NotFoundException('Passenger not found');
+
+    return passenger;
   }
 
   //? ============================================================================================== */

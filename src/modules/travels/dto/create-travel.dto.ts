@@ -2,12 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDate,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   Matches,
 } from 'class-validator';
+import { TravelType } from '../enums/travel-type.enum';
 
 export class CreateTravelDto {
   @ApiProperty({
@@ -40,6 +42,15 @@ export class CreateTravelDto {
   @IsNotEmpty()
   @Matches(/^\d+(\.\d{1,2})?$/)
   price_deck_2?: string;
+
+  @ApiPropertyOptional({
+    enum: TravelType,
+    example: TravelType.HABILITADA,
+  })
+  @IsOptional()
+  @IsString()
+  @IsEnum(TravelType)
+  type?: TravelType;
 
   @ApiProperty({
     example: '2025-10-02T15:00:00Z',

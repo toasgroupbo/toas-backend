@@ -66,10 +66,10 @@ export class CustomersForCashierService {
   }
 
   //? ============================================================================================== */
-  //?                              FindAll_Passengers                                                */
+  //?                              FindOne_Passengers                                                */
   //? ============================================================================================== */
 
-  async findAllPassengers(customerId: number) {
-    return this.passengersService.findAllInOffice(customerId);
+  async findOne(ci: string) {
+    return this.passengersService.findOne(ci);
   }
 }

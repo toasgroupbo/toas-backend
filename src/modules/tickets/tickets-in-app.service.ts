@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, IsNull, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -21,13 +21,20 @@ import { Ticket } from './entities/ticket.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
 
+import { TicketExpirationService } from './services/ticket-expiration.service';
+
 @Injectable()
 export class TicketsInAppService {
   constructor(
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
 
+    @InjectRepository(Travel)
+    private readonly travelRepository: Repository<Travel>,
+
     private readonly ticketsService: TicketsService,
+
+    private readonly ticketExpirationService: TicketExpirationService,
 
     private dataSource: DataSource,
   ) {}
@@ -49,8 +56,22 @@ export class TicketsInAppService {
   //? ============================================================================================== */
 
   async findAll(customer: Customer) {
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    const travelsToExpire = await this.travelRepository.find({
+      select: { id: true },
+    });
+
+    for (const travel of travelsToExpire) {
+      await this.ticketExpirationService.expireTravelIfNeeded(travel.id);
+    }
+
     return await this.ticketRepository.find({
-      where: { buyer: { id: customer.id } },
+      where: {
+        buyer: { id: customer.id },
+      },
     });
   }
 
@@ -76,6 +97,23 @@ export class TicketsInAppService {
     await queryRunner.startTransaction();
 
     try {
+      //! --------------------------------------------
+      //! Expirar Reservas si es necesario
+      //! --------------------------------------------
+
+      const ticketForTravel = await queryRunner.manager.findOne(Ticket, {
+        where: { id: ticketId },
+        select: { id: true, travel: true },
+        relations: { travel: true },
+      });
+
+      if (ticketForTravel) {
+        await this.ticketExpirationService.expireTravelIfNeeded(
+          ticketForTravel.travel.id,
+          queryRunner.manager,
+        );
+      }
+
       // --------------------------------------------
       // 1. Buscar ticket con sus relaciones
       // --------------------------------------------
@@ -148,16 +186,7 @@ export class TicketsInAppService {
       }
 
       // --------------------------------------------
-      // 4. Añadir Logica de penalizacion
-      // --------------------------------------------
-
-      /* await this.penaltiesService.registerFailure(
-        customer,
-        queryRunner.manager,
-      );
- */
-      // --------------------------------------------
-      // 5. Persistir cambios
+      // 4. Persistir cambios
       // --------------------------------------------
 
       await queryRunner.manager.save(Ticket, ticket);

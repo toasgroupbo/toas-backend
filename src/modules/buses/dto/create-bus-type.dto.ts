@@ -20,6 +20,7 @@ export class CreateBusTypeDto {
     example: [
       {
         deck: 1,
+        price: '50.00',
         deckType: 'LEITO',
         seats: [
           {
@@ -38,6 +39,7 @@ export class CreateBusTypeDto {
       },
       {
         deck: 2,
+        price: '50.00',
         deckType: 'SEMICAMA',
         seats: [
           {

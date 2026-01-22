@@ -4,10 +4,14 @@ import { DataSource, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
+import { TravelForCashierFilterDto } from './pagination';
+
 import { SeatStatus } from 'src/common/enums';
 import { SaleType } from './enums/sale_type-enum';
 import { TravelStatus } from './enums/travel-status.enum';
 import { TicketStatus } from '../tickets/enums/ticket-status.enum';
+
+import { TicketExpirationService } from '../tickets/services/ticket-expiration.service';
 
 import { Travel } from './entities/travel.entity';
 import { User } from '../users/entities/user.entity';
@@ -23,6 +27,8 @@ export class TravelsForCashierService {
     @InjectRepository(TravelSeat)
     private readonly travelSeatRepository: Repository<TravelSeat>,
 
+    private readonly ticketExpirationService: TicketExpirationService,
+
     private dataSource: DataSource,
   ) {}
 
@@ -30,19 +36,33 @@ export class TravelsForCashierService {
   //?                                        FindAll                                                 */
   //? ============================================================================================== */
 
-  async findAll(office: Office) {
-    const officeId = office.id;
+  async findAll(filters: TravelForCashierFilterDto, office: Office) {
+    const { destination_placeId } = filters;
+    const origin_placeId = office.place.id;
+
+    const where: any = {
+      route: {
+        officeOrigin: { place: { id: origin_placeId } },
+        officeDestination: { place: { id: destination_placeId } },
+      },
+    };
+
+    // --------------------------------------------
+    // 2. Paginación y relaciones
+    // --------------------------------------------
 
     const travels = await this.travelRepository.find({
-      where: {
-        route: { officeOrigin: { id: officeId } },
-        travel_status: TravelStatus.ACTIVE, //! solo lista los viajes activos
-      },
+      where: { ...where, travel_status: TravelStatus.ACTIVE },
+      order: { departure_time: 'ASC' },
       relations: {
-        bus: true,
-        route: { officeOrigin: true, officeDestination: true },
+        //bus: true,
+        route: {
+          officeOrigin: { place: true },
+          officeDestination: { place: true },
+        },
       },
     });
+
     return travels;
   }
 
@@ -51,10 +71,14 @@ export class TravelsForCashierService {
   //? ============================================================================================== */
 
   async findOne(travelId: number, office: Office) {
-    const officeId = office.id;
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
 
     const travel = await this.travelRepository.findOne({
-      where: { id: travelId, route: { officeOrigin: { id: officeId } } },
+      where: { id: travelId, route: { officeOrigin: { id: office.id } } },
       relations: {
         bus: true,
         route: { officeOrigin: true, officeDestination: true },
@@ -70,19 +94,19 @@ export class TravelsForCashierService {
   //? ============================================================================================== */
 
   async getSeatsAvailable(travelId: number) {
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
+
     return await this.travelSeatRepository
       .createQueryBuilder('seat')
       .where('seat.travelId = :travelId', { travelId })
-      .andWhere(
-        `
-        seat.status = :available
-        OR (seat.status = :reserved)
-      `,
-        {
-          available: SeatStatus.AVAILABLE,
-          reserved: SeatStatus.RESERVED,
-        },
-      )
+      .andWhere(`seat.status = :available OR seat.status = :reserved`, {
+        available: SeatStatus.AVAILABLE,
+        reserved: SeatStatus.RESERVED,
+      })
       .getMany();
   }
 

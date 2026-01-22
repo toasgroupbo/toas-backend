@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   OneToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
 import { Equipment } from '../enums';
@@ -14,6 +15,7 @@ import { Equipment } from '../enums';
 import { Company } from 'src/modules/companies/entities/company.entity';
 import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { BusType } from './bus-type.entity';
+import { Travel } from 'src/modules/travels/entities/travel.entity';
 
 @Entity('buses')
 export class Bus {
@@ -68,6 +70,9 @@ export class Bus {
 
   @ManyToOne(() => Company, (company) => company.buses)
   company: Company;
+
+  @OneToMany(() => Travel, (travel) => travel.bus)
+  travels: Travel[];
 
   //* ---------------------------------------------------------------------------------------------- */
   //*                                        Functions                                               */

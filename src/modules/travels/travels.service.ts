@@ -1,20 +1,21 @@
 import {
-  ConflictException,
   Injectable,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, MoreThan, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { paginate } from 'src/common/pagination/paginate';
-
 import { CreateTravelDto } from './dto';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 
 import { SeatStatus } from 'src/common/enums';
 import { TravelStatus } from './enums/travel-status.enum';
+
+import { TicketExpirationService } from '../tickets/services/ticket-expiration.service';
 
 import { Travel } from './entities/travel.entity';
 import { Bus } from '../buses/entities/bus.entity';
@@ -24,6 +25,8 @@ export class TravelsService {
   constructor(
     @InjectRepository(Travel)
     private readonly travelRepository: Repository<Travel>,
+
+    private readonly ticketExpirationService: TicketExpirationService,
 
     private dataSource: DataSource,
   ) {}
@@ -39,22 +42,41 @@ export class TravelsService {
 
     try {
       const { busId, routeId, ...data } = createTravelDto;
+      const now = new Date();
 
       // --------------------------------------------
       // 1. Obtener el Bus con tipo y su layout
       // --------------------------------------------
 
-      const busEntity = await queryRunner.manager.findOne(Bus, {
+      const bus = await queryRunner.manager.findOne(Bus, {
         where: { id: busId },
         relations: { busType: true },
       });
-      if (!busEntity) throw new NotFoundException('Bus not found');
+
+      if (!bus) throw new NotFoundException('Bus not found');
 
       // --------------------------------------------
-      // 2. Generar seats segun maquetacion
+      // 2. Validar que bus no este en un travel activo
       // --------------------------------------------
 
-      const travelSeats = busEntity.busType.decks.flatMap((deck) =>
+      const activeTravel = await queryRunner.manager.findOne(Travel, {
+        where: {
+          bus: { id: bus.id },
+          travel_status: TravelStatus.ACTIVE,
+          arrival_time: MoreThan(now),
+        },
+      });
+
+      if (activeTravel)
+        throw new ConflictException(
+          'The bus is already assigned to an active travel',
+        );
+
+      // --------------------------------------------
+      // 3. Generar seats segun maquetacion
+      // --------------------------------------------
+
+      const travelSeats = bus.busType.decks.flatMap((deck) =>
         deck.seats.map((seat) => ({
           ...seat,
           deck: deck.deck,
@@ -63,13 +85,13 @@ export class TravelsService {
       );
 
       // --------------------------------------------
-      // 3. Creacion del Travel
+      // 4. Creacion del Travel
       // --------------------------------------------
 
       const newTravel = queryRunner.manager.create(Travel, {
         ...data,
         route: { id: routeId },
-        bus: busEntity,
+        bus: bus,
         travelSeats,
       });
 
@@ -90,6 +112,18 @@ export class TravelsService {
 
   async findAll(pagination: TravelPaginationDto, companyId: number) {
     const { status } = pagination;
+
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    const travelsToExpire = await this.travelRepository.find({
+      select: { id: true },
+    });
+
+    for (const travel of travelsToExpire) {
+      await this.ticketExpirationService.expireTravelIfNeeded(travel.id);
+    }
 
     const options: any = {
       where: { bus: { company: { id: companyId } } },
@@ -120,6 +154,12 @@ export class TravelsService {
   //? ============================================================================================== */
 
   async findOne(id: number, companyId: number) {
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(id);
+
     const travel = await this.travelRepository.findOne({
       where: { id, bus: { company: { id: companyId } } },
 
@@ -138,6 +178,12 @@ export class TravelsService {
   //? ============================================================================================== */
 
   async cancel(id: number, companyId: number) {
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(id);
+
     const travel = await this.findOne(id, companyId);
 
     try {
@@ -157,7 +203,6 @@ export class TravelsService {
     const travel = await this.findOne(id, companyId);
 
     try {
-      //! Verificar si algún asiento está en estado 'sold' o 'reserved'
       const hasSoldOrReserved = travel.travelSeats.some(
         (s) => s.status === SeatStatus.SOLD || s.status === SeatStatus.RESERVED,
       );

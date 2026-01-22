@@ -14,7 +14,7 @@ import { Auth, Resource } from '../../auth/decorators';
 
 import { IsVerifyGuard } from 'src/auth/guards';
 
-import { TravelInAppFilterDto } from './pagination/travel-in-app-pagination.dto';
+import { TravelInAppFilterDto } from './pagination';
 
 import { TravelsInAppService } from './travels-in-app.service';
 

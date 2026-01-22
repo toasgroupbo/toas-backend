@@ -23,6 +23,7 @@ import { TravelStatus } from '../travels/enums/travel-status.enum';
 
 import { CustomersService } from '../customers/customers.service';
 import { PenaltiesService } from '../customers/penalties.service';
+import { TicketExpirationService } from './services/ticket-expiration.service';
 
 import { Ticket } from './entities/ticket.entity';
 import { User } from '../users/entities/user.entity';
@@ -37,15 +38,11 @@ export class TicketsService {
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
 
-    @InjectRepository(TravelSeat)
-    private readonly travelSeatRepository: Repository<TravelSeat>,
-
-    @InjectRepository(Passenger)
-    private readonly passengerRepository: Repository<Passenger>,
-
     private readonly customersService: CustomersService,
 
     private readonly penaltiesService: PenaltiesService,
+
+    private readonly ticketExpirationService: TicketExpirationService,
 
     private dataSource: DataSource,
   ) {}
@@ -71,17 +68,24 @@ export class TicketsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(
+      travelId,
+      queryRunner.manager,
+    );
+
     try {
       // --------------------------------------------
-      // 1. Obtener Viaje
+      // 1. Obtener Viaje y validar
       // --------------------------------------------
 
       const travel = await queryRunner.manager.findOne(Travel, {
         where: { id: travelId },
         relations: { bus: true },
       });
-
-      //! Validaciones de Travel
       if (!travel) throw new NotFoundException('Travel not found');
 
       if (travel.travel_status !== TravelStatus.ACTIVE)
@@ -104,7 +108,7 @@ export class TicketsService {
         .getMany();
 
       // --------------------------------------------
-      // 3. Validar disponibilidad de asientos y que no sean espacios
+      // 3. Validar disponibilidad y que no sean espacios
       // --------------------------------------------
 
       const seatsCleaned = [...seats];
@@ -125,8 +129,6 @@ export class TicketsService {
       // --------------------------------------------
       // 4. Obtener el customer
       // --------------------------------------------
-
-      //let customer: Customer
 
       if (type === TicketType.IN_OFFICE && !buyer) {
         const officeDto = dto as CreateTicketInOfficeDto;
@@ -164,8 +166,7 @@ export class TicketsService {
         };
       });
 
-      //! obtener el tiempo de expiracion de reservas
-      const expires = this.getReservationExpiry();
+      const expires = this.getReservationExpiry(); //! get fecha de expiracion
 
       const ticket = queryRunner.manager.create(Ticket, {
         type,
@@ -245,6 +246,12 @@ export class TicketsService {
   //? ============================================================================================== */
 
   async findAll(companyId: number, travelId: number) {
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
+
     const tickets = await this.ticketRepository.find({
       where: {
         travel: {
@@ -266,39 +273,71 @@ export class TicketsService {
     passengerId: number,
     customer: Customer,
   ) {
-    const seat = await this.travelSeatRepository
-      .createQueryBuilder('seat')
-      .leftJoinAndSelect('seat.ticket', 'ticket')
-      .where('seat.id = :seatId', { seatId })
-      .andWhere('ticket.id = :ticketId', { ticketId })
-      .andWhere('ticket.buyerId = :customerId', {
-        customerId: customer.id,
-      })
-      .andWhere('ticket.status IN (:...statuses)', {
-        statuses: [TicketStatus.RESERVED],
-      })
-      .getOne();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (!seat) {
-      throw new BadRequestException('Seat not editable');
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    try {
+      const travel = await queryRunner.manager.findOne(Travel, {
+        where: { tickets: { id: ticketId } },
+        select: ['id'],
+      });
+
+      if (!travel) {
+        throw new NotFoundException('Travel not found');
+      }
+
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travel.id,
+        queryRunner.manager,
+      );
+
+      const seat = await queryRunner.manager
+        .createQueryBuilder(TravelSeat, 'seat')
+        .leftJoinAndSelect('seat.ticket', 'ticket')
+        .where('seat.id = :seatId', { seatId })
+        .andWhere('ticket.id = :ticketId', { ticketId })
+        .andWhere('ticket.buyerId = :customerId', {
+          customerId: customer.id,
+        })
+        .andWhere('ticket.status = :status', {
+          status: TicketStatus.RESERVED,
+        })
+        .getOne();
+
+      if (!seat) {
+        throw new BadRequestException('Seat not editable');
+      }
+
+      const passenger = await queryRunner.manager.findOne(Passenger, {
+        where: {
+          id: passengerId,
+          customer: { id: customer.id },
+        },
+      });
+
+      if (!passenger) {
+        throw new NotFoundException('Passenger not found');
+      }
+
+      seat.passenger = {
+        name: passenger.fullName,
+        ci: passenger.ci,
+      };
+
+      await queryRunner.manager.save(seat);
+
+      await queryRunner.commitTransaction();
+      return seat;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    const passenger = await this.passengerRepository.findOne({
-      where: {
-        id: passengerId,
-        customer: { id: customer.id },
-      },
-    });
-
-    if (!passenger) {
-      throw new NotFoundException('Passenger not found');
-    }
-
-    seat.passenger = {
-      name: passenger.fullName,
-      ci: passenger.ci,
-    };
-
-    return this.travelSeatRepository.save(seat);
   }
 }

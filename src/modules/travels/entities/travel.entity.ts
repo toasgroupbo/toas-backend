@@ -8,13 +8,14 @@ import {
   Column,
 } from 'typeorm';
 
+import { TravelType } from '../enums/travel-type.enum';
 import { TravelStatus } from '../enums/travel-status.enum';
 
-import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
-import { Route } from 'src/modules/routes/entities/route.entity';
-import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { TravelSeat } from './travel-seat.entity';
+import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { User } from 'src/modules/users/entities/user.entity';
+import { Route } from 'src/modules/routes/entities/route.entity';
+import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 
 @Entity('travels')
 export class Travel {
@@ -41,8 +42,8 @@ export class Travel {
   @Column({ type: 'text', default: TravelStatus.ACTIVE })
   travel_status: TravelStatus;
 
-  @Column({ type: 'boolean', default: false })
-  closedAutomatically: boolean;
+  @Column({ type: 'text', default: TravelType.NORMAL })
+  type: TravelType;
 
   @Column({ type: 'timestamptz', nullable: true })
   closedAt?: Date;
@@ -57,7 +58,7 @@ export class Travel {
   //*                                        Relations                                               */
   //* ---------------------------------------------------------------------------------------------- */
 
-  @ManyToOne(() => Bus)
+  @ManyToOne(() => Bus, (bus) => bus.travels) //() => Travel, (travel) => travel.tickets
   bus: Bus;
 
   @OneToMany(() => TravelSeat, (seat) => seat.travel, {

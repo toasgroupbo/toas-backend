@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -21,6 +21,7 @@ import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
 
 import { TicketsService } from './tickets.service';
+import { TicketExpirationService } from './services/ticket-expiration.service';
 
 @Injectable()
 export class TicketsForCashierService {
@@ -32,6 +33,8 @@ export class TicketsForCashierService {
     private readonly customerRepository: Repository<Customer>,
 
     private readonly ticketsService: TicketsService,
+
+    private readonly ticketExpirationService: TicketExpirationService,
 
     private dataSource: DataSource,
   ) {}
@@ -49,7 +52,7 @@ export class TicketsForCashierService {
   }
 
   //? ============================================================================================== */
-  //?                               Confirm_Ticket                                                   */
+  //?                                      Confirm                                                   */
   //? ============================================================================================== */
 
   async confirm(ticketId: number, cashier: User) {
@@ -58,6 +61,23 @@ export class TicketsForCashierService {
     await queryRunner.startTransaction();
 
     try {
+      //! --------------------------------------------
+      //! Expirar Reservas si es necesario
+      //! --------------------------------------------
+
+      const ticketForTravel = await queryRunner.manager.findOne(Ticket, {
+        where: { id: ticketId },
+        select: { id: true, travel: true },
+        relations: { travel: true },
+      });
+
+      if (ticketForTravel) {
+        await this.ticketExpirationService.expireTravelIfNeeded(
+          ticketForTravel.travel.id,
+          queryRunner.manager,
+        );
+      }
+
       // --------------------------------------------
       // 1. Buscar ticket con sus relaciones
       // --------------------------------------------
@@ -142,6 +162,23 @@ export class TicketsForCashierService {
     await queryRunner.startTransaction();
 
     try {
+      //! --------------------------------------------
+      //! Expirar Reservas si es necesario
+      //! --------------------------------------------
+
+      const ticketForTravel = await queryRunner.manager.findOne(Ticket, {
+        where: { id: ticketId },
+        select: { id: true, travel: true },
+        relations: { travel: true },
+      });
+
+      if (ticketForTravel) {
+        await this.ticketExpirationService.expireTravelIfNeeded(
+          ticketForTravel.travel.id,
+          queryRunner.manager,
+        );
+      }
+
       // --------------------------------------------
       // 1. Buscar ticket con sus relaciones
       // --------------------------------------------
@@ -182,11 +219,11 @@ export class TicketsForCashierService {
         );
       }
 
-      if (this.hasTravelDeparted(ticket.travel)) {
+      /* if (this.hasTravelDeparted(ticket.travel)) {
         throw new BadRequestException(
           'Cannot cancel a ticket for a travel that has already departed',
         );
-      }
+      } */
 
       // --------------------------------------------
       // 3. Actualizar estados
@@ -222,7 +259,7 @@ export class TicketsForCashierService {
 
       return {
         message: 'Ticket canceled successfully',
-        ticketId: ticket.id,
+        ticketId: ticket,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -249,11 +286,18 @@ export class TicketsForCashierService {
   //? ============================================================================================== */
 
   async findAll(travelId: number, cashier: User) {
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
+
     const tickets = await this.ticketRepository.find({
       where: {
         travel: { id: travelId },
         soldBy: { id: cashier.id },
       },
+      relations: { travelSeats: true, buyer: true },
     });
     return tickets;
   }

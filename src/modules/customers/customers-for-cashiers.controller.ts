@@ -63,14 +63,14 @@ export class CustomersForCashiersController {
   }
 
   //? ============================================================================================== */
-  //?                             FindAll_Passengers                                                 */
+  //?                             FindOne_Passengers                                                 */
   //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @Get('passengers/:customerId')
-  findAllPassengers(@Param('customerId') customerId: number) {
-    return this.customersForCashierService.findAllPassengers(customerId);
+  @Get('passengers/:ci')
+  findOne(@Param('ci') ci: string) {
+    return this.customersForCashierService.findOne(ci);
   }
 }

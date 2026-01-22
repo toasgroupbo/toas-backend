@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 
-import { TravelInAppFilterDto } from './pagination/travel-in-app-pagination.dto';
+import { TravelInAppFilterDto } from './pagination';
 
 import { TravelStatus } from './enums/travel-status.enum';
 
+import { TicketExpirationService } from '../tickets/services/ticket-expiration.service';
+
 import { Travel } from './entities/travel.entity';
-import { RoutesInAppService } from '../routes/routes-in-app.service';
 
 @Injectable()
 export class TravelsInAppService {
@@ -15,7 +16,7 @@ export class TravelsInAppService {
     @InjectRepository(Travel)
     private readonly travelRepository: Repository<Travel>,
 
-    private readonly routesInAppService: RoutesInAppService,
+    private readonly ticketExpirationService: TicketExpirationService,
   ) {}
 
   //? ============================================================================================== */
@@ -64,9 +65,15 @@ export class TravelsInAppService {
   //?                                       FindOne                                                  */
   //? ============================================================================================== */
 
-  async findOne(id: number) {
+  async findOne(travelId: number) {
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
+
     return await this.travelRepository.findOne({
-      where: { id },
+      where: { id: travelId },
 
       relations: {
         bus: true,

@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager, LessThan } from 'typeorm';
 
 import { SeatStatus } from 'src/common/enums';
+import { TicketType } from '../enums/ticket-type.enum';
 import { TicketStatus } from '../enums/ticket-status.enum';
+import { SaleType } from 'src/modules/travels/enums/sale_type-enum';
+import { TravelStatus } from 'src/modules/travels/enums/travel-status.enum';
 
 import { PenaltiesService } from 'src/modules/customers/penalties.service';
 
@@ -12,69 +15,109 @@ import { Ticket } from '../entities/ticket.entity';
 export class TicketExpirationService {
   constructor(
     private readonly dataSource: DataSource,
-
     private readonly penaltyService: PenaltiesService,
   ) {}
 
-  async expireIfNeeded(ticketId: number, reason: 'EXPIRED' | 'CANCELLED') {
-    const queryRunner = this.dataSource.createQueryRunner();
+  //? ============================================================================================== */
+  //?                           ExpireTravelIfNeeded                                                 */
+  //? ============================================================================================== */
 
-    try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
+  async expireTravelIfNeeded(
+    travelId: number,
+    manager?: EntityManager,
+  ): Promise<number> {
+    const internalManager = manager ?? this.dataSource.manager;
 
-      const ticket = await queryRunner.manager.findOne(Ticket, {
-        where: { id: ticketId },
-        lock: { mode: 'pessimistic_write' },
-        relations: { travelSeats: true },
-      });
+    const expiredTickets = await internalManager.find(Ticket, {
+      where: {
+        travel: { id: travelId },
+        status: TicketStatus.RESERVED,
+        reserve_expiresAt: LessThan(new Date()),
+      },
+      relations: { travelSeats: true, buyer: true },
+    });
 
-      if (!ticket) {
-        await queryRunner.commitTransaction();
-        return;
-      }
+    let expiredCount = 0;
 
-      //! Idempotencia
-      if (
-        ticket.status === TicketStatus.EXPIRED ||
-        ticket.status === TicketStatus.CANCELLED
-      ) {
-        await queryRunner.commitTransaction();
-        return;
-      }
+    for (const ticket of expiredTickets) {
+      ticket.status = TicketStatus.EXPIRED;
+      ticket.deletedAt = new Date();
+      //ticket.reserve_expiresAt = null;
 
-      //! Validación temporal
-      if (
-        reason === 'EXPIRED' &&
-        ticket.reserve_expiresAt &&
-        ticket.reserve_expiresAt > new Date()
-      ) {
-        await queryRunner.commitTransaction();
-        return;
-      }
-
-      // 1 Expirar ticket
-      ticket.status =
-        reason === 'CANCELLED' ? TicketStatus.CANCELLED : TicketStatus.EXPIRED;
-
-      ticket.reserve_expiresAt = null;
-
-      await queryRunner.manager.save(ticket);
-
-      // 2 Liberar asientos
       for (const seat of ticket.travelSeats) {
         seat.status = SeatStatus.AVAILABLE;
         seat.ticket = null;
-        await queryRunner.manager.save(seat);
+        seat.sale_type = SaleType.UNSOLD;
+        seat.price = '0';
+        seat.passenger = null;
+        await internalManager.save(seat);
       }
 
-      // 3 Penalizar
-      await this.penaltyService.registerFailure(
-        ticket.buyer,
-        queryRunner.manager,
-      );
+      if (ticket.type === TicketType.IN_APP && ticket.buyer) {
+        await this.penaltyService.registerFailure(
+          ticket.buyer,
+          internalManager,
+        );
+      }
+
+      await internalManager.save(ticket);
+      expiredCount++;
+    }
+
+    return expiredCount;
+  }
+
+  //? ============================================================================================== */
+  //?                                   Expire_Batch                                                 */
+  //? ============================================================================================== */
+
+  async expireBatch(limit: number = 100): Promise<number> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const expiredTickets = await queryRunner.manager
+        .createQueryBuilder(Ticket, 'ticket')
+        .leftJoinAndSelect('ticket.travelSeats', 'travelSeats')
+        .leftJoinAndSelect('ticket.buyer', 'buyer')
+        .leftJoin('ticket.travel', 'travel')
+        .where('ticket.status = :status', { status: TicketStatus.RESERVED })
+        .andWhere('ticket.reserve_expiresAt < NOW()')
+        .andWhere('travel.travel_status = :active', {
+          active: TravelStatus.ACTIVE,
+        })
+        .take(limit)
+        .getMany();
+
+      let expiredCount = 0;
+
+      for (const ticket of expiredTickets) {
+        ticket.status = TicketStatus.EXPIRED;
+        ticket.reserve_expiresAt = null;
+
+        for (const seat of ticket.travelSeats) {
+          seat.status = SeatStatus.AVAILABLE;
+          seat.ticket = null;
+          seat.sale_type = SaleType.UNSOLD;
+          seat.price = '0';
+          seat.passenger = null;
+          await queryRunner.manager.save(seat);
+        }
+
+        if (ticket.type === TicketType.IN_APP && ticket.buyer) {
+          await this.penaltyService.registerFailure(
+            ticket.buyer,
+            queryRunner.manager,
+          );
+        }
+
+        await queryRunner.manager.save(ticket);
+        expiredCount++;
+      }
 
       await queryRunner.commitTransaction();
+      return expiredCount;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
