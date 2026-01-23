@@ -32,6 +32,7 @@ export class TravelsInAppService {
         officeDestination: { place: { id: destination_placeId } },
       },
     };
+
     // --------------------------------------------
     // 1. Filtros
     // --------------------------------------------

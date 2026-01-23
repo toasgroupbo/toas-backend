@@ -43,6 +43,11 @@ export class TravelsForCashiersController {
     required: true,
     type: Number,
   })
+  @ApiQuery({
+    name: 'departure_time',
+    required: false,
+    type: Date,
+  })
   @Get('all')
   findAll(
     @Query() filters: TravelForCashierFilterDto,
@@ -56,7 +61,6 @@ export class TravelsForCashiersController {
   //? ============================================================================================== */
 
   //!
-
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Between, DataSource, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -37,7 +37,7 @@ export class TravelsForCashierService {
   //? ============================================================================================== */
 
   async findAll(filters: TravelForCashierFilterDto, office: Office) {
-    const { destination_placeId } = filters;
+    const { destination_placeId, departure_time } = filters;
     const origin_placeId = office.place.id;
 
     const where: any = {
@@ -48,6 +48,17 @@ export class TravelsForCashierService {
     };
 
     // --------------------------------------------
+    // 1. Filtros
+    // --------------------------------------------
+
+    //! Por dia
+    if (departure_time) {
+      const start = new Date(`${departure_time}T00:00:00-04:00`);
+      const end = new Date(`${departure_time}T23:59:59.999-04:00`);
+      where.departure_time = Between(start, end);
+    }
+
+    // --------------------------------------------
     // 2. Paginación y relaciones
     // --------------------------------------------
 
@@ -55,7 +66,6 @@ export class TravelsForCashierService {
       where: { ...where, travel_status: TravelStatus.ACTIVE },
       order: { departure_time: 'ASC' },
       relations: {
-        //bus: true,
         route: {
           officeOrigin: { place: true },
           officeDestination: { place: true },
@@ -63,7 +73,21 @@ export class TravelsForCashierService {
       },
     });
 
-    return travels;
+    // --------------------------------------------
+    // 3. Agreagar count de asientos disponibles
+    // --------------------------------------------
+
+    const travelsWithSeats = await Promise.all(
+      travels.map(async (travel) => {
+        const seatsAvailable = await this.getSeatsAvailableCount(travel.id);
+        return {
+          ...travel,
+          seatsAvailable,
+        };
+      }),
+    );
+
+    return travelsWithSeats;
   }
 
   //? ============================================================================================== */
@@ -108,6 +132,24 @@ export class TravelsForCashierService {
         reserved: SeatStatus.RESERVED,
       })
       .getMany();
+  }
+
+  //? ============================================================================================== */
+  //? ============================================================================================== */
+
+  private async getSeatsAvailableCount(travelId: number): Promise<number> {
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
+
+    return await this.travelSeatRepository
+      .createQueryBuilder('seat')
+      .where('seat.travelId = :travelId', { travelId })
+      .andWhere('seat.status IN (:...statuses)', {
+        statuses: [SeatStatus.AVAILABLE, SeatStatus.RESERVED],
+      })
+      .getCount();
   }
 
   //? ============================================================================================== */
