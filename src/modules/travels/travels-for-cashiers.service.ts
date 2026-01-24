@@ -66,6 +66,7 @@ export class TravelsForCashierService {
       where: { ...where, travel_status: TravelStatus.ACTIVE },
       order: { departure_time: 'ASC' },
       relations: {
+        bus: true,
         route: {
           officeOrigin: { place: true },
           officeDestination: { place: true },

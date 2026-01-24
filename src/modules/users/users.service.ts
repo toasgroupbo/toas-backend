@@ -159,6 +159,8 @@ export class UsersService {
       .leftJoinAndSelect('user.rol', 'rol')
       .leftJoinAndSelect('rol.permissions', 'permissions')
       .leftJoinAndSelect('user.company', 'company')
+      .leftJoinAndSelect('user.office', 'office')
+      .leftJoinAndSelect('office.place', 'place')
       .select([
         'user.id',
         'user.ci',
@@ -172,6 +174,8 @@ export class UsersService {
         'permissions.resourse',
         'permissions.permissions',
         'company.id',
+        'office.id',
+        'place.id',
       ])
       .where('user.email = :email', { email })
       .getOne();
