@@ -40,7 +40,7 @@ export class TravelsForCashiersController {
   //!
   @ApiQuery({
     name: 'destination_placeId',
-    required: true,
+    required: false,
     type: Number,
   })
   @ApiQuery({

@@ -3,8 +3,9 @@ import { IsDateString, IsNumber, IsOptional } from 'class-validator';
 
 export class TravelForCashierFilterDto {
   @Type(() => Number)
+  @IsOptional()
   @IsNumber()
-  destination_placeId: number;
+  destination_placeId?: number;
 
   @IsOptional()
   @IsDateString()

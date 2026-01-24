@@ -40,12 +40,22 @@ export class TravelsForCashierService {
     const { destination_placeId, departure_time } = filters;
     const origin_placeId = office.place.id;
 
-    const where: any = {
-      route: {
-        officeOrigin: { place: { id: origin_placeId } },
-        officeDestination: { place: { id: destination_placeId } },
-      },
-    };
+    let where: any = {};
+
+    if (destination_placeId) {
+      where = {
+        route: {
+          officeOrigin: { place: { id: origin_placeId } },
+          officeDestination: { place: { id: destination_placeId } },
+        },
+      };
+    } else {
+      where = {
+        route: {
+          officeOrigin: { place: { id: origin_placeId } },
+        },
+      };
+    }
 
     // --------------------------------------------
     // 1. Filtros
