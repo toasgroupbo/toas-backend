@@ -73,10 +73,15 @@ export class TravelsForCashierService {
     // --------------------------------------------
 
     const travels = await this.travelRepository.find({
-      where: { ...where, travel_status: TravelStatus.ACTIVE },
+      where: {
+        ...where,
+        travel_status: TravelStatus.ACTIVE,
+        route: { officeOrigin: { id: office.id } },
+      },
       order: { departure_time: 'ASC' },
       relations: {
         bus: true,
+
         route: {
           officeOrigin: { place: true },
           officeDestination: { place: true },
