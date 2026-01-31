@@ -8,14 +8,14 @@ export class CreateOfficeDto {
   @IsString()
   url_gps: string;
 
-  @ApiProperty({
+  /*   @ApiProperty({
     enum: CitiesEnum,
     example: CitiesEnum.SANTA_CRUZ_DE_LA_SIERRA,
   })
   @IsEnum(CitiesEnum)
   @IsString()
   city: CitiesEnum;
-
+ */
   @ApiProperty({
     example: 'central',
   })

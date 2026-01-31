@@ -23,11 +23,11 @@ export class Office {
   @Column('text', { nullable: true })
   url_gps: string;
 
-  @Column({
+  /*   @Column({
     type: 'text',
   })
   city: CitiesEnum;
-
+ */
   @Column({
     type: 'text',
     default: 'central',
