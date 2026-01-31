@@ -50,6 +50,7 @@ export class RoutesService {
 
   async findAll(companyId: number) {
     const routes = await this.routeRepository.find({
+      order: { id: 'DESC' },
       where: { officeOrigin: { company: { id: companyId } } },
       relations: {
         officeOrigin: true,
