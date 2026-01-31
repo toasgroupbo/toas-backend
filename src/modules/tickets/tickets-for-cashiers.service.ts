@@ -293,6 +293,7 @@ export class TicketsForCashierService {
     await this.ticketExpirationService.expireTravelIfNeeded(travelId);
 
     const tickets = await this.ticketRepository.find({
+      order: { id: 'DESC' },
       where: {
         travel: { id: travelId },
         soldBy: { id: cashier.id },

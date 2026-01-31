@@ -38,50 +38,50 @@ export class TravelsForCashierService {
 
   async findAll(filters: TravelForCashierFilterDto, office: Office) {
     const { destination_placeId, departure_time } = filters;
-    const origin_placeId = office.place.id;
 
-    let where: any = {};
-
-    if (destination_placeId) {
-      where = {
-        route: {
-          officeOrigin: { place: { id: origin_placeId } },
-          officeDestination: { place: { id: destination_placeId } },
+    // --------------------------------------------
+    // 1. WHERE base (obligatorio)
+    // --------------------------------------------
+    const where: any = {
+      travel_status: TravelStatus.ACTIVE,
+      route: {
+        officeOrigin: {
+          id: office.id,
         },
-      };
-    } else {
-      where = {
-        route: {
-          officeOrigin: { place: { id: origin_placeId } },
+      },
+    };
+
+    // --------------------------------------------
+    // 2. Filtro por destino (opcional)
+    // --------------------------------------------
+    if (destination_placeId) {
+      where.route.officeDestination = {
+        place: {
+          id: destination_placeId,
         },
       };
     }
 
     // --------------------------------------------
-    // 1. Filtros
+    // 3. Filtro por día (opcional)
     // --------------------------------------------
-
-    //! Por dia
     if (departure_time) {
       const start = new Date(`${departure_time}T00:00:00-04:00`);
       const end = new Date(`${departure_time}T23:59:59.999-04:00`);
+
       where.departure_time = Between(start, end);
     }
 
     // --------------------------------------------
-    // 2. Paginación y relaciones
+    // 4. Query final
     // --------------------------------------------
-
     const travels = await this.travelRepository.find({
-      where: {
-        ...where,
-        travel_status: TravelStatus.ACTIVE,
-        route: { officeOrigin: { id: office.id } },
+      where,
+      order: {
+        departure_time: 'ASC',
       },
-      order: { departure_time: 'ASC' },
       relations: {
         bus: true,
-
         route: {
           officeOrigin: { place: true },
           officeDestination: { place: true },
