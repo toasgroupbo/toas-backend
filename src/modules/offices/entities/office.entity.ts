@@ -28,11 +28,11 @@ export class Office {
   })
   city: CitiesEnum;
  */
-  @Column({
+  /*   @Column({
     type: 'text',
     default: 'central',
   })
-  subsidiary: string;
+  subsidiary: string; */
 
   @CreateDateColumn({
     type: 'timestamptz',
