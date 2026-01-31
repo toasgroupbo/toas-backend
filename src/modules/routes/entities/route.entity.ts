@@ -24,6 +24,9 @@ export class Route {
   @Column('text', { array: true, default: [] })
   pass_by: string[];
 
+  @Column({ type: 'int', default: 1 })
+  travel_hours: number;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })
