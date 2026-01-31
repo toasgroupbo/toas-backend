@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, MoreThan, Repository } from 'typeorm';
+import { DataSource, LessThan, MoreThan, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -42,7 +42,6 @@ export class TravelsService {
 
     try {
       const { busId, routeId, ...data } = createTravelDto;
-      const now = new Date();
 
       // --------------------------------------------
       // 1. Obtener el Bus con tipo y su layout
@@ -56,22 +55,25 @@ export class TravelsService {
       if (!bus) throw new NotFoundException('Bus not found');
 
       // --------------------------------------------
-      // 2. Validar que bus no este en un travel activo
+      // 2. Validar que bus no tenga viajes solapados
       // --------------------------------------------
 
-      const activeTravel = await queryRunner.manager.findOne(Travel, {
+      const { departure_time, arrival_time } = data;
+
+      const overlappingTravel = await queryRunner.manager.findOne(Travel, {
         where: {
           bus: { id: bus.id },
           travel_status: TravelStatus.ACTIVE,
-          arrival_time: MoreThan(now),
+          departure_time: LessThan(arrival_time),
+          arrival_time: MoreThan(departure_time),
         },
       });
 
-      if (activeTravel)
+      if (overlappingTravel) {
         throw new ConflictException(
-          'The bus is already assigned to an active travel',
+          'The bus already has a travel scheduled that overlaps with the selected departure or arrival time',
         );
-
+      }
       // --------------------------------------------
       // 3. Generar seats segun maquetacion
       // --------------------------------------------
