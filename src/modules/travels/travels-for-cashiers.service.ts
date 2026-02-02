@@ -178,31 +178,51 @@ export class TravelsForCashierService {
     await queryRunner.startTransaction();
 
     try {
-      //! Bloquear viaje
-      const travel = await queryRunner.manager
+      // --------------------------------------------
+      // 1. BLOQUEAR viaje (SIN joins)
+      // --------------------------------------------
+      const lockedTravel = await queryRunner.manager
         .createQueryBuilder(Travel, 'travel')
         .setLock('pessimistic_write')
-        .leftJoinAndSelect('travel.tickets', 'ticket')
-        .leftJoinAndSelect('ticket.travelSeats', 'ticketSeats')
-        .leftJoinAndSelect('travel.travelSeats', 'travelSeats')
         .where('travel.id = :id', { id: travelId })
         .andWhere('travel.travel_status = :status', {
           status: TravelStatus.ACTIVE,
         })
         .getOne();
 
-      if (!travel) {
+      if (!lockedTravel) {
         throw new NotFoundException('Active travel not found');
       }
 
-      //! Cerrar viaje
+      // --------------------------------------------
+      // 2. Cargar relaciones (SIN LOCK)
+      // --------------------------------------------
+      const travel = await queryRunner.manager.findOne(Travel, {
+        where: { id: lockedTravel.id },
+        relations: {
+          tickets: {
+            travelSeats: true,
+          },
+          travelSeats: true,
+        },
+      });
+
+      if (!travel) {
+        throw new NotFoundException('Travel not found');
+      }
+
+      // --------------------------------------------
+      // 3. Cerrar viaje
+      // --------------------------------------------
       travel.travel_status = TravelStatus.CLOSED;
       travel.closedAt = new Date();
       travel.closedBy = cashier;
 
       const now = new Date();
 
-      //! Procesar tickets
+      // --------------------------------------------
+      // 4. Procesar tickets
+      // --------------------------------------------
       for (const ticket of travel.tickets) {
         if (ticket.status === TicketStatus.RESERVED) {
           if (ticket.reserve_expiresAt && ticket.reserve_expiresAt < now) {
@@ -214,7 +234,9 @@ export class TravelsForCashierService {
         }
       }
 
-      //! Procesar asientos
+      // --------------------------------------------
+      // 5. Procesar asientos
+      // --------------------------------------------
       for (const seat of travel.travelSeats) {
         if (seat.status !== SeatStatus.SOLD) {
           seat.status = SeatStatus.UNSOLD;
@@ -224,7 +246,10 @@ export class TravelsForCashierService {
         }
       }
 
-      //! Persistir
+      // --------------------------------------------
+      // 6. Persistir cambios
+      // --------------------------------------------
+
       await queryRunner.manager.save(travel);
       await queryRunner.manager.save(travel.tickets);
       await queryRunner.manager.save(travel.travelSeats);
@@ -233,7 +258,7 @@ export class TravelsForCashierService {
 
       return {
         message: 'Travel closed successfully',
-        travel: travel,
+        travel,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
