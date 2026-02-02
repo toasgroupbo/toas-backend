@@ -185,7 +185,7 @@ export class TicketsForCashierService {
 
       const ticket = await queryRunner.manager
         .createQueryBuilder(Ticket, 'ticket')
-        .setLock('pessimistic_write', undefined, ['ticket'])
+        //.setLock('pessimistic_write', undefined, ['ticket'])
 
         .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
         .innerJoinAndSelect('ticket.travel', 'travel')
