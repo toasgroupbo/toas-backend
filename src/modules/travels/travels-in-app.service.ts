@@ -77,7 +77,7 @@ export class TravelsInAppService {
       where: { id: travelId },
 
       relations: {
-        bus: true,
+        bus: { busType: true, company: true }, // true
         route: {
           officeOrigin: { place: true },
           officeDestination: { place: true },
