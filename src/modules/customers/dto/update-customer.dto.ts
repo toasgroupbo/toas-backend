@@ -4,6 +4,13 @@ import { IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class UpdateCustomerDto {
   @ApiProperty({
+    example: '123456789',
+  })
+  @IsOptional()
+  @IsString()
+  ci?: string;
+
+  @ApiProperty({
     example: 'juan',
   })
   @IsOptional()
