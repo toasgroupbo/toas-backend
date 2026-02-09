@@ -8,6 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 
+import { OAuth2Client } from 'google-auth-library';
+
 import { IJwtPayload } from './interfaces/jwt-payload.interface';
 import { LoginUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
@@ -22,6 +24,9 @@ import { UsersService } from '../modules/users/users.service';
 
 import { Customer } from '../modules/customers/entities/customer.entity';
 
+import { envs } from 'src/config/environments/environments';
+import { AuthProviders } from './enums';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -31,6 +36,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly userService: UsersService,
   ) {}
+
+  private googleClient = new OAuth2Client(envs.GOOGLE_ID_OAUTH);
 
   //? ============================================================================================== */
   //?                              SignIn_Customer                                                   */
@@ -105,6 +112,67 @@ export class AuthService {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  //? ============================================================================================== */
+  //?                                   Google_Verify                                                */
+  //? ============================================================================================== */
+
+  async googleVerify(idToken: string) {
+    if (!idToken) {
+      throw new BadRequestException('Missing idToken');
+    }
+
+    const ticket = await this.googleClient.verifyIdToken({
+      idToken,
+      audience: envs.GOOGLE_ID_OAUTH,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload) {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+
+    const {
+      sub,
+      email,
+      email_verified,
+      name,
+      given_name,
+      family_name,
+      picture,
+    } = payload;
+
+    if (!email_verified) {
+      throw new UnauthorizedException('Google email not verified');
+    }
+
+    if (!email) {
+      throw new UnauthorizedException('Email not Found');
+    }
+
+    let customer = await this.findCustomerByEmail(email);
+
+    if (!customer) {
+      customer = await this.customerRepository.save(
+        this.customerRepository.create({
+          email,
+          name,
+          provider: AuthProviders.GOOGLE,
+          idProvider: sub,
+          is_verified: true,
+        }),
+      );
+    }
+
+    return {
+      token: this.generateJwt({
+        id: customer.id,
+        type: LoginType.customer,
+      }),
+      user: customer,
+    };
   }
 
   //? ============================================================================================== */

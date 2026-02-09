@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { LoginCustomerDto, LoginUserDto } from './dto';
+import { GoogleLoginDto, LoginCustomerDto, LoginUserDto } from './dto';
 
 import { GoogleOauthGuard } from './guards';
 
@@ -59,5 +59,14 @@ export class AuthController {
   @Post('login/customer')
   loginCustomer(@Body() dto: LoginCustomerDto) {
     return this.authService.loginCustomer(dto.email);
+  }
+
+  //? ============================================================================================== */
+  //?                                        Google                                                  */
+  //? ============================================================================================== */
+
+  @Post('google/verify')
+  googleVerify(@Body() dto: GoogleLoginDto) {
+    return this.authService.googleVerify(dto.idToken);
   }
 }
