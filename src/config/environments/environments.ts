@@ -18,7 +18,12 @@ interface IEnvironmentVariables {
   GOOGLE_ID_OAUTH: string;
   GOOGLE_SECRET_KEY: string;
   GOOGLE_CALLBACK: string;
-
+  //BCP
+  BCP_USER: string;
+  BCP_PASSWORD: string;
+  BCP_BUSINESS_CODE: string;
+  BCP_PUBLIC_TOKEN: string;
+  BCP_APP_USER_ID: string;
   //constants
   RESERVATION_EXPIRE_MINUTES: number;
   BALANCE_EXPIRATION_DAYS: number;
@@ -55,6 +60,12 @@ export const envs = {
   GOOGLE_ID_OAUTH: envVariables.GOOGLE_ID_OAUTH,
   GOOGLE_SECRET_KEY: envVariables.GOOGLE_SECRET_KEY,
   GOOGLE_CALLBACK: envVariables.GOOGLE_CALLBACK,
+  //BCP
+  BCP_USER: envVariables.BCP_USER,
+  BCP_PASSWORD: envVariables.BCP_PASSWORD,
+  BCP_BUSINESS_CODE: envVariables.BCP_BUSINESS_CODE,
+  BCP_PUBLIC_TOKEN: envVariables.BCP_PUBLIC_TOKEN,
+  BCP_APP_USER_ID: envVariables.BCP_APP_USER_ID,
   //constants
   RESERVATION_EXPIRE_MINUTES: envVariables.RESERVATION_EXPIRE_MINUTES,
   BALANCE_EXPIRATION_DAYS: envVariables.BALANCE_EXPIRATION_DAYS,

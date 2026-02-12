@@ -22,6 +22,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module';
 import { BankAccountsModule } from './modules/bank-accounts/bank-accounts.module';
 import { LoggerModule } from './logger/logger.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -65,6 +66,8 @@ import { SchedulerModule } from './scheduler/scheduler.module';
     BalanceModule,
 
     LoggerModule,
+
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],
