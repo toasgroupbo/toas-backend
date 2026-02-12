@@ -11,7 +11,7 @@ import { Repository } from 'typeorm';
 import { OAuth2Client } from 'google-auth-library';
 
 import { IJwtPayload } from './interfaces/jwt-payload.interface';
-import { LoginUserDto } from './dto';
+import { LoginCustomerDto, LoginUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
 
 import { CreateCustomerDto } from 'src/modules/customers/dto';
@@ -43,7 +43,7 @@ export class AuthService {
   //?                              SignIn_Customer                                                   */
   //? ============================================================================================== */
 
-  async signIn(GooglePayload: IGooglePayload) {
+  /* async signIn(GooglePayload: IGooglePayload) {
     if (!GooglePayload) {
       throw new BadRequestException('Unauthenticated');
     }
@@ -60,7 +60,7 @@ export class AuthService {
         type: LoginType.customer,
       }),
     };
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                   Login_User                                                   */
@@ -95,7 +95,7 @@ export class AuthService {
   //?                               Register_Customer                                                */
   //? ============================================================================================== */
 
-  async registerCustomer(createCustomerDto: CreateCustomerDto) {
+  /* async registerCustomer(createCustomerDto: CreateCustomerDto) {
     try {
       const newCustomer = this.customerRepository.create({
         ...createCustomerDto,
@@ -112,7 +112,7 @@ export class AuthService {
     } catch (error) {
       console.log(error);
     }
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                   Google_Verify                                                */
@@ -179,8 +179,10 @@ export class AuthService {
   //?                                  Login_Customer                                                */
   //? ============================================================================================== */
 
-  async loginCustomer(email: string) {
-    const customer = await this.customerRepository.findOneBy({ email });
+  /* async loginCustomer(dto: LoginCustomerDto) {
+    const customer = await this.customerRepository.findOneBy({
+      email: dto.email,
+    });
     if (!customer) {
       throw new NotFoundException('Customer not found');
     }
@@ -188,6 +190,36 @@ export class AuthService {
     return {
       token: this.generateJwt({
         id: customer.id,
+        type: LoginType.customer,
+      }),
+    };
+  } */
+
+  async loginCustomer(dto: LoginCustomerDto) {
+    const { email, password } = dto;
+
+    const customer = await this.customerRepository.findOneBy({
+      email,
+    });
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    if (!customer.password) {
+      throw new NotFoundException('Customer Without Password');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, customer.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const { password: _, ...entityWithoutPassword } = customer;
+
+    return {
+      customer: entityWithoutPassword,
+      token: this.generateJwt({
+        id: entityWithoutPassword.id,
         type: LoginType.customer,
       }),
     };

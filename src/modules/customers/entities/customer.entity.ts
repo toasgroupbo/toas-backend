@@ -7,7 +7,10 @@ import {
   PrimaryGeneratedColumn,
   OneToOne,
   JoinColumn,
+  BeforeInsert,
 } from 'typeorm';
+
+import * as bcrypt from 'bcrypt';
 
 import { AuthProviders } from 'src/auth/enums';
 
@@ -24,6 +27,12 @@ export class Customer {
 
   @Column('text', { unique: true, nullable: true })
   email: string;
+
+  @Column('text', {
+    //select: false,
+    nullable: true,
+  })
+  password?: string; //! solo para pruebas
 
   @Column('text')
   name: string;
@@ -83,4 +92,13 @@ export class Customer {
   })
   @JoinColumn()
   penalty?: Penalty;
+
+  //* ---------------------------------------------------------------------------------------------- */
+  //*                                        Functions                                               */
+  //* ---------------------------------------------------------------------------------------------- */
+
+  @BeforeInsert()
+  hashingPassword() {
+    this.password = bcrypt.hashSync(this.password, 10);
+  }
 }

@@ -26,22 +26,21 @@ export class AuthController {
   //? ============================================================================================== */
 
   //! redirecciona al inicio de session de google
-  @Get('google')
+  /* @Get('google')
   @UseGuards(GoogleOauthGuard)
-  async auth() {}
+  async auth() {} */
 
   //? ============================================================================================== */
   //?                              Google_CallBack                                                   */
   //? ============================================================================================== */
 
   //! se ejecuta cuando google redirecciona al usuario de vuelta a la aplicacion
-  @Get('google/callback')
+  /* @Get('google/callback')
   @UseGuards(GoogleOauthGuard)
   async googleAuthCallback(@Req() req) {
-    const customer = req.user; //!  (en passport siempre en req.user)
-
+    const customer = req.user;
     return this.authService.signIn(customer);
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        Logout                                                  */
@@ -58,7 +57,7 @@ export class AuthController {
 
   @Post('login/customer')
   loginCustomer(@Body() dto: LoginCustomerDto) {
-    return this.authService.loginCustomer(dto.email);
+    return this.authService.loginCustomer(dto);
   }
 
   //? ============================================================================================== */
