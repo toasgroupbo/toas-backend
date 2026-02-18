@@ -11,7 +11,7 @@ import { GenerateQrInterface } from '../interfaces/generate-qr.interface';
 
 @Injectable()
 export class HttpService {
-  private readonly axiosInstance: ReturnType<typeof axios.create>;
+  /*   private readonly axiosInstance: ReturnType<typeof axios.create>;
 
   constructor() {
     // Leer el certificado PFX
@@ -40,9 +40,9 @@ export class HttpService {
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
     } as any);
-  }
+  } */
 
-  async generateQr(dto: GenerateQrInterface): Promise<BcpQrResponse> {
+  /*   async generateQr(dto: GenerateQrInterface): Promise<BcpQrResponse> {
     try {
       const user = envs.BCP_USER;
       const password = envs.BCP_PASSWORD;
@@ -103,7 +103,7 @@ export class HttpService {
         details: error.message,
       };
     }
-  }
+  } */
 
   private generateCorrelationId(): string {
     // Formato: 0001-001-123456

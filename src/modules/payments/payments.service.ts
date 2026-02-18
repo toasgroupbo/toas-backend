@@ -30,7 +30,7 @@ export class PaymentsService {
     private dataSource: DataSource,
   ) {}
 
-  async generateQr(dto: GenerateQrDto) {
+  /*   async generateQr(dto: GenerateQrDto) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -107,7 +107,7 @@ export class PaymentsService {
         details: error.details,
       };
     }
-  }
+  } */
 
   //* ============================================================================================== */
 
