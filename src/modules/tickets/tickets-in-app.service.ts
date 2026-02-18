@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, IsNull, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -12,16 +12,16 @@ import { CreateTicketInAppDto, AssignPassengerInAppDto } from './dto';
 
 import { SeatStatus } from 'src/common/enums';
 import { TicketType } from './enums/ticket-type.enum';
+import { PaymentType } from './enums/payment-type.enum';
 import { TicketStatus } from './enums/ticket-status.enum';
 import { SaleType } from '../travels/enums/sale_type-enum';
 
 import { TicketsService } from './tickets.service';
+import { TicketExpirationService } from './services/ticket-expiration.service';
 
 import { Ticket } from './entities/ticket.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
-
-import { TicketExpirationService } from './services/ticket-expiration.service';
 
 @Injectable()
 export class TicketsInAppService {
@@ -48,6 +48,7 @@ export class TicketsInAppService {
       dto,
       buyer,
       type: TicketType.IN_APP,
+      paymentType: PaymentType.QR,
     });
   }
 
@@ -62,6 +63,7 @@ export class TicketsInAppService {
 
     const travelsToExpire = await this.travelRepository.find({
       select: { id: true },
+      /* where:{} */
     });
 
     for (const travel of travelsToExpire) {
@@ -76,18 +78,6 @@ export class TicketsInAppService {
   }
 
   //? ============================================================================================== */
-  //?                                    Generate_Qr                                                 */
-  //? ============================================================================================== */
-
-  async generateQr() {}
-
-  //? ============================================================================================== */
-  //?                                     Confirm_QR                                                 */
-  //? ============================================================================================== */
-
-  async confirmQr() {}
-
-  //? ============================================================================================== */
   //?                                        Cancel                                                  */
   //? ============================================================================================== */
 
@@ -97,11 +87,7 @@ export class TicketsInAppService {
     await queryRunner.startTransaction();
 
     try {
-      //! --------------------------------------------
-      //! Expirar Reservas si es necesario
-      //! --------------------------------------------
-
-      const ticketForTravel = await queryRunner.manager.findOne(Ticket, {
+      /* const ticketForTravel = await queryRunner.manager.findOne(Ticket, {
         where: { id: ticketId },
         select: { id: true, travel: true },
         relations: { travel: true },
@@ -112,7 +98,21 @@ export class TicketsInAppService {
           ticketForTravel.travel.id,
           queryRunner.manager,
         );
-      }
+      } */
+
+      const travel = await queryRunner.manager.findOne(Travel, {
+        where: { tickets: { id: ticketId } },
+      });
+      if (!travel) throw new NotFoundException('Travel not found');
+
+      //! --------------------------------------------
+      //! Expirar Reservas si es necesario
+      //! --------------------------------------------
+
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travel.id,
+        queryRunner.manager,
+      );
 
       // --------------------------------------------
       // 1. Buscar ticket con sus relaciones

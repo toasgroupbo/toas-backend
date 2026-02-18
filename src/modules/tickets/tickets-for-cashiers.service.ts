@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -15,13 +15,14 @@ import { TicketType } from './enums/ticket-type.enum';
 import { TicketStatus } from './enums/ticket-status.enum';
 import { SaleType } from '../travels/enums/sale_type-enum';
 
+import { TicketsService } from './tickets.service';
+import { TicketExpirationService } from './services/ticket-expiration.service';
+
 import { Ticket } from './entities/ticket.entity';
 import { User } from '../users/entities/user.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
-
-import { TicketsService } from './tickets.service';
-import { TicketExpirationService } from './services/ticket-expiration.service';
+import { PaymentType } from './enums/payment-type.enum';
 
 @Injectable()
 export class TicketsForCashierService {
@@ -48,6 +49,7 @@ export class TicketsForCashierService {
       dto,
       user,
       type: TicketType.IN_OFFICE,
+      paymentType: dto.payment_type,
     });
   }
 
@@ -61,11 +63,7 @@ export class TicketsForCashierService {
     await queryRunner.startTransaction();
 
     try {
-      //! --------------------------------------------
-      //! Expirar Reservas si es necesario
-      //! --------------------------------------------
-
-      const ticketForTravel = await queryRunner.manager.findOne(Ticket, {
+      /* const ticketForTravel = await queryRunner.manager.findOne(Ticket, {
         where: { id: ticketId },
         select: { id: true, travel: true },
         relations: { travel: true },
@@ -76,7 +74,21 @@ export class TicketsForCashierService {
           ticketForTravel.travel.id,
           queryRunner.manager,
         );
-      }
+      } */
+
+      const travel = await queryRunner.manager.findOne(Travel, {
+        where: { tickets: { id: ticketId } },
+      });
+      if (!travel) throw new NotFoundException('Travel not found');
+
+      //! --------------------------------------------
+      //! Expirar Reservas si es necesario
+      //! --------------------------------------------
+
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travel.id,
+        queryRunner.manager,
+      );
 
       // --------------------------------------------
       // 1. Buscar ticket con sus relaciones
@@ -100,6 +112,9 @@ export class TicketsForCashierService {
         })
         .andWhere('ticket.type = :type', {
           type: TicketType.IN_OFFICE, //! Solo en office
+        })
+        .andWhere('ticket.payment_type = :payment_type', {
+          payment_type: PaymentType.CASH, //! Solo en cash
         })
         .andWhere('(ticket.reserve_expiresAt > NOW())') //! No expirado
         .getOne();
@@ -141,12 +156,6 @@ export class TicketsForCashierService {
   }
 
   //? ============================================================================================== */
-  //?                                    Generate_Qr                                                 */
-  //? ============================================================================================== */
-
-  async generateQr() {}
-
-  //? ============================================================================================== */
   //?                                     Confirm_QR                                                 */
   //? ============================================================================================== */
 
@@ -162,22 +171,19 @@ export class TicketsForCashierService {
     await queryRunner.startTransaction();
 
     try {
+      const travel = await queryRunner.manager.findOne(Travel, {
+        where: { tickets: { id: ticketId } },
+      });
+      if (!travel) throw new NotFoundException('Travel not found');
+
       //! --------------------------------------------
       //! Expirar Reservas si es necesario
       //! --------------------------------------------
 
-      const ticketForTravel = await queryRunner.manager.findOne(Ticket, {
-        where: { id: ticketId },
-        select: { id: true, travel: true },
-        relations: { travel: true },
-      });
-
-      if (ticketForTravel) {
-        await this.ticketExpirationService.expireTravelIfNeeded(
-          ticketForTravel.travel.id,
-          queryRunner.manager,
-        );
-      }
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travel.id,
+        queryRunner.manager,
+      );
 
       // --------------------------------------------
       // 1. Buscar ticket con sus relaciones
@@ -219,6 +225,7 @@ export class TicketsForCashierService {
         );
       }
 
+      //! agregar despues
       /* if (this.hasTravelDeparted(ticket.travel)) {
         throw new BadRequestException(
           'Cannot cancel a ticket for a travel that has already departed',

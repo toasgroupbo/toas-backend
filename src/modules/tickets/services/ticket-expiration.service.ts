@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, EntityManager, LessThan } from 'typeorm';
+import { DataSource, EntityManager, In, LessThan } from 'typeorm';
 
 import { SeatStatus } from 'src/common/enums';
 import { TicketType } from '../enums/ticket-type.enum';
@@ -31,7 +31,7 @@ export class TicketExpirationService {
     const expiredTickets = await internalManager.find(Ticket, {
       where: {
         travel: { id: travelId },
-        status: TicketStatus.RESERVED,
+        status: In([TicketStatus.RESERVED, TicketStatus.PENDING_PAYMENT]),
         reserve_expiresAt: LessThan(new Date()),
       },
       relations: { travelSeats: true, buyer: true },

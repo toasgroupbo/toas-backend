@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString, ValidateNested } from 'class-validator';
+import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 import { SeatSelectionInOfficeDto } from './selected-seats.dto';
+import { PaymentType } from '../enums/payment-type.enum';
 
 export class CreateTicketInOfficeDto {
   @ApiProperty({
@@ -29,4 +30,12 @@ export class CreateTicketInOfficeDto {
   })
   @IsNumber()
   customerId: number;
+
+  @ApiProperty({
+    example: PaymentType.CASH,
+    enum: PaymentType,
+  })
+  @IsString()
+  @IsEnum(PaymentType)
+  payment_type: PaymentType;
 }

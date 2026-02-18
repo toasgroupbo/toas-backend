@@ -24,8 +24,12 @@ interface IEnvironmentVariables {
   BCP_BUSINESS_CODE: string;
   BCP_PUBLIC_TOKEN: string;
   BCP_APP_USER_ID: string;
+  BCP_URL: string;
+  BCP_PASSPHRASE: string;
+  BCP_SERVER_NAME: string;
   //constants
   RESERVATION_EXPIRE_MINUTES: number;
+  RESERVATION_QR_EXPIRE_MINUTES: number;
   BALANCE_EXPIRATION_DAYS: number;
 }
 
@@ -66,7 +70,11 @@ export const envs = {
   BCP_BUSINESS_CODE: envVariables.BCP_BUSINESS_CODE,
   BCP_PUBLIC_TOKEN: envVariables.BCP_PUBLIC_TOKEN,
   BCP_APP_USER_ID: envVariables.BCP_APP_USER_ID,
+  BCP_URL: envVariables.BCP_URL,
+  BCP_PASSPHRASE: envVariables.BCP_PASSPHRASE,
+  BCP_SERVER_NAME: envVariables.BCP_SERVER_NAME,
   //constants
   RESERVATION_EXPIRE_MINUTES: envVariables.RESERVATION_EXPIRE_MINUTES,
   BALANCE_EXPIRATION_DAYS: envVariables.BALANCE_EXPIRATION_DAYS,
+  RESERVATION_QR_EXPIRE_MINUTES: envVariables.RESERVATION_QR_EXPIRE_MINUTES,
 };

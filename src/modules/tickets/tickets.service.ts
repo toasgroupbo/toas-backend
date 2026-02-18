@@ -31,6 +31,7 @@ import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { Passenger } from '../customers/entities/passenger.entity';
 import { TravelSeat } from '../travels/entities/travel-seat.entity';
+import { PaymentType } from './enums/payment-type.enum';
 
 @Injectable()
 export class TicketsService {
@@ -56,11 +57,13 @@ export class TicketsService {
     buyer,
     user,
     type,
+    paymentType,
   }: {
     dto: CreateTicketInAppDto | CreateTicketInOfficeDto;
     buyer?: Customer;
     user?: User;
     type: TicketType;
+    paymentType: PaymentType;
   }) {
     const { travelId, seatSelections } = dto;
 
@@ -177,6 +180,7 @@ export class TicketsService {
         travelSeats: seats,
         total_price: totalPrice.toFixed(2),
         reserve_expiresAt: expires,
+        payment_type: paymentType,
       });
 
       // --------------------------------------------
@@ -230,12 +234,6 @@ export class TicketsService {
   }
 
   //? ============================================================================================== */
-  //?                                    Generate_Qr                                                 */
-  //? ============================================================================================== */
-
-  async generateQr() {}
-
-  //? ============================================================================================== */
   //?                              Confirm_Ticket_QR                                                 */
   //? ============================================================================================== */
 
@@ -262,6 +260,41 @@ export class TicketsService {
     });
     return tickets;
   }
+
+  //? ============================================================================================== */
+  //?                                     FindOne_Qr                                                 */
+  //? ============================================================================================== */
+
+  /* async findOneQr(ticketId: number) {
+    const travel = await this.dataSource.manager.findOne(Travel, {
+      where: { tickets: { id: ticketId } },
+    });
+    if (!travel) throw new NotFoundException('Travel not found');
+
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(travel.id);
+
+    const ticket = await this.ticketRepository
+      .createQueryBuilder('ticket')
+      .where('ticket.id = :ticketId', { ticketId })
+      .andWhere('ticket.status = :status', {
+        status: TicketStatus.RESERVED,
+      })
+      .andWhere('ticket.payment_type = :paymentType', {
+        paymentType: PaymentType.QR,
+      })
+      .andWhere(
+        '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
+      )
+      .getOne();
+
+    if (!ticket) throw new NotFoundException('Ticket not found or expired');
+
+    return ticket;
+  } */
 
   //? ============================================================================================== */
   //?                               Assign_Passenger                                                 */

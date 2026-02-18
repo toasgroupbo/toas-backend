@@ -7,16 +7,20 @@ import {
   DeleteDateColumn,
   PrimaryGeneratedColumn,
   Index,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
 
 import { SelectedSeatsDto } from '../dto';
 
 import { TicketType } from '../enums/ticket-type.enum';
+import { PaymentType } from '../enums/payment-type.enum';
 import { TicketStatus } from '../enums/ticket-status.enum';
 
 import { User } from 'src/modules/users/entities/user.entity';
 import { Travel } from 'src/modules/travels/entities/travel.entity';
 import { Customer } from 'src/modules/customers/entities/customer.entity';
+import { PaymentQR } from 'src/modules/payments/entities/payment-qr.entity';
 import { TravelSeat } from 'src/modules/travels/entities/travel-seat.entity';
 
 @Entity('tickets')
@@ -26,6 +30,9 @@ export class Ticket {
 
   @Column({ type: 'text', default: TicketType.IN_OFFICE })
   type: TicketType;
+
+  @Column({ type: 'text', default: PaymentType.CASH })
+  payment_type: PaymentType;
 
   @Column({ type: 'text', default: TicketStatus.RESERVED })
   status: TicketStatus;
@@ -48,9 +55,9 @@ export class Ticket {
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @ManyToOne(() => Travel, (travel) => travel.tickets, { onDelete: 'CASCADE' })
   travel: Travel;
@@ -61,8 +68,8 @@ export class Ticket {
   travelSeats: TravelSeat[];
 
   @ManyToOne(() => User, (user) => user.ticketsSold, {
-    nullable: true, //! permitir null si la venta fue online
     onDelete: 'SET NULL',
+    nullable: true, //! permitir null si la venta fue online
   })
   soldBy?: User | null;
 
@@ -70,4 +77,11 @@ export class Ticket {
     //onDelete: 'SET NULL',
   })
   buyer: Customer;
+
+  @OneToOne(() => PaymentQR, (paymentQr) => paymentQr.ticket, {
+    cascade: true,
+    nullable: true,
+  })
+  @JoinColumn()
+  paymentQr?: PaymentQR;
 }

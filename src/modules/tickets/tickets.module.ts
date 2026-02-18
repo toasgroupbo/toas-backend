@@ -32,6 +32,6 @@ import { TicketExpirationService } from './services/ticket-expiration.service';
     TicketsForCashierService,
     TicketExpirationService,
   ],
-  exports: [TicketExpirationService],
+  exports: [TicketExpirationService, TicketsService],
 })
 export class TicketsModule {}
