@@ -7,6 +7,8 @@ import {
 } from 'typeorm';
 
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
+import { BcpQrCallbackDto } from '../interfaces/response-qr-callback.interface';
+import { PaymentStatusEnum } from '../enum/payment-status.enum';
 
 @Entity('payments-qr')
 export class PaymentQR {
@@ -22,10 +24,23 @@ export class PaymentQR {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: string;
 
-  @Column({
-    type: 'text',
-  })
+  @Column({ type: 'text' })
   expirationDate: string;
+
+  @Column('text', { unique: true, nullable: true })
+  IdCorrelation: string;
+
+  @Column({ type: 'text', nullable: true })
+  state: string;
+
+  @Column({ type: 'text', nullable: true })
+  message: string;
+
+  @Column('jsonb', { nullable: true })
+  data: BcpQrCallbackDto;
+
+  @Column('text', { default: PaymentStatusEnum.PENDING, nullable: true })
+  status: PaymentStatusEnum;
 
   @CreateDateColumn({
     type: 'timestamptz',

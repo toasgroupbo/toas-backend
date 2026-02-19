@@ -262,41 +262,6 @@ export class TicketsService {
   }
 
   //? ============================================================================================== */
-  //?                                     FindOne_Qr                                                 */
-  //? ============================================================================================== */
-
-  /* async findOneQr(ticketId: number) {
-    const travel = await this.dataSource.manager.findOne(Travel, {
-      where: { tickets: { id: ticketId } },
-    });
-    if (!travel) throw new NotFoundException('Travel not found');
-
-    //! --------------------------------------------
-    //! Expirar Reservas si es necesario
-    //! --------------------------------------------
-
-    await this.ticketExpirationService.expireTravelIfNeeded(travel.id);
-
-    const ticket = await this.ticketRepository
-      .createQueryBuilder('ticket')
-      .where('ticket.id = :ticketId', { ticketId })
-      .andWhere('ticket.status = :status', {
-        status: TicketStatus.RESERVED,
-      })
-      .andWhere('ticket.payment_type = :paymentType', {
-        paymentType: PaymentType.QR,
-      })
-      .andWhere(
-        '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
-      )
-      .getOne();
-
-    if (!ticket) throw new NotFoundException('Ticket not found or expired');
-
-    return ticket;
-  } */
-
-  //? ============================================================================================== */
   //?                               Assign_Passenger                                                 */
   //? ============================================================================================== */
 

@@ -40,9 +40,9 @@ export class HttpService {
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
     } as any);
-  } */
+  }
 
-  /*   async generateQr(dto: GenerateQrInterface): Promise<BcpQrResponse> {
+  async generateQr(dto: GenerateQrInterface): Promise<BcpQrResponse> {
     try {
       const user = envs.BCP_USER;
       const password = envs.BCP_PASSWORD;
@@ -51,7 +51,7 @@ export class HttpService {
 
       const headers = {
         'Content-Type': 'application/json',
-        'Correlation-Id': this.generateCorrelationId(),
+        'Correlation-Id': dto.IdCorrelation,
         Authorization: `Basic ${base64Auth}`,
       };
 
@@ -104,10 +104,4 @@ export class HttpService {
       };
     }
   } */
-
-  private generateCorrelationId(): string {
-    // Formato: 0001-001-123456
-    const timestamp = Date.now().toString().slice(-6);
-    return `0001-001-${timestamp}`;
-  }
 }

@@ -12,6 +12,7 @@ import { CreateTicketInOfficeDto, AssignPassengerInOfficeDto } from './dto';
 
 import { SeatStatus } from 'src/common/enums';
 import { TicketType } from './enums/ticket-type.enum';
+import { PaymentType } from './enums/payment-type.enum';
 import { TicketStatus } from './enums/ticket-status.enum';
 import { SaleType } from '../travels/enums/sale_type-enum';
 
@@ -22,7 +23,6 @@ import { Ticket } from './entities/ticket.entity';
 import { User } from '../users/entities/user.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
-import { PaymentType } from './enums/payment-type.enum';
 
 @Injectable()
 export class TicketsForCashierService {
@@ -63,19 +63,6 @@ export class TicketsForCashierService {
     await queryRunner.startTransaction();
 
     try {
-      /* const ticketForTravel = await queryRunner.manager.findOne(Ticket, {
-        where: { id: ticketId },
-        select: { id: true, travel: true },
-        relations: { travel: true },
-      });
-
-      if (ticketForTravel) {
-        await this.ticketExpirationService.expireTravelIfNeeded(
-          ticketForTravel.travel.id,
-          queryRunner.manager,
-        );
-      } */
-
       const travel = await queryRunner.manager.findOne(Travel, {
         where: { tickets: { id: ticketId } },
       });
@@ -205,7 +192,11 @@ export class TicketsForCashierService {
           companyId: cashier.office?.company.id, //! Solo de la misma empresa
         })
         .andWhere('ticket.status IN (:...statuses)', {
-          statuses: [TicketStatus.SOLD, TicketStatus.RESERVED], //! Solo los vendidos o reservados
+          statuses: [
+            TicketStatus.SOLD,
+            TicketStatus.RESERVED,
+            TicketStatus.PENDING_PAYMENT,
+          ], //! Solo los vendidos o reservados
         })
         .andWhere('ticket.type = :type', { type: TicketType.IN_OFFICE }) //! Solo en office
         .andWhere(
@@ -236,13 +227,22 @@ export class TicketsForCashierService {
       // 3. Actualizar estados
       // --------------------------------------------
 
+      // en caso de que el ticket este vendido
       switch (ticket.status) {
         case TicketStatus.SOLD:
           ticket.status = TicketStatus.CANCELLED;
           ticket.reserve_expiresAt = null;
           break;
 
+        // en caso de que el ticket este reservado
         case TicketStatus.RESERVED:
+          ticket.status = TicketStatus.CANCELLED;
+          ticket.reserve_expiresAt = null;
+          ticket.deletedAt = new Date();
+          break;
+
+        // en caso de que el ticket este reservado por qr
+        case TicketStatus.PENDING_PAYMENT:
           ticket.status = TicketStatus.CANCELLED;
           ticket.reserve_expiresAt = null;
           ticket.deletedAt = new Date();

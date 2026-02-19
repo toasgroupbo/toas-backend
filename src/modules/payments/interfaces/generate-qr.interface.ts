@@ -1,4 +1,5 @@
 export interface GenerateQrInterface {
+  IdCorrelation: string;
   amount: number;
   //currency?: string; // BOB, USD
   gloss?: string;

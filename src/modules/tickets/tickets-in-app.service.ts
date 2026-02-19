@@ -87,19 +87,6 @@ export class TicketsInAppService {
     await queryRunner.startTransaction();
 
     try {
-      /* const ticketForTravel = await queryRunner.manager.findOne(Ticket, {
-        where: { id: ticketId },
-        select: { id: true, travel: true },
-        relations: { travel: true },
-      });
-
-      if (ticketForTravel) {
-        await this.ticketExpirationService.expireTravelIfNeeded(
-          ticketForTravel.travel.id,
-          queryRunner.manager,
-        );
-      } */
-
       const travel = await queryRunner.manager.findOne(Travel, {
         where: { tickets: { id: ticketId } },
       });
@@ -134,7 +121,11 @@ export class TicketsInAppService {
           buyerId: customer.id, //! la misma persona
         })
         .andWhere('ticket.status IN (:...statuses)', {
-          statuses: [TicketStatus.SOLD, TicketStatus.RESERVED], //! Solo los vendidos o reservados
+          statuses: [
+            TicketStatus.SOLD,
+            TicketStatus.RESERVED,
+            TicketStatus.PENDING_PAYMENT,
+          ], //! Solo los vendidos o reservados
         })
         .andWhere('ticket.type = :type', { type: TicketType.IN_APP }) //! Solo en app
         .andWhere(
@@ -171,6 +162,12 @@ export class TicketsInAppService {
           break;
 
         case TicketStatus.RESERVED:
+          ticket.status = TicketStatus.CANCELLED;
+          ticket.reserve_expiresAt = null;
+          ticket.deletedAt = new Date();
+          break;
+
+        case TicketStatus.PENDING_PAYMENT:
           ticket.status = TicketStatus.CANCELLED;
           ticket.reserve_expiresAt = null;
           ticket.deletedAt = new Date();

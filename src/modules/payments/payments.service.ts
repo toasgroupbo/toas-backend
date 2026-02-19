@@ -5,17 +5,23 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { randomUUID } from 'crypto';
+
+import { envs } from 'src/config/environments/environments';
 
 import { GenerateQrDto } from './dto/generate-qr.dto';
+
+import { BcpQrCallbackDto } from './interfaces/response-qr-callback.interface';
+
+import { PaymentStatusEnum } from './enum/payment-status.enum';
+import { PaymentType } from '../tickets/enums/payment-type.enum';
+import { TicketStatus } from '../tickets/enums/ticket-status.enum';
 
 import { HttpService } from './http/http.service';
 import { TicketsService } from '../tickets/tickets.service';
 
 import { PaymentQR } from './entities/payment-qr.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
-import { TicketStatus } from '../tickets/enums/ticket-status.enum';
-import { PaymentType } from '../tickets/enums/payment-type.enum';
-import { envs } from 'src/config/environments/environments';
 
 @Injectable()
 export class PaymentsService {
@@ -30,7 +36,7 @@ export class PaymentsService {
     private dataSource: DataSource,
   ) {}
 
-  /*   async generateQr(dto: GenerateQrDto) {
+  /* async generateQr(dto: GenerateQrDto) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -71,8 +77,10 @@ export class PaymentsService {
       // --------------------------------------------
       // 3 Hacer la peticion al BCP
       // --------------------------------------------
+      const IdCorrelation = this.generateCorrelationId();
 
       const result = await this.httpService.generateQr({
+        IdCorrelation: IdCorrelation,
         amount: +ticket.total_price,
         gloss: dto.gloss,
         collectors: [
@@ -89,11 +97,15 @@ export class PaymentsService {
       // --------------------------------------------
 
       const paymentQr = queryRunner.manager.create(PaymentQR, {
+        IdCorrelation: IdCorrelation,
         ticket: ticket,
         qrImage: result.data.qrImage,
         amount: ticket.total_price,
         qrId: result.data.id,
         expirationDate: result.data.expirationDate,
+        state: result.state,
+        message: result.message,
+        status: PaymentStatusEnum.PENDING,
       });
       await queryRunner.manager.save(paymentQr);
 
@@ -111,9 +123,28 @@ export class PaymentsService {
 
   //* ============================================================================================== */
 
+  private generateCorrelationId(): string {
+    return randomUUID();
+  }
+  //* ============================================================================================== */
+
   private getReservationExpiryQr(): Date {
     const minutes = envs.RESERVATION_QR_EXPIRE_MINUTES || 10;
     const now = new Date();
     return new Date(now.getTime() + minutes * 60 * 1000);
+  }
+
+  async callback(dto: BcpQrCallbackDto) {
+    const { CorrelationId } = dto;
+
+    const paymentQr = await this.paymentRepository.findOne({
+      where: { IdCorrelation: CorrelationId },
+    });
+
+    if (paymentQr) {
+      paymentQr.data = dto;
+      paymentQr.status = PaymentStatusEnum.PAID;
+      await this.paymentRepository.save(paymentQr);
+    }
   }
 }

@@ -18,7 +18,7 @@ export class PaymentsController {
 
   /* @Post('generate')
   generateQr(@Body() generateQrDto: GenerateQrDto) {
-    //return this.paymentsService.generateQr(generateQrDto);
+    return this.paymentsService.generateQr(generateQrDto);
   } */
 
   //? ============================================================================================== */
@@ -30,10 +30,12 @@ export class PaymentsController {
   async receiveQrCallback(@Body() qrcallbackDto: BcpQrCallbackDto) {
     try {
       //  Aquí validas si el Id existe en tu sistema
+
+      await this.paymentsService.callback(qrcallbackDto);
       const id = qrcallbackDto.Id;
 
       //  Procesas el pago
-      console.log('Pago recibido:', qrcallbackDto);
+      console.log(qrcallbackDto);
 
       return {
         State: '000',
