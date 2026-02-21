@@ -14,8 +14,8 @@ export class HttpService {
   private readonly axiosInstance: ReturnType<typeof axios.create>;
 
   constructor() {
-    /* // Leer el certificado PFX
-    const certPath = join(process.cwd(), 'src/certs/bcp_cert_prueba.pfx');
+    // Leer el certificado PFX
+    const certPath = join(process.cwd(), 'static/certs/bcp_cert_prueba.pfx');
 
     const pfxBuffer = fs.readFileSync(certPath);
 
@@ -36,7 +36,7 @@ export class HttpService {
       validateStatus: () => true,
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-    } as any); */
+    } as any);
   }
 
   async generateQr(dto: QrGenerate): Promise<QrGenerateResponse> {
