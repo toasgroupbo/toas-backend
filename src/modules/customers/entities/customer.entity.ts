@@ -99,6 +99,6 @@ export class Customer {
 
   @BeforeInsert()
   hashingPassword() {
-    this.password = bcrypt.hashSync(this.password, 10);
+    if (this.password) this.password = bcrypt.hashSync(this.password, 10);
   }
 }
