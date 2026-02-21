@@ -30,9 +30,8 @@ export class Customer {
 
   @Column('text', {
     //select: false,
-    nullable: true,
   })
-  password?: string; //! solo para pruebas
+  password: string; //! solo para pruebas
 
   @Column('text')
   name: string;
@@ -99,6 +98,6 @@ export class Customer {
 
   @BeforeInsert()
   hashingPassword() {
-    if (this.password) this.password = bcrypt.hashSync(this.password, 10);
+    this.password = bcrypt.hashSync(this.password, 10);
   }
 }
