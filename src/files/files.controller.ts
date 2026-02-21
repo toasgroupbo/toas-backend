@@ -116,7 +116,7 @@ export class FilesController {
   //?                                  deletedFiles                                                  */
   //? ============================================================================================== */
 
-  /* @Post('upload-cert')
+  @Post('upload-cert')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -146,5 +146,5 @@ export class FilesController {
     }
 
     return { message: 'Certificado subido correctamente' };
-  } */
+  }
 }
