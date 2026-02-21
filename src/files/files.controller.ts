@@ -116,6 +116,10 @@ export class FilesController {
   //?                                  deletedFiles                                                  */
   //? ============================================================================================== */
 
+  //!
+  @Auth(ValidPermissions.CREATE)
+  @ApiBearerAuth('access-token')
+  //!
   @Post('upload-cert')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
