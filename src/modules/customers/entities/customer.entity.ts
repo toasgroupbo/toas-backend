@@ -96,8 +96,8 @@ export class Customer {
   //*                                        Functions                                               */
   //* ---------------------------------------------------------------------------------------------- */
 
-  @BeforeInsert()
+  /* @BeforeInsert()
   hashingPassword() {
     this.password = bcrypt.hashSync(this.password, 10);
-  }
+  } */
 }
