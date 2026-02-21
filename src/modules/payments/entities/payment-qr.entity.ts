@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
-import { BcpQrCallbackDto } from '../interfaces/response-qr-callback.interface';
+import { QrCallbackResponse } from '../interfaces/qr-callback-response.interface';
 import { PaymentStatusEnum } from '../enum/payment-status.enum';
 
 @Entity('payments-qr')
@@ -37,7 +37,7 @@ export class PaymentQR {
   message: string;
 
   @Column('jsonb', { nullable: true })
-  data: BcpQrCallbackDto;
+  data: QrCallbackResponse;
 
   @Column('text', { default: PaymentStatusEnum.PENDING, nullable: true })
   status: PaymentStatusEnum;

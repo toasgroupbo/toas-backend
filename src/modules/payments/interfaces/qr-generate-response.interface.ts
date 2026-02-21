@@ -1,4 +1,4 @@
-export interface BcpQrResponse {
+export interface QrGenerateResponse {
   data: {
     id: number;
     qrImage: string; // Base64

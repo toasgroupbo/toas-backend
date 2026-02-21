@@ -6,19 +6,16 @@ import { join } from 'path';
 
 import { envs } from 'src/config/environments/environments';
 
-import { BcpQrResponse } from '../interfaces/bcp-qr.interface';
-import { GenerateQrInterface } from '../interfaces/generate-qr.interface';
+import { QrGenerateResponse } from '../interfaces/qr-generate-response.interface';
+import { QrGenerate } from '../interfaces/qr-generate.interface';
 
 @Injectable()
 export class HttpService {
-  /*   private readonly axiosInstance: ReturnType<typeof axios.create>;
+  private readonly axiosInstance: ReturnType<typeof axios.create>;
 
   constructor() {
-    // Leer el certificado PFX
-    const certPath = join(
-      process.cwd(),
-      'src/certs/sandbox.openbanking.bcp.com.bo.pfx',
-    );
+    /* // Leer el certificado PFX
+    const certPath = join(process.cwd(), 'src/certs/bcp_cert_prueba.pfx');
 
     const pfxBuffer = fs.readFileSync(certPath);
 
@@ -39,10 +36,10 @@ export class HttpService {
       validateStatus: () => true,
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-    } as any);
+    } as any); */
   }
 
-  async generateQr(dto: GenerateQrInterface): Promise<BcpQrResponse> {
+  async generateQr(dto: QrGenerate): Promise<QrGenerateResponse> {
     try {
       const user = envs.BCP_USER;
       const password = envs.BCP_PASSWORD;
@@ -68,7 +65,7 @@ export class HttpService {
         branchOffice: 'toas',
         teller: '1',
         publicToken: envs.BCP_PUBLIC_TOKEN,
-        expiration: '00/00:00', //'00/00:00',
+        expiration: dto.expiration, //'00/00:00',
         collectors: dto.collectors,
       };
 
@@ -78,7 +75,7 @@ export class HttpService {
         { headers },
       );
 
-      const responseData = response.data as BcpQrResponse;
+      const responseData = response.data as QrGenerateResponse;
 
       if (responseData.state !== '00') {
         throw {
@@ -103,5 +100,5 @@ export class HttpService {
         details: error.message,
       };
     }
-  } */
+  }
 }

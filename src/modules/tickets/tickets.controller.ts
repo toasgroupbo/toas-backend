@@ -1,4 +1,12 @@
-import { Get, Param, Controller, ParseIntPipe } from '@nestjs/common';
+import {
+  Get,
+  Param,
+  Controller,
+  ParseIntPipe,
+  Post,
+  Body,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
@@ -34,14 +42,12 @@ export class TicketsController {
   }
 
   //? ============================================================================================== */
-  //?                                        FindOne                                                 */
+  //?                                     Confirm_QR                                                 */
   //? ============================================================================================== */
 
-  /* //!
-  @Auth(ValidPermissions.READ)
-  //!
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @GetUser() admin: User) {
-    return this.ticketsService.findOne(id, admin); //! GetUser
-  } */
+  @Post('confirm-qr')
+  @ApiQuery({ name: 'ticketId', required: true, type: Number })
+  confirmQR(@Query() query: any) {
+    return this.ticketsService.confirm(query.ticketId);
+  }
 }

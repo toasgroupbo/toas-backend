@@ -7,7 +7,6 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 import { TravelForCashierFilterDto } from './pagination';
 
 import { SeatStatus } from 'src/common/enums';
-import { SaleType } from './enums/sale_type-enum';
 import { TravelStatus } from './enums/travel-status.enum';
 import { TicketStatus } from '../tickets/enums/ticket-status.enum';
 
@@ -240,7 +239,6 @@ export class TravelsForCashierService {
       for (const seat of travel.travelSeats) {
         if (seat.status !== SeatStatus.SOLD) {
           seat.status = SeatStatus.UNSOLD;
-          seat.sale_type = SaleType.UNSOLD;
           seat.price = '0';
           seat.ticket = null;
         }

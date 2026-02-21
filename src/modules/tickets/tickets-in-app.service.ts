@@ -14,7 +14,6 @@ import { SeatStatus } from 'src/common/enums';
 import { TicketType } from './enums/ticket-type.enum';
 import { PaymentType } from './enums/payment-type.enum';
 import { TicketStatus } from './enums/ticket-status.enum';
-import { SaleType } from '../travels/enums/sale_type-enum';
 
 import { TicketsService } from './tickets.service';
 import { TicketExpirationService } from './services/ticket-expiration.service';
@@ -176,7 +175,6 @@ export class TicketsInAppService {
 
       for (const seat of ticket.travelSeats) {
         seat.status = SeatStatus.AVAILABLE;
-        seat.sale_type = SaleType.UNSOLD;
         seat.ticket = null; //! desasociar el asiento del ticket
         seat.price = '0'; //! resetear el precio
         seat.passenger = null; //! desasociar el pasajero

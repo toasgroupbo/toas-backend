@@ -3,7 +3,6 @@ import { Cron } from '@nestjs/schedule';
 import { DataSource } from 'typeorm';
 
 import { SeatStatus } from 'src/common/enums';
-import { SaleType } from 'src/modules/travels/enums/sale_type-enum';
 import { TicketStatus } from 'src/modules/tickets/enums/ticket-status.enum';
 import { TravelStatus } from 'src/modules/travels/enums/travel-status.enum';
 
@@ -61,7 +60,6 @@ export class ReservationCleanupService {
 
         for (const seat of ticket.travelSeats) {
           seat.status = SeatStatus.AVAILABLE;
-          seat.sale_type = SaleType.UNSOLD;
           seat.price = '0';
           seat.ticket = null;
           seat.passenger = null;

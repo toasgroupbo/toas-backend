@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { BasicAuthGuard } from './guards/basic-auth.guard';
 
 import { GenerateQrDto } from './dto/generate-qr.dto';
-import { BcpQrCallbackDto } from './interfaces/response-qr-callback.interface';
+import { QrCallbackResponse } from './interfaces/qr-callback-response.interface';
 
 import { PaymentsService } from './payments.service';
 
@@ -16,10 +16,10 @@ export class PaymentsController {
   //?                                   Generate_QR                                                  */
   //? ============================================================================================== */
 
-  /* @Post('generate')
+  @Post('generate')
   generateQr(@Body() generateQrDto: GenerateQrDto) {
     return this.paymentsService.generateQr(generateQrDto);
-  } */
+  }
 
   //? ============================================================================================== */
   //?                                      CallBack                                                  */
@@ -27,16 +27,16 @@ export class PaymentsController {
 
   @Post('qr/callback')
   @UseGuards(BasicAuthGuard)
-  async receiveQrCallback(@Body() qrcallbackDto: BcpQrCallbackDto) {
+  async receiveQrCallback(@Body() qrcallbackDto: QrCallbackResponse) {
     try {
       //  Aquí validas si el Id existe en tu sistema
 
       await this.paymentsService.callback(qrcallbackDto);
-      const id = qrcallbackDto.Id;
 
       //  Procesas el pago
       console.log(qrcallbackDto);
 
+      const id = qrcallbackDto.Id;
       return {
         State: '000',
         Mensaje: 'COMPLETADO',

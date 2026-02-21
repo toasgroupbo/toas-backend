@@ -18,6 +18,7 @@ import {
 
 import { SeatStatus } from 'src/common/enums';
 import { TicketType } from './enums/ticket-type.enum';
+import { PaymentType } from './enums/payment-type.enum';
 import { TicketStatus } from './enums/ticket-status.enum';
 import { TravelStatus } from '../travels/enums/travel-status.enum';
 
@@ -31,7 +32,6 @@ import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { Passenger } from '../customers/entities/passenger.entity';
 import { TravelSeat } from '../travels/entities/travel-seat.entity';
-import { PaymentType } from './enums/payment-type.enum';
 
 @Injectable()
 export class TicketsService {
@@ -237,7 +237,84 @@ export class TicketsService {
   //?                              Confirm_Ticket_QR                                                 */
   //? ============================================================================================== */
 
-  async confirmTicketQr(qrDataInterface: any) {}
+  async confirm(ticketId: number) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const travel = await queryRunner.manager.findOne(Travel, {
+        where: { tickets: { id: ticketId } },
+      });
+      if (!travel) throw new NotFoundException('Travel not found');
+
+      //! --------------------------------------------
+      //! Expirar Reservas si es necesario
+      //! --------------------------------------------
+
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travel.id,
+        queryRunner.manager,
+      );
+
+      // --------------------------------------------
+      // 1. Buscar ticket con sus relaciones
+      // --------------------------------------------
+
+      const ticket = await queryRunner.manager
+        .createQueryBuilder(Ticket, 'ticket')
+        .setLock('pessimistic_write')
+
+        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
+        .innerJoinAndSelect('ticket.travel', 'travel')
+
+        //.innerJoin('travel.bus', 'bus')
+
+        .where('ticket.id = :ticketId', { ticketId })
+
+        .andWhere('ticket.status = :status', {
+          status: TicketStatus.PENDING_PAYMENT,
+        })
+        .andWhere('ticket.payment_type = :payment_type', {
+          payment_type: PaymentType.QR,
+        })
+        .andWhere('(ticket.reserve_expiresAt > NOW())')
+        .getOne();
+
+      if (!ticket)
+        throw new NotFoundException(
+          'Ticket not found, expired, or not in a confirmable state',
+        );
+
+      // --------------------------------------------
+      // 2. Actualizar estados
+      // --------------------------------------------
+
+      ticket.status = TicketStatus.SOLD;
+      ticket.reserve_expiresAt = null; //! (para la limpieza)
+
+      for (const seat of ticket.travelSeats) {
+        seat.status = SeatStatus.SOLD;
+      }
+
+      // --------------------------------------------
+      // 3. Persistir cambios
+      // --------------------------------------------
+
+      await queryRunner.manager.save(Ticket, ticket);
+      await queryRunner.commitTransaction();
+
+      return {
+        message: 'Ticket payment confirmed successfully',
+        ticket: ticket,
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      handleDBExceptions(error);
+    } finally {
+      await queryRunner.release();
+    }
+  }
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */

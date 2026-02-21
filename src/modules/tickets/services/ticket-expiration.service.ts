@@ -4,7 +4,6 @@ import { DataSource, EntityManager, In, LessThan } from 'typeorm';
 import { SeatStatus } from 'src/common/enums';
 import { TicketType } from '../enums/ticket-type.enum';
 import { TicketStatus } from '../enums/ticket-status.enum';
-import { SaleType } from 'src/modules/travels/enums/sale_type-enum';
 import { TravelStatus } from 'src/modules/travels/enums/travel-status.enum';
 
 import { PenaltiesService } from 'src/modules/customers/penalties.service';
@@ -47,7 +46,6 @@ export class TicketExpirationService {
       for (const seat of ticket.travelSeats) {
         seat.status = SeatStatus.AVAILABLE;
         seat.ticket = null;
-        seat.sale_type = SaleType.UNSOLD;
         seat.price = '0';
         seat.passenger = null;
         await internalManager.save(seat);
@@ -99,7 +97,6 @@ export class TicketExpirationService {
         for (const seat of ticket.travelSeats) {
           seat.status = SeatStatus.AVAILABLE;
           seat.ticket = null;
-          seat.sale_type = SaleType.UNSOLD;
           seat.price = '0';
           seat.passenger = null;
           await queryRunner.manager.save(seat);

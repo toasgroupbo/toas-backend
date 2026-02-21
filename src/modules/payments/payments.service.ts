@@ -11,7 +11,7 @@ import { envs } from 'src/config/environments/environments';
 
 import { GenerateQrDto } from './dto/generate-qr.dto';
 
-import { BcpQrCallbackDto } from './interfaces/response-qr-callback.interface';
+import { QrCallbackResponse } from './interfaces/qr-callback-response.interface';
 
 import { PaymentStatusEnum } from './enum/payment-status.enum';
 import { PaymentType } from '../tickets/enums/payment-type.enum';
@@ -30,13 +30,16 @@ export class PaymentsService {
     private readonly paymentRepository: Repository<PaymentQR>,
 
     private readonly httpService: HttpService,
+    private dataSource: DataSource,
 
     private readonly ticketsService: TicketsService,
-
-    private dataSource: DataSource,
   ) {}
 
-  /* async generateQr(dto: GenerateQrDto) {
+  //? ============================================================================================== */
+  //?                                   Generate_QR                                                  */
+  //? ============================================================================================== */
+
+  async generateQr(dto: GenerateQrDto) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -60,6 +63,7 @@ export class PaymentsService {
           '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
         )
         .getOne();
+
       if (!ticket) {
         throw new BadRequestException('Ticket not available for QR generation');
       }
@@ -74,6 +78,11 @@ export class PaymentsService {
 
       await queryRunner.manager.save(ticket);
 
+      // Generar expiración para BCP (menos 2 minutos)
+      const expirationForBcp = this.formatExpirationForBcp(
+        ticket.reserve_expiresAt,
+      );
+
       // --------------------------------------------
       // 3 Hacer la peticion al BCP
       // --------------------------------------------
@@ -81,6 +90,7 @@ export class PaymentsService {
 
       const result = await this.httpService.generateQr({
         IdCorrelation: IdCorrelation,
+        expiration: expirationForBcp,
         amount: +ticket.total_price,
         gloss: dto.gloss,
         collectors: [
@@ -119,7 +129,34 @@ export class PaymentsService {
         details: error.details,
       };
     }
-  } */
+  }
+
+  //? ============================================================================================== */
+  //?                                      CallBack                                                  */
+  //? ============================================================================================== */
+
+  async callback(dto: QrCallbackResponse) {
+    const { CorrelationId } = dto;
+
+    const paymentQr = await this.paymentRepository.findOne({
+      where: { IdCorrelation: CorrelationId },
+      relations: { ticket: true },
+    });
+
+    if (paymentQr) {
+      paymentQr.data = dto;
+      paymentQr.status = PaymentStatusEnum.PAID;
+      await this.paymentRepository.save(paymentQr);
+
+      try {
+        if (paymentQr.ticket) {
+          await this.ticketsService.confirm(paymentQr.ticket.id);
+        }
+      } catch (err) {
+        console.error('Error confirming ticket after payment callback', err);
+      }
+    }
+  }
 
   //* ============================================================================================== */
 
@@ -134,17 +171,18 @@ export class PaymentsService {
     return new Date(now.getTime() + minutes * 60 * 1000);
   }
 
-  async callback(dto: BcpQrCallbackDto) {
-    const { CorrelationId } = dto;
+  //* ============================================================================================== */
 
-    const paymentQr = await this.paymentRepository.findOne({
-      where: { IdCorrelation: CorrelationId },
-    });
+  private formatExpirationForBcp(ticketExpireDate: Date): string {
+    const TWO_MINUTES = 2 * 60 * 1000;
 
-    if (paymentQr) {
-      paymentQr.data = dto;
-      paymentQr.status = PaymentStatusEnum.PAID;
-      await this.paymentRepository.save(paymentQr);
-    }
+    // Restar 2 minutos
+    const qrExpire = new Date(ticketExpireDate.getTime() - TWO_MINUTES);
+
+    const day = String(qrExpire.getDate()).padStart(2, '0');
+    const hours = String(qrExpire.getHours()).padStart(2, '0');
+    const minutes = String(qrExpire.getMinutes()).padStart(2, '0');
+
+    return `${day}/${hours}:${minutes}`;
   }
 }

@@ -9,8 +9,9 @@ import {
   Res,
   Delete,
   Body,
+  UploadedFile,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { diskStorage } from 'multer';
@@ -32,9 +33,9 @@ import { Auth, Resource } from 'src/auth/decorators';
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Upload                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.CREATE)
@@ -75,9 +76,9 @@ export class FilesController {
     return this.filesService.getSecureUrl(files);
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                      GetFiles                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   @Get('/upload/:file')
   getFile(@Res() res: Response, @Param('file') file: string) {
@@ -85,9 +86,9 @@ export class FilesController {
     res.sendFile(path);
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                   GetAllFiles                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
@@ -98,9 +99,9 @@ export class FilesController {
     return this.filesService.getAllFiles();
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                  deletedFiles                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.DELETE)
@@ -109,5 +110,41 @@ export class FilesController {
   @Delete()
   deleteFiles(@Body() deleteDto: string[]) {
     return this.filesService.deletedFiles(deleteDto);
+  }
+
+  //? ============================================================================================== */
+  //?                                  deletedFiles                                                  */
+  //? ============================================================================================== */
+
+  @Post('upload-cert')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+      storage: diskStorage({
+        destination: './src/certs',
+        filename: (req, file, callback) => {
+          callback(null, 'bcp_cert_prueba.pfx');
+        },
+      }),
+    }),
+  )
+  uploadCert(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Debe subir un archivo .pfx');
+    }
+
+    return { message: 'Certificado subido correctamente' };
   }
 }

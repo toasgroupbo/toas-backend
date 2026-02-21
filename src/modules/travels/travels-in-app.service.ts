@@ -94,7 +94,6 @@ export class TravelsInAppService {
           price: true,
           seatNumber: true,
           type: true,
-          sale_type: true,
           status: true,
           //createdAt: true,
           //passenger: false,

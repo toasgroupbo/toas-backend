@@ -7,7 +7,6 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { SaleType } from '../enums/sale_type-enum';
 import { SeatStatus, SeatType } from '../../../common/enums';
 
 import { Travel } from './travel.entity';
@@ -35,9 +34,6 @@ export class TravelSeat {
 
   @Column({ type: 'text', nullable: true })
   type: SeatType; // 'seat' | 'aisle' | 'space'
-
-  @Column({ type: 'text', default: SaleType.UNSOLD })
-  sale_type: SaleType; // 'office' | 'app' | 'unsold'
 
   @Column({ type: 'text', default: SeatStatus.AVAILABLE })
   status: SeatStatus; // 'available' | 'reserved' | 'sold' | 'unsold'
