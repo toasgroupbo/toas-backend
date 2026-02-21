@@ -10,8 +10,6 @@ import {
   BeforeInsert,
 } from 'typeorm';
 
-import * as bcrypt from 'bcrypt';
-
 import { AuthProviders } from 'src/auth/enums';
 
 import { Penalty } from './penalty.entity';
