@@ -137,7 +137,7 @@ export class FilesController {
     FileInterceptor('file', {
       limits: { fileSize: 5 * 1024 * 1024 },
       storage: diskStorage({
-        destination: './src/certs',
+        destination: './static/certs',
         filename: (req, file, callback) => {
           callback(null, 'bcp_cert_prueba.pfx');
         },

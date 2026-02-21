@@ -5,8 +5,6 @@ import { existsSync } from 'fs';
 import { promises as fs } from 'fs';
 import { readdir } from 'fs/promises';
 
-import { envs } from 'src/config/environments/environments';
-
 @Injectable()
 export class FilesService {
   private uploadPath = path.resolve('./static/uploads/');
