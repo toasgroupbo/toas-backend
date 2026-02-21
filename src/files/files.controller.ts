@@ -116,7 +116,7 @@ export class FilesController {
   //?                                  deletedFiles                                                  */
   //? ============================================================================================== */
 
-  //!
+  /*   //!
   @Auth(ValidPermissions.CREATE)
   @ApiBearerAuth('access-token')
   //!
@@ -139,7 +139,7 @@ export class FilesController {
       storage: diskStorage({
         destination: './static/certs',
         filename: (req, file, callback) => {
-          callback(null, 'bcp_cert_prueba.pfx');
+          callback(null, 'bcp_cert_prueba.pfx'); //! cambiar para producción
         },
       }),
     }),
@@ -150,5 +150,5 @@ export class FilesController {
     }
 
     return { message: 'Certificado subido correctamente' };
-  }
+  } */
 }
