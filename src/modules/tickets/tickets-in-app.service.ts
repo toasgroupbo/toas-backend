@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -62,7 +62,7 @@ export class TicketsInAppService {
 
     const travelsToExpire = await this.travelRepository.find({
       select: { id: true },
-      /* where:{} */
+      where: { tickets: { buyer: customer } },
     });
 
     for (const travel of travelsToExpire) {
@@ -209,6 +209,30 @@ export class TicketsInAppService {
 
   private hasTravelDeparted(travel: Travel): boolean {
     return travel.departure_time <= new Date();
+  }
+
+  //? ============================================================================================== */
+  //?                        Get_Active_Reservation                                                  */
+  //? ============================================================================================== */
+
+  async getActiveReservation(customer: Customer) {
+    const ticket = await this.ticketRepository
+      .createQueryBuilder('ticket')
+      .where('ticket.buyerId = :buyerId', {
+        buyerId: customer.id,
+      })
+      .andWhere('ticket.status IN (:...statuses)', {
+        statuses: [TicketStatus.RESERVED, TicketStatus.PENDING_PAYMENT],
+      })
+      .andWhere('ticket.type = :type', { type: TicketType.IN_APP })
+      .andWhere(
+        '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
+      )
+      .getOne();
+
+    if (!ticket) return null;
+
+    return ticket;
   }
 
   //? ============================================================================================== */

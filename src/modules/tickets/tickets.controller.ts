@@ -17,9 +17,7 @@ import { TicketsService } from './tickets.service';
 
 //!
 @Resource(ValidResourses.TICKET)
-@ApiBearerAuth('access-token')
 //!
-
 @ApiTags('Tickets')
 @Controller('tickets')
 export class TicketsController {
@@ -31,6 +29,7 @@ export class TicketsController {
 
   //!
   @Auth(ValidPermissions.READ)
+  @ApiBearerAuth('access-token')
   //!
   @ApiQuery({ name: 'companyId', required: false, type: Number })
   @Get(':travelId')
@@ -45,6 +44,7 @@ export class TicketsController {
   //?                                     Confirm_QR                                                 */
   //? ============================================================================================== */
 
+  //! solo para pruebas
   @Post('confirm-qr')
   @ApiQuery({ name: 'ticketId', required: true, type: Number })
   confirmQR(@Query() query: any) {

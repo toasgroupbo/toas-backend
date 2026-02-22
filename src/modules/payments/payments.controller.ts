@@ -1,12 +1,22 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 
 import { BasicAuthGuard } from './guards/basic-auth.guard';
 
+import { ValidResourses } from 'src/common/enums';
+
+import { VerifyQrDto } from './dto/verify-qr.dto';
 import { GenerateQrDto } from './dto/generate-qr.dto';
 import { QrCallbackResponse } from './interfaces/qr-callback-response.interface';
 
 import { PaymentsService } from './payments.service';
+import { Auth, Resource } from 'src/auth/decorators';
+
+//!
+@Resource(ValidResourses.TICKET_CASHIER)
+@ApiBearerAuth('access-token')
+//!
 
 @Controller('payments')
 export class PaymentsController {
@@ -16,9 +26,24 @@ export class PaymentsController {
   //?                                   Generate_QR                                                  */
   //? ============================================================================================== */
 
+  //!
+  @Auth()
+  //!
   @Post('generate')
   generateQr(@Body() generateQrDto: GenerateQrDto) {
     return this.paymentsService.generateQr(generateQrDto);
+  }
+
+  //? ============================================================================================== */
+  //?                                    Verify_QR                                                   */
+  //? ============================================================================================== */
+
+  //!
+  @Auth()
+  //!
+  @Post('verify-qr')
+  verifyQr(@Body() dto: VerifyQrDto) {
+    return this.paymentsService.verifyQr(dto.ticketId);
   }
 
   //? ============================================================================================== */

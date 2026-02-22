@@ -20,6 +20,8 @@ export function setupSwagger(app: INestApplication): void {
   const document = SwaggerModule.createDocument(app, config);
 
   document.tags = [
+    { name: 'Settings' },
+
     { name: 'Auth' },
     { name: 'Roles' },
     { name: 'Users' },

@@ -48,4 +48,7 @@ export enum ValidResourses {
   CUSTOMER_APP = 'CUSTOMER_APP',
   TRAVEL_APP = 'TRAVEL_APP',
   ROUTE_APP = 'ROUTE_APP',
+
+  //! ambos
+  PAYMENTS = 'PAYMENTS',
 }

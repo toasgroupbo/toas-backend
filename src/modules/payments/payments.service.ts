@@ -13,6 +13,7 @@ import { GenerateQrDto } from './dto/generate-qr.dto';
 
 import { QrCallbackResponse } from './interfaces/qr-callback-response.interface';
 
+import { SeatStatus } from 'src/common/enums';
 import { PaymentStatusEnum } from './enum/payment-status.enum';
 import { PaymentType } from '../tickets/enums/payment-type.enum';
 import { TicketStatus } from '../tickets/enums/ticket-status.enum';
@@ -51,6 +52,7 @@ export class PaymentsService {
 
       const ticket = await queryRunner.manager
         .createQueryBuilder(Ticket, 'ticket')
+        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
         .setLock('pessimistic_write')
         .where('ticket.id = :ticketId', { ticketId: dto.ticketId })
         .andWhere('ticket.status = :status', {
@@ -76,9 +78,12 @@ export class PaymentsService {
       ticket.status = TicketStatus.PENDING_PAYMENT;
       ticket.reserve_expiresAt = expires;
 
+      for (const travelSeat of ticket.travelSeats) {
+        travelSeat.status = SeatStatus.PENDING_PAYMENT;
+      }
+
       await queryRunner.manager.save(ticket);
 
-      // Generar expiración para BCP (menos 2 minutos)
       const expirationForBcp = this.formatExpirationForBcp(
         ticket.reserve_expiresAt,
       );
@@ -86,17 +91,18 @@ export class PaymentsService {
       // --------------------------------------------
       // 3 Hacer la peticion al BCP
       // --------------------------------------------
+
       const IdCorrelation = this.generateCorrelationId();
 
       const result = await this.httpService.generateQr({
         IdCorrelation: IdCorrelation,
         expiration: expirationForBcp,
-        amount: +ticket.total_price,
+        amount: Number(ticket.total_price) + Number(ticket.commission), //! + la comision
         gloss: dto.gloss,
         collectors: [
           {
-            name: 'TicketId',
-            parameter: 'Ticket',
+            name: 'Ticket',
+            parameter: 'TicketId',
             value: ticket.id.toString(),
           },
         ],
@@ -129,6 +135,14 @@ export class PaymentsService {
         details: error.details,
       };
     }
+  }
+
+  //? ============================================================================================== */
+  //?                                    Verify_QR                                                   */
+  //? ============================================================================================== */
+
+  async verifyQr(ticketId: number) {
+    return await this.ticketsService.verifyQr(ticketId);
   }
 
   //? ============================================================================================== */

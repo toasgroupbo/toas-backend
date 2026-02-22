@@ -3,10 +3,11 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { ValidResourses } from 'src/common/enums';
 
+import { IsVerifyGuard } from '../tickets/guards/is-verify.guard';
+
 import { Auth, Resource } from 'src/auth/decorators';
 
 import { RoutesInAppService } from './routes-in-app.service';
-import { IsVerifyGuard } from 'src/auth/guards';
 
 //!
 @Resource(ValidResourses.ROUTE_APP)

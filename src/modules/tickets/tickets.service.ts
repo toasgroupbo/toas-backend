@@ -21,9 +21,10 @@ import { TicketType } from './enums/ticket-type.enum';
 import { PaymentType } from './enums/payment-type.enum';
 import { TicketStatus } from './enums/ticket-status.enum';
 import { TravelStatus } from '../travels/enums/travel-status.enum';
+import { PaymentStatusEnum } from '../payments/enum/payment-status.enum';
 
-import { CustomersService } from '../customers/customers.service';
 import { PenaltiesService } from '../customers/penalties.service';
+import { CustomersService } from '../customers/customers.service';
 import { TicketExpirationService } from './services/ticket-expiration.service';
 
 import { Ticket } from './entities/ticket.entity';
@@ -32,6 +33,7 @@ import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { Passenger } from '../customers/entities/passenger.entity';
 import { TravelSeat } from '../travels/entities/travel-seat.entity';
+import { Setting } from '../settings/entities/setting.entity';
 
 @Injectable()
 export class TicketsService {
@@ -144,7 +146,6 @@ export class TicketsService {
       // --------------------------------------------
       // 5. Calcular precios y cambiar estados
       // --------------------------------------------
-
       let totalPrice = 0;
 
       for (const seat of seats) {
@@ -170,6 +171,12 @@ export class TicketsService {
       });
 
       const expires = this.getReservationExpiry(); //! get fecha de expiracion
+      let commission = 0;
+
+      if (type === TicketType.IN_APP) {
+        const settings = await queryRunner.manager.find(Setting); //! se añade la commission al ticket solo si es en app
+        commission = settings[0].commission || 0;
+      }
 
       const ticket = queryRunner.manager.create(Ticket, {
         type,
@@ -181,6 +188,7 @@ export class TicketsService {
         total_price: totalPrice.toFixed(2),
         reserve_expiresAt: expires,
         payment_type: paymentType,
+        commission: commission.toString(), //! comission
       });
 
       // --------------------------------------------
@@ -266,9 +274,7 @@ export class TicketsService {
         .setLock('pessimistic_write')
 
         .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
-        .innerJoinAndSelect('ticket.travel', 'travel')
-
-        //.innerJoin('travel.bus', 'bus')
+        .innerJoinAndSelect('ticket.paymentQr', 'paymentQr')
 
         .where('ticket.id = :ticketId', { ticketId })
 
@@ -293,6 +299,10 @@ export class TicketsService {
       ticket.status = TicketStatus.SOLD;
       ticket.reserve_expiresAt = null; //! (para la limpieza)
 
+      if (ticket.paymentQr) {
+        ticket.paymentQr.status = PaymentStatusEnum.PAID;
+      }
+
       for (const seat of ticket.travelSeats) {
         seat.status = SeatStatus.SOLD;
       }
@@ -306,7 +316,7 @@ export class TicketsService {
 
       return {
         message: 'Ticket payment confirmed successfully',
-        ticket: ticket,
+        ticket: { id: ticket.id, total_price: ticket.total_price },
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -314,6 +324,22 @@ export class TicketsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  //? ============================================================================================== */
+  //?                                    Verify_QR                                                   */
+  //? ============================================================================================== */
+
+  async verifyQr(ticketId: number) {
+    const ticket = await this.ticketRepository.findOne({
+      where: { id: ticketId, status: TicketStatus.PENDING_PAYMENT },
+      relations: { paymentQr: true },
+    });
+    if (!ticket) throw new NotFoundException('Ticket not found');
+    if (!ticket.paymentQr)
+      throw new NotFoundException('QR code not found for this ticket');
+
+    return { status: ticket.paymentQr.status };
   }
 
   //? ============================================================================================== */

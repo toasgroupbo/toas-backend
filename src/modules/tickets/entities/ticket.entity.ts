@@ -37,6 +37,9 @@ export class Ticket {
   @Column({ type: 'text', default: TicketStatus.RESERVED })
   status: TicketStatus;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  commission: string;
+
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   total_price: string;
 

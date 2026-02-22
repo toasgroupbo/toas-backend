@@ -12,7 +12,7 @@ import { ValidResourses } from 'src/common/enums';
 
 import { Auth, Resource } from '../../auth/decorators';
 
-import { IsVerifyGuard } from 'src/auth/guards';
+import { IsVerifyGuard } from '../tickets/guards/is-verify.guard';
 
 import { TravelInAppFilterDto } from './pagination';
 

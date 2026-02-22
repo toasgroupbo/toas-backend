@@ -16,8 +16,9 @@ import { ValidResourses } from 'src/common/enums';
 
 import { Auth, GetCustomer, Resource } from '../../auth/decorators';
 
-import { IsVerifyGuard } from 'src/auth/guards';
+import { IsVerifyGuard } from './guards/is-verify.guard';
 import { IsPenaltyGuard } from './guards/is-penalty.guard';
+import { NoActiveReservationGuard } from './guards/no-active-reservation.guard';
 
 import { Customer } from '../customers/entities/customer.entity';
 
@@ -38,8 +39,7 @@ export class TicketsInAppController {
   //? ============================================================================================== */
 
   //!
-
-  @UseGuards(IsVerifyGuard, IsPenaltyGuard)
+  @UseGuards(IsVerifyGuard, IsPenaltyGuard, NoActiveReservationGuard)
   @Auth()
   //!
   @Post()
@@ -77,6 +77,19 @@ export class TicketsInAppController {
   @Get('all')
   findAll(@GetCustomer() customer: Customer) {
     return this.ticketsInAppService.findAll(customer); //! GetCustomer
+  }
+
+  //? ============================================================================================== */
+  //?                        Get_Active_Reservation                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @Get('get-active-reservation')
+  getActiveReservation(@GetCustomer() customer: Customer) {
+    return this.ticketsInAppService.getActiveReservation(customer); //! GetCustomer
   }
 
   //? ============================================================================================== */

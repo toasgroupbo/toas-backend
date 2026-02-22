@@ -17,7 +17,7 @@ import {
 
 import { ValidResourses } from 'src/common/enums';
 
-import { IsVerifyGuard } from 'src/auth/guards';
+import { IsVerifyGuard } from '../tickets/guards/is-verify.guard';
 
 import { Auth, GetCustomer, Resource } from 'src/auth/decorators';
 
