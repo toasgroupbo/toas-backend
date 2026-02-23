@@ -436,7 +436,14 @@ export class TicketsService {
         await queryRunner.manager.save(seat);
       }
       await queryRunner.commitTransaction();
-      return { message: 'Passengers assigned successfully' };
+      return {
+        message: 'Passengers assigned successfully',
+        ticketId,
+        assignedSeats: passengers.map((p) => ({
+          seatId: p.seatId,
+          ci: p.passenger.ci,
+        })),
+      };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;

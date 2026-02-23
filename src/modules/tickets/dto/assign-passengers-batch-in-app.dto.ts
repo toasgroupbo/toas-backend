@@ -1,22 +1,26 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, ValidateNested } from 'class-validator';
+import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+
+export class PassengerDto {
+  @ApiProperty({ example: 'Juan Perez' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: '1234567' })
+  @IsString()
+  ci: string;
+}
 
 export class PassengerSeatBatchDto {
   @ApiProperty({ example: 10 })
   @IsNumber()
   seatId: number;
 
-  @ApiProperty({
-    example: {
-      name: 'Juan Perez',
-      ci: '1234567',
-    },
-  })
-  passenger: {
-    name: string;
-    ci: string;
-  };
+  @ApiProperty({ type: PassengerDto })
+  @ValidateNested()
+  @Type(() => PassengerDto)
+  passenger: PassengerDto;
 }
 
 export class AssignPassengersBatchInAppDto {
