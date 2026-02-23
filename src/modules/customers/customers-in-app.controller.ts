@@ -117,7 +117,7 @@ export class CustomersInAppController {
   //?                               Create_Passenger                                                 */
   //? ============================================================================================== */
 
-  //!
+  /* //!
   @UseGuards(IsVerifyGuard)
   @Auth()
   //!
@@ -127,7 +127,7 @@ export class CustomersInAppController {
     @GetCustomer() customer: Customer,
   ) {
     return this.customerInAppService.createPassenger(dto, customer); //! GetCustomer
-  }
+  } */
 
   //? ============================================================================================== */
   //?                             FindAll_Passengers                                                 */

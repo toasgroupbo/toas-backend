@@ -8,7 +8,10 @@ import { DataSource, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { CreateTicketInOfficeDto, AssignPassengerInOfficeDto } from './dto';
+import {
+  CreateTicketInOfficeDto,
+  AssignPassengersBatchInOfficeDto,
+} from './dto';
 
 import { SeatStatus } from 'src/common/enums';
 import { TicketType } from './enums/ticket-type.enum';
@@ -22,6 +25,7 @@ import { Ticket } from './entities/ticket.entity';
 import { User } from '../users/entities/user.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Customer } from '../customers/entities/customer.entity';
+import { Passenger } from '../customers/entities/passenger.entity';
 
 @Injectable()
 export class TicketsForCashierService {
@@ -320,7 +324,7 @@ export class TicketsForCashierService {
   //?                               Assign_Passenger                                                 */
   //? ============================================================================================== */
 
-  async assignPassenger(dto: AssignPassengerInOfficeDto) {
+  async assignPassenger(dto: AssignPassengersBatchInOfficeDto) {
     const customer = await this.customerRepository.findOne({
       where: { id: dto.customerId },
     });
@@ -328,11 +332,10 @@ export class TicketsForCashierService {
     if (!customer) {
       throw new NotFoundException('Customer not found');
     }
-    return this.ticketsService.assignPassengerBase(
-      dto.ticketId,
-      dto.seatId,
-      dto.passengerId,
-      customer,
-    );
+    return this.ticketsService.assignPassengerBase({
+      customer: customer,
+      passengers: dto.passengers,
+      ticketId: dto.ticketId,
+    });
   }
 }

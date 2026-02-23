@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -18,37 +18,74 @@ export class PassengersService {
   //?                                   Create_Base                                                  */
   //? ============================================================================================== */
 
-  async createBase(dto: { fullName: string; ci: string }, customer: Customer) {
+  async createBase(
+    dto: { fullName: string; ci: string },
+    customer: Customer,
+    manager?: EntityManager,
+  ): Promise<Passenger> {
+    const repository = manager
+      ? manager.getRepository(Passenger)
+      : this.passengerRepository;
+
+    const entityManager = manager ?? repository.manager;
+
     try {
-      const exists = await this.passengerRepository.findOne({
-        where: {
-          fullName: dto.fullName,
-          ci: dto.ci,
-          customer: { id: customer.id },
-        },
+      // Buscar pasajero por CI
+
+      let passenger = await repository.findOne({
+        where: { ci: dto.ci },
+        relations: { customers: true },
       });
 
-      if (exists) {
-        return exists;
+      // Si ya existe
+      if (passenger) {
+        const alreadyLinked = passenger.customers?.some(
+          (c) => c.id === customer.id,
+        );
+
+        if (!alreadyLinked) {
+          passenger.customers = [...(passenger.customers || []), customer];
+
+          await repository.save(passenger);
+        }
+
+        return passenger;
       }
 
-      const passengers = await this.passengerRepository.find({
-        where: { customer: { id: customer.id } },
-        order: { createdAt: 'ASC' },
+      // Obtener passengers actuales del customer
+      const customerWithPassengers = await entityManager.findOne(Customer, {
+        where: { id: customer.id },
+        relations: ['passengers'],
       });
 
-      if (passengers.length >= 10) {
-        await this.passengerRepository.remove(passengers[0]);
+      if (!customerWithPassengers) {
+        throw new Error('Customer not found');
       }
 
-      const passenger = this.passengerRepository.create({
+      if (customerWithPassengers.passengers.length >= 10) {
+        // eliminar SOLO la relación más antigua (no el pasajero)
+        const oldestPassenger = customerWithPassengers.passengers.sort(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+        )[0];
+
+        customerWithPassengers.passengers =
+          customerWithPassengers.passengers.filter(
+            (p) => p.id !== oldestPassenger.id,
+          );
+
+        await entityManager.save(Customer, customerWithPassengers);
+      }
+
+      // Crear nuevo pasajero
+      passenger = repository.create({
         ...dto,
-        customer,
+        customers: [customer],
       });
 
-      return await this.passengerRepository.save(passenger);
+      return await repository.save(passenger);
     } catch (error) {
       handleDBExceptions(error);
+      throw error;
     }
   }
 
@@ -69,7 +106,7 @@ export class PassengersService {
 
   async findAllInApp(customer: Customer) {
     return this.passengerRepository.find({
-      where: { customer: { id: customer.id } },
+      where: { customers: customer },
     });
   }
 }

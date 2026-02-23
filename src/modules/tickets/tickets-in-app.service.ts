@@ -4,11 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { CreateTicketInAppDto, AssignPassengerInAppDto } from './dto';
+import { CreateTicketInAppDto, AssignPassengersBatchInAppDto } from './dto';
 
 import { SeatStatus } from 'src/common/enums';
 import { TicketType } from './enums/ticket-type.enum';
@@ -239,12 +239,14 @@ export class TicketsInAppService {
   //?                               Assign_Passenger                                                 */
   //? ============================================================================================== */
 
-  async assignPassenger(dto: AssignPassengerInAppDto, customer: Customer) {
-    return this.ticketsService.assignPassengerBase(
-      dto.ticketId,
-      dto.seatId,
-      dto.passengerId,
+  async assignPassenger(
+    dto: AssignPassengersBatchInAppDto,
+    customer: Customer,
+  ) {
+    return this.ticketsService.assignPassengerBase({
       customer,
-    );
+      passengers: dto.passengers,
+      ticketId: dto.ticketId,
+    });
   }
 }

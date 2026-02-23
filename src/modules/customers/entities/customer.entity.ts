@@ -7,7 +7,8 @@ import {
   PrimaryGeneratedColumn,
   OneToOne,
   JoinColumn,
-  BeforeInsert,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 
 import { AuthProviders } from 'src/auth/enums';
@@ -73,7 +74,18 @@ export class Customer {
   @OneToMany(() => Balance, (balance) => balance.customer)
   balances: Balance[];
 
-  @OneToMany(() => Passenger, (passenger) => passenger.customer)
+  @ManyToMany(() => Passenger, (passenger) => passenger.customers)
+  @JoinTable({
+    name: 'customer_passengers',
+    joinColumn: {
+      name: 'customerId',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'passengerId',
+      referencedColumnName: 'id',
+    },
+  })
   passengers: Passenger[];
 
   @OneToOne(() => Billing, (billing) => billing.customer, {
@@ -89,13 +101,4 @@ export class Customer {
   })
   @JoinColumn()
   penalty?: Penalty;
-
-  //* ---------------------------------------------------------------------------------------------- */
-  //*                                        Functions                                               */
-  //* ---------------------------------------------------------------------------------------------- */
-
-  /* @BeforeInsert()
-  hashingPassword() {
-    this.password = bcrypt.hashSync(this.password, 10);
-  } */
 }

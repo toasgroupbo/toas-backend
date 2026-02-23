@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { AssignPassengerInAppDto, CreateTicketInAppDto } from './dto';
+import { AssignPassengersBatchInAppDto, CreateTicketInAppDto } from './dto';
 
 import { ValidResourses } from 'src/common/enums';
 
@@ -100,9 +100,9 @@ export class TicketsInAppController {
   @UseGuards(IsVerifyGuard)
   @Auth()
   //!
-  @Patch('assign-passenger')
+  @Post('assign-passenger')
   assignOccupant(
-    @Body() dto: AssignPassengerInAppDto,
+    @Body() dto: AssignPassengersBatchInAppDto,
     @GetCustomer() customer: Customer,
   ) {
     return this.ticketsInAppService.assignPassenger(dto, customer); //! GetCustomer

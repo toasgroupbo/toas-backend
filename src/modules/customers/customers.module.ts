@@ -40,6 +40,11 @@ import { Penalty } from './entities/penalty.entity';
     BillingsService,
     PenaltiesService,
   ],
-  exports: [CustomersService, TypeOrmModule, PenaltiesService],
+  exports: [
+    CustomersService,
+    TypeOrmModule,
+    PenaltiesService,
+    PassengersService,
+  ],
 })
 export class CustomersModule {}

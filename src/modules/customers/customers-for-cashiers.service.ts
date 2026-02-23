@@ -53,7 +53,7 @@ export class CustomersForCashierService {
   //?                                Create_Passenger                                                */
   //? ============================================================================================== */
 
-  async createPassenger(dto: CreatePassengerInOfficeDto) {
+  /* async createPassenger(dto: CreatePassengerInOfficeDto) {
     const customer = await this.customerRepository.findOne({
       where: { id: dto.customerId },
     });
@@ -63,7 +63,7 @@ export class CustomersForCashierService {
     }
 
     return this.passengersService.createBase(dto, customer);
-  }
+  } */
 
   //? ============================================================================================== */
   //?                              FindOne_Passengers                                                */

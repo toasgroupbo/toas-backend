@@ -98,9 +98,9 @@ export class CustomersInAppService {
   //?                               Create_Passenger                                                 */
   //? ============================================================================================== */
 
-  async createPassenger(dto: CreatePassengerInAppDto, customer: Customer) {
+  a; /* sync createPassenger(dto: CreatePassengerInAppDto, customer: Customer) {
     return this.passengersService.createBase(dto, customer);
-  }
+  } */
 
   //? ============================================================================================== */
   //?                              FindAll_Passengers                                                */

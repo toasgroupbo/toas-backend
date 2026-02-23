@@ -23,6 +23,8 @@ import { TicketStatus } from './enums/ticket-status.enum';
 import { TravelStatus } from '../travels/enums/travel-status.enum';
 import { PaymentStatusEnum } from '../payments/enum/payment-status.enum';
 
+import { PassengerSeatBatchDto } from './dto/assign-passengers-batch-in-app.dto';
+
 import { PenaltiesService } from '../customers/penalties.service';
 import { CustomersService } from '../customers/customers.service';
 import { TicketExpirationService } from './services/ticket-expiration.service';
@@ -30,10 +32,10 @@ import { TicketExpirationService } from './services/ticket-expiration.service';
 import { Ticket } from './entities/ticket.entity';
 import { User } from '../users/entities/user.entity';
 import { Travel } from '../travels/entities/travel.entity';
-import { Customer } from '../customers/entities/customer.entity';
-import { Passenger } from '../customers/entities/passenger.entity';
-import { TravelSeat } from '../travels/entities/travel-seat.entity';
 import { Setting } from '../settings/entities/setting.entity';
+import { Customer } from '../customers/entities/customer.entity';
+import { TravelSeat } from '../travels/entities/travel-seat.entity';
+import { PassengersService } from '../customers/passengers.service';
 
 @Injectable()
 export class TicketsService {
@@ -46,6 +48,8 @@ export class TicketsService {
     private readonly penaltiesService: PenaltiesService,
 
     private readonly ticketExpirationService: TicketExpirationService,
+
+    private readonly passengersService: PassengersService,
 
     private dataSource: DataSource,
   ) {}
@@ -368,12 +372,13 @@ export class TicketsService {
   //?                               Assign_Passenger                                                 */
   //? ============================================================================================== */
 
-  async assignPassengerBase(
-    ticketId: number,
-    seatId: number,
-    passengerId: number,
-    customer: Customer,
-  ) {
+  async assignPassengerBase(data: {
+    passengers: PassengerSeatBatchDto[];
+    customer: Customer;
+    ticketId: number;
+  }) {
+    const { passengers, customer, ticketId } = data;
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -384,8 +389,8 @@ export class TicketsService {
 
     try {
       const travel = await queryRunner.manager.findOne(Travel, {
-        where: { tickets: { id: ticketId } },
-        select: ['id'],
+        where: { tickets: { id: data.ticketId } },
+        select: { id: true },
       });
 
       if (!travel) {
@@ -396,44 +401,42 @@ export class TicketsService {
         travel.id,
         queryRunner.manager,
       );
+      for (const item of passengers) {
+        const seat = await queryRunner.manager
+          .createQueryBuilder(TravelSeat, 'seat')
+          .leftJoinAndSelect('seat.ticket', 'ticket')
+          .where('seat.id = :seatId', { seatId: item.seatId })
+          .andWhere('ticket.id = :ticketId', { ticketId })
+          .andWhere('ticket.buyerId = :customerId', {
+            customerId: customer.id,
+          })
+          .andWhere('ticket.status = :status', {
+            status: TicketStatus.RESERVED,
+          })
+          .getOne();
 
-      const seat = await queryRunner.manager
-        .createQueryBuilder(TravelSeat, 'seat')
-        .leftJoinAndSelect('seat.ticket', 'ticket')
-        .where('seat.id = :seatId', { seatId })
-        .andWhere('ticket.id = :ticketId', { ticketId })
-        .andWhere('ticket.buyerId = :customerId', {
-          customerId: customer.id,
-        })
-        .andWhere('ticket.status = :status', {
-          status: TicketStatus.RESERVED,
-        })
-        .getOne();
+        if (!seat) {
+          throw new BadRequestException(`Seat ${item.seatId} not editable`);
+        }
 
-      if (!seat) {
-        throw new BadRequestException('Seat not editable');
+        const passenger = await this.passengersService.createBase(
+          {
+            fullName: item.passenger.name,
+            ci: item.passenger.ci,
+          },
+          customer,
+          queryRunner.manager,
+        );
+
+        seat.passenger = {
+          name: passenger.fullName,
+          ci: passenger.ci,
+        };
+
+        await queryRunner.manager.save(seat);
       }
-
-      const passenger = await queryRunner.manager.findOne(Passenger, {
-        where: {
-          id: passengerId,
-          customer: { id: customer.id },
-        },
-      });
-
-      if (!passenger) {
-        throw new NotFoundException('Passenger not found');
-      }
-
-      seat.passenger = {
-        name: passenger.fullName,
-        ci: passenger.ci,
-      };
-
-      await queryRunner.manager.save(seat);
-
       await queryRunner.commitTransaction();
-      return seat;
+      return { message: 'Passengers assigned successfully' };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;

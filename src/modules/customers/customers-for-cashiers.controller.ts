@@ -54,13 +54,13 @@ export class CustomersForCashiersController {
   //?                              Create_Passenger                                                  */
   //? ============================================================================================== */
 
-  //!
+  /* //!
   @Auth(ValidPermissions.CREATE)
   //!
   @Post('passengers')
   createPassenger(@Body() dto: CreatePassengerInOfficeDto) {
     return this.customersForCashierService.createPassenger(dto);
-  }
+  } */
 
   //? ============================================================================================== */
   //?                             FindOne_Passengers                                                 */

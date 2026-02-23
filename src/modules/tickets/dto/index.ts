@@ -7,5 +7,5 @@ export {
   SeatSelectionInAppDto,
 } from './selected-seats.dto';
 
-export { AssignPassengerInAppDto } from './assign-passenger-in-app.dto';
-export { AssignPassengerInOfficeDto } from './assign-passenger-in-office.dto';
+export { AssignPassengersBatchInAppDto } from './assign-passengers-batch-in-app.dto';
+export { AssignPassengersBatchInOfficeDto } from './assign-passengers-batch-in-office.dto';

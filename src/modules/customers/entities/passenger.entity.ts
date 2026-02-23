@@ -1,9 +1,9 @@
 import {
   Column,
   Entity,
-  ManyToOne,
   CreateDateColumn,
   PrimaryGeneratedColumn,
+  ManyToMany,
 } from 'typeorm';
 
 import { Customer } from './customer.entity';
@@ -27,8 +27,7 @@ export class Passenger {
   //* ---------------------------------------------------------------------------------------------- */
   //*                                        Relations                                               */
   //* ---------------------------------------------------------------------------------------------- */
-  @ManyToOne(() => Customer, (customer) => customer.passengers, {
-    onDelete: 'CASCADE',
-  })
-  customer: Customer;
+
+  @ManyToMany(() => Customer, (customers) => customers.passengers)
+  customers: Customer[];
 }
