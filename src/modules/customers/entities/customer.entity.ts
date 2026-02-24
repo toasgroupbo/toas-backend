@@ -29,6 +29,7 @@ export class Customer {
 
   @Column('text', {
     //select: false,
+    nullable: true,
   })
   password: string; //! solo para pruebas
 
