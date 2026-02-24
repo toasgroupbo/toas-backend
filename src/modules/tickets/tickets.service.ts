@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 import { envs } from 'src/config/environments/environments';
 
@@ -336,7 +336,13 @@ export class TicketsService {
 
   async verifyQr(ticketId: number) {
     const ticket = await this.ticketRepository.findOne({
-      where: { id: ticketId, status: TicketStatus.PENDING_PAYMENT },
+      where: {
+        id: ticketId,
+        /* status: In([
+      TicketStatus.PENDING_PAYMENT,
+      TicketStatus.,
+    ]), */
+      },
       relations: { paymentQr: true },
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
