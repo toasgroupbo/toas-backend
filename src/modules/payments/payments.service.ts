@@ -45,6 +45,93 @@ export class PaymentsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let ticket: Ticket | null;
+    let expirationForBcp: string;
+    let IdCorrelation: string;
+
+    try {
+      ticket = await queryRunner.manager
+        .createQueryBuilder(Ticket, 'ticket')
+        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
+        .setLock('pessimistic_write')
+        .where('ticket.id = :ticketId', { ticketId: dto.ticketId })
+        .andWhere('ticket.status = :status', {
+          status: TicketStatus.RESERVED,
+        })
+        .andWhere('ticket.payment_type = :paymentType', {
+          paymentType: PaymentType.QR,
+        })
+        .andWhere(
+          '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
+        )
+        .getOne();
+
+      if (!ticket) {
+        throw new BadRequestException('Ticket not available for QR generation');
+      }
+
+      const expires = this.getReservationExpiryQr();
+      ticket.status = TicketStatus.PENDING_PAYMENT;
+      ticket.reserve_expiresAt = expires;
+
+      for (const travelSeat of ticket.travelSeats) {
+        travelSeat.status = SeatStatus.PENDING_PAYMENT;
+      }
+
+      await queryRunner.manager.save(ticket);
+
+      expirationForBcp = this.formatExpirationForBcp(ticket.reserve_expiresAt);
+
+      IdCorrelation = this.generateCorrelationId();
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+
+    //  AQUÍ YA NO HAY TRANSACCIÓN ABIERTA
+    const result = await this.httpService.generateQr({
+      IdCorrelation,
+      expiration: expirationForBcp,
+      amount: Number(ticket.total_price) + Number(ticket.commission),
+      gloss: dto.gloss,
+      collectors: [
+        {
+          name: 'Ticket',
+          parameter: 'TicketId',
+          value: ticket.id.toString(),
+        },
+      ],
+    });
+
+    // Nueva transacción corta solo para guardar el QR
+    await this.dataSource.transaction(async (manager) => {
+      const paymentQr = manager.create(PaymentQR, {
+        IdCorrelation,
+        ticket,
+        qrImage: result.data.qrImage,
+        amount: ticket.total_price,
+        qrId: result.data.id,
+        expirationDate: result.data.expirationDate,
+        state: result.state,
+        message: result.message,
+        status: PaymentStatusEnum.PENDING,
+      });
+
+      await manager.save(paymentQr);
+    });
+
+    return result;
+  }
+
+  /* async generateQr(dto: GenerateQrDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
       // --------------------------------------------
       // 1 Buscar ticket con lock
@@ -135,7 +222,7 @@ export class PaymentsService {
         details: error.details,
       };
     }
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                    Verify_QR                                                   */
