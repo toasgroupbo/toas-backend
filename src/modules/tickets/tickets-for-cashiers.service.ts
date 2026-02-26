@@ -274,7 +274,11 @@ export class TicketsForCashierService {
   //* ============================================================================================== */
 
   private isTicketCancelable(ticket: Ticket): boolean {
-    return [TicketStatus.RESERVED, TicketStatus.SOLD].includes(ticket.status);
+    return [
+      TicketStatus.RESERVED,
+      TicketStatus.SOLD,
+      TicketStatus.PENDING_PAYMENT,
+    ].includes(ticket.status);
   }
 
   //* ============================================================================================== */

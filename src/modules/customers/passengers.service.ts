@@ -30,6 +30,76 @@ export class PassengersService {
     const entityManager = manager ?? repository.manager;
 
     try {
+      // Buscar passenger por CI
+      let passenger = await repository.findOne({
+        where: { ci: dto.ci },
+      });
+
+      // Obtener customer con pasajeros actuales
+      const customerWithPassengers = await entityManager.findOne(Customer, {
+        where: { id: customer.id },
+        relations: { passengers: true },
+      });
+
+      if (!customerWithPassengers) {
+        throw new Error('Customer not found');
+      }
+
+      // Verificar si ya está vinculado
+      const alreadyLinked = customerWithPassengers.passengers.some(
+        (p) => p.ci === dto.ci,
+      );
+
+      if (alreadyLinked) {
+        return passenger!;
+      }
+
+      // Validar límite ANTES de agregar
+      if (customerWithPassengers.passengers.length >= 10) {
+        const oldestPassenger = customerWithPassengers.passengers.sort(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+        )[0];
+
+        customerWithPassengers.passengers =
+          customerWithPassengers.passengers.filter(
+            (p) => p.id !== oldestPassenger.id,
+          );
+      }
+
+      // Si no existe passenger, crearlo
+      if (!passenger) {
+        passenger = repository.create({
+          fullName: dto.fullName,
+          ci: dto.ci,
+        });
+
+        await repository.save(passenger);
+      }
+
+      // Agregar relación DESDE EL OWNER
+      customerWithPassengers.passengers.push(passenger);
+
+      await entityManager.save(Customer, customerWithPassengers);
+
+      return passenger;
+    } catch (error) {
+      handleDBExceptions(error);
+      throw error;
+    }
+  }
+
+  /* async createBase(
+    dto: { fullName: string; ci: string },
+    customer: Customer,
+    manager?: EntityManager,
+  ): Promise<Passenger> {
+    const repository = manager
+      ? manager.getRepository(Passenger)
+      : this.passengerRepository;
+
+    const entityManager = manager ?? repository.manager;
+
+    try {
       // Buscar pasajero por CI
 
       let passenger = await repository.findOne({
@@ -87,7 +157,7 @@ export class PassengersService {
       handleDBExceptions(error);
       throw error;
     }
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */

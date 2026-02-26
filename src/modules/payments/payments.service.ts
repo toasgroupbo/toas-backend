@@ -46,10 +46,13 @@ export class PaymentsService {
     await queryRunner.startTransaction();
 
     let ticket: Ticket | null;
-    let expirationForBcp: string;
     let IdCorrelation: string;
 
     try {
+      // ----------------------------------------------------------------
+      // SOLO VALIDAR Y BLOQUEAR TICKET (NO CAMBIAR ESTADO)
+      // ----------------------------------------------------------------
+
       ticket = await queryRunner.manager
         .createQueryBuilder(Ticket, 'ticket')
         .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
@@ -70,18 +73,7 @@ export class PaymentsService {
         throw new BadRequestException('Ticket not available for QR generation');
       }
 
-      const expires = this.getReservationExpiryQr();
-      ticket.status = TicketStatus.PENDING_PAYMENT;
-      ticket.reserve_expiresAt = expires;
-
-      for (const travelSeat of ticket.travelSeats) {
-        travelSeat.status = SeatStatus.PENDING_PAYMENT;
-      }
-
-      await queryRunner.manager.save(ticket);
-
-      expirationForBcp = this.formatExpirationForBcp(ticket.reserve_expiresAt);
-
+      // Generar correlación
       IdCorrelation = this.generateCorrelationId();
 
       await queryRunner.commitTransaction();
@@ -92,99 +84,17 @@ export class PaymentsService {
       await queryRunner.release();
     }
 
-    //  AQUÍ YA NO HAY TRANSACCIÓN ABIERTA
-    const result = await this.httpService.generateQr({
-      IdCorrelation,
-      expiration: expirationForBcp,
-      amount: Number(ticket.total_price) + Number(ticket.commission),
-      gloss: dto.gloss,
-      collectors: [
-        {
-          name: 'Ticket',
-          parameter: 'TicketId',
-          value: ticket.id.toString(),
-        },
-      ],
-    });
+    // ----------------------------------------------------------------
+    // LLAMAR AL BANCO (FUERA DE TRANSACCIÓN)
+    // ----------------------------------------------------------------
 
-    // Nueva transacción corta solo para guardar el QR
-    await this.dataSource.transaction(async (manager) => {
-      const paymentQr = manager.create(PaymentQR, {
-        IdCorrelation,
-        ticket,
-        qrImage: result.data.qrImage,
-        amount: ticket.total_price,
-        qrId: result.data.id,
-        expirationDate: result.data.expirationDate,
-        state: result.state,
-        message: result.message,
-        status: PaymentStatusEnum.PENDING,
-      });
-
-      await manager.save(paymentQr);
-    });
-
-    return result;
-  }
-
-  /* async generateQr(dto: GenerateQrDto) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    let result;
 
     try {
-      // --------------------------------------------
-      // 1 Buscar ticket con lock
-      // --------------------------------------------
-
-      const ticket = await queryRunner.manager
-        .createQueryBuilder(Ticket, 'ticket')
-        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
-        .setLock('pessimistic_write')
-        .where('ticket.id = :ticketId', { ticketId: dto.ticketId })
-        .andWhere('ticket.status = :status', {
-          status: TicketStatus.RESERVED,
-        })
-        .andWhere('ticket.payment_type = :paymentType', {
-          paymentType: PaymentType.QR,
-        })
-        .andWhere(
-          '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
-        )
-        .getOne();
-
-      if (!ticket) {
-        throw new BadRequestException('Ticket not available for QR generation');
-      }
-
-      // --------------------------------------------
-      // 2 Cambiar estados y cambiar el expire
-      // --------------------------------------------
-
-      const expires = this.getReservationExpiryQr();
-      ticket.status = TicketStatus.PENDING_PAYMENT;
-      ticket.reserve_expiresAt = expires;
-
-      for (const travelSeat of ticket.travelSeats) {
-        travelSeat.status = SeatStatus.PENDING_PAYMENT;
-      }
-
-      await queryRunner.manager.save(ticket);
-
-      const expirationForBcp = this.formatExpirationForBcp(
-        ticket.reserve_expiresAt,
-      );
-
-      // --------------------------------------------
-      // 3 Hacer la peticion al BCP
-      // --------------------------------------------
-
-      const IdCorrelation = this.generateCorrelationId();
-
-      const result = await this.httpService.generateQr({
-        IdCorrelation: IdCorrelation,
-        expiration: expirationForBcp,
-        amount: Number(ticket.total_price) + Number(ticket.commission), //! + la comision
+      result = await this.httpService.generateQr({
+        IdCorrelation,
+        expiration: this.formatExpirationForBcp(), // 00/HH:mm
+        amount: Number(ticket.total_price) + Number(ticket.commission),
         gloss: dto.gloss,
         collectors: [
           {
@@ -194,35 +104,51 @@ export class PaymentsService {
           },
         ],
       });
+    } catch (error) {
+      //  Si el banco falla, el ticket sigue RESERVED
+      throw new BadRequestException('QR generation failed. Please try again.');
+    }
 
-      // --------------------------------------------
-      // 4 Guardar el Payment QR
-      // --------------------------------------------
+    // ----------------------------------------------------------------
+    // SOLO SI EL BANCO RESPONDE OK → CAMBIAR ESTADOS
+    // ----------------------------------------------------------------
 
-      const paymentQr = queryRunner.manager.create(PaymentQR, {
-        IdCorrelation: IdCorrelation,
-        ticket: ticket,
+    await this.dataSource.transaction(async (manager) => {
+      const ticketToUpdate = await manager.findOne(Ticket, {
+        where: { id: ticket.id },
+        relations: { travelSeats: true },
+      });
+
+      if (!ticketToUpdate) {
+        throw new NotFoundException('Ticket not found');
+      }
+
+      // Cambiar estados ahora sí
+      ticketToUpdate.status = TicketStatus.PENDING_PAYMENT;
+      ticketToUpdate.reserve_expiresAt = this.getReservationExpiryQr();
+
+      for (const seat of ticketToUpdate.travelSeats) {
+        seat.status = SeatStatus.PENDING_PAYMENT;
+      }
+
+      const paymentQr = manager.create(PaymentQR, {
+        IdCorrelation,
+        ticket: ticketToUpdate,
         qrImage: result.data.qrImage,
-        amount: ticket.total_price,
+        amount: ticketToUpdate.total_price,
         qrId: result.data.id,
         expirationDate: result.data.expirationDate,
         state: result.state,
         message: result.message,
         status: PaymentStatusEnum.PENDING,
       });
-      await queryRunner.manager.save(paymentQr);
 
-      await queryRunner.commitTransaction();
-      return result;
-    } catch (error) {
-      return {
-        success: false,
-        state: error.state || '99',
-        message: error.message || 'Error generando QR',
-        details: error.details,
-      };
-    }
-  } */
+      await manager.save(ticketToUpdate);
+      await manager.save(paymentQr);
+    });
+
+    return result;
+  }
 
   //? ============================================================================================== */
   //?                                    Verify_QR                                                   */
@@ -274,16 +200,10 @@ export class PaymentsService {
 
   //* ============================================================================================== */
 
-  private formatExpirationForBcp(ticketExpireDate: Date): string {
-    const TWO_MINUTES = 2 * 60 * 1000;
+  private formatExpirationForBcp(): string {
+    const TWO_MINUTES = 2;
+    const minutes = envs.RESERVATION_QR_EXPIRE_MINUTES - TWO_MINUTES;
 
-    // Restar 2 minutos
-    const qrExpire = new Date(ticketExpireDate.getTime() - TWO_MINUTES);
-
-    const day = String(qrExpire.getDate()).padStart(2, '0');
-    const hours = String(qrExpire.getHours()).padStart(2, '0');
-    const minutes = String(qrExpire.getMinutes()).padStart(2, '0');
-
-    return `${day}/${hours}:${minutes}`;
+    return `00/00:${minutes}`;
   }
 }

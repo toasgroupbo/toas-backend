@@ -218,6 +218,7 @@ export class TicketsInAppService {
   async getActiveReservation(customer: Customer) {
     const ticket = await this.ticketRepository
       .createQueryBuilder('ticket')
+      .leftJoinAndSelect('ticket.paymentQr', 'paymentQr')
       .where('ticket.buyerId = :buyerId', {
         buyerId: customer.id,
       })
@@ -230,9 +231,7 @@ export class TicketsInAppService {
       )
       .getOne();
 
-    if (!ticket) return null;
-
-    return ticket;
+    return ticket ?? null;
   }
 
   //? ============================================================================================== */
