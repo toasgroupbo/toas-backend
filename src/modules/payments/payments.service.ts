@@ -106,7 +106,8 @@ export class PaymentsService {
       });
     } catch (error) {
       //  Si el banco falla, el ticket sigue RESERVED
-      throw new BadRequestException('QR generation failed. Please try again.');
+      return error;
+      //throw new BadRequestException('QR generation failed. Please try again.');
     }
 
     // ----------------------------------------------------------------
