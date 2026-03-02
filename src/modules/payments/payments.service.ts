@@ -23,6 +23,7 @@ import { TicketsService } from '../tickets/tickets.service';
 
 import { PaymentQR } from './entities/payment-qr.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
+import { Penalty } from '../customers/entities/penalty.entity';
 
 @Injectable()
 export class PaymentsService {
@@ -106,8 +107,8 @@ export class PaymentsService {
       });
     } catch (error) {
       //  Si el banco falla, el ticket sigue RESERVED
-      return error;
-      //throw new BadRequestException('QR generation failed. Please try again.');
+      //return error;
+      throw new BadRequestException('QR generation failed. Please try again.');
     }
 
     // ----------------------------------------------------------------
@@ -166,6 +167,55 @@ export class PaymentsService {
   async callback(dto: QrCallbackResponse) {
     const { CorrelationId } = dto;
 
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
+        where: { IdCorrelation: CorrelationId },
+        relations: { ticket: true },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!paymentQr) {
+        await queryRunner.rollbackTransaction();
+        return;
+      }
+
+      //  Idempotencia básica (evita doble callback)
+      if (paymentQr.status === PaymentStatusEnum.PAID) {
+        await queryRunner.rollbackTransaction();
+        return;
+      }
+
+      // Guardar respuesta del banco
+      paymentQr.data = dto;
+      paymentQr.status = PaymentStatusEnum.PAID;
+
+      await queryRunner.manager.save(paymentQr);
+
+      // Confirmar ticket
+      if (paymentQr.ticket) {
+        await this.ticketsService.confirmWithManager(
+          paymentQr.ticket.id,
+          queryRunner.manager,
+        );
+      }
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /* async callback(dto: QrCallbackResponse) {
+    const { CorrelationId } = dto;
+
     const paymentQr = await this.paymentRepository.findOne({
       where: { IdCorrelation: CorrelationId },
       relations: { ticket: true },
@@ -184,7 +234,7 @@ export class PaymentsService {
         console.error('Error confirming ticket after payment callback', err);
       }
     }
-  }
+  } */
 
   //* ============================================================================================== */
 

@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 
 import { envs } from 'src/config/environments/environments';
 
@@ -27,15 +27,16 @@ import { PassengerSeatBatchDto } from './dto/assign-passengers-batch-in-app.dto'
 
 import { PenaltiesService } from '../customers/penalties.service';
 import { CustomersService } from '../customers/customers.service';
+import { PassengersService } from '../customers/passengers.service';
 import { TicketExpirationService } from './services/ticket-expiration.service';
 
 import { Ticket } from './entities/ticket.entity';
 import { User } from '../users/entities/user.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Setting } from '../settings/entities/setting.entity';
+import { Penalty } from '../customers/entities/penalty.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { TravelSeat } from '../travels/entities/travel-seat.entity';
-import { PassengersService } from '../customers/passengers.service';
 
 @Injectable()
 export class TicketsService {
@@ -150,6 +151,7 @@ export class TicketsService {
       // --------------------------------------------
       // 5. Calcular precios y cambiar estados
       // --------------------------------------------
+
       let totalPrice = 0;
 
       for (const seat of seats) {
@@ -202,11 +204,12 @@ export class TicketsService {
       await queryRunner.manager.save(ticket);
 
       // --------------------------------------------
-      // 8. Logica de penalizacion
+      // 8. Añadir penalizacion
       // --------------------------------------------
 
-      if (buyer && !user)
+      if (buyer && !user) {
         await this.penaltiesService.registerFailure(buyer, queryRunner.manager);
+      }
 
       await queryRunner.commitTransaction();
 
@@ -247,6 +250,165 @@ export class TicketsService {
 
   //? ============================================================================================== */
   //?                              Confirm_Ticket_QR                                                 */
+  //? ============================================================================================== */
+
+  async confirmWithManager(ticketId: number, manager: EntityManager) {
+    // --------------------------------------------
+    // 1. Buscar travel asociado al ticket
+    // --------------------------------------------
+
+    const travel = await manager.findOne(Travel, {
+      where: { tickets: { id: ticketId } },
+    });
+
+    if (!travel) throw new NotFoundException('Travel not found');
+
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(travel.id, manager);
+
+    // --------------------------------------------
+    // 2. Buscar ticket con lock y validaciones
+    // --------------------------------------------
+
+    const ticket = await manager
+      .createQueryBuilder(Ticket, 'ticket')
+      .setLock('pessimistic_write')
+      .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
+      .innerJoinAndSelect('ticket.paymentQr', 'paymentQr')
+      .innerJoinAndSelect('ticket.buyer', 'buyer') // ← necesario
+      .where('ticket.id = :ticketId', { ticketId })
+      .andWhere('ticket.status = :status', {
+        status: TicketStatus.PENDING_PAYMENT,
+      })
+      .andWhere('ticket.payment_type = :payment_type', {
+        payment_type: PaymentType.QR,
+      })
+      .andWhere('(ticket.reserve_expiresAt > NOW())')
+      .getOne();
+
+    if (!ticket)
+      throw new NotFoundException(
+        'Ticket not found, expired, or not in a confirmable state',
+      );
+
+    // --------------------------------------------
+    // 3. Actualizar estados
+    // --------------------------------------------
+
+    ticket.status = TicketStatus.SOLD;
+    ticket.reserve_expiresAt = null;
+
+    if (ticket.paymentQr) {
+      ticket.paymentQr.status = PaymentStatusEnum.PAID;
+    }
+
+    for (const seat of ticket.travelSeats) {
+      seat.status = SeatStatus.SOLD;
+    }
+
+    // --------------------------------------------
+    // 4. Quitar penalización SOLO si es IN_APP
+    // --------------------------------------------
+
+    if (
+      ticket.type === TicketType.IN_APP &&
+      ticket.buyer /* && !ticket.soldBy */
+    ) {
+      const penaltyRepository = manager.getRepository(Penalty);
+
+      const penalty = await penaltyRepository.findOne({
+        where: { customer: { id: ticket.buyer.id } },
+      });
+
+      if (penalty && penalty.failedCount > 0) {
+        penalty.failedCount -= 1;
+
+        // Si ya no llega al límite, quitar bloqueo
+        /* if (penalty.failedCount < 4) {
+          penalty.blockedUntil = null;
+        } */
+
+        await penaltyRepository.save(penalty);
+      }
+    }
+
+    // --------------------------------------------
+    // 5. Persistir cambios
+    // --------------------------------------------
+
+    await manager.save(Ticket, ticket);
+
+    return ticket;
+  }
+
+  /* async confirmWithManager(ticketId: number, manager: EntityManager) {
+    // --------------------------------------------
+    // 1. Buscar travel asociado al ticket
+    // --------------------------------------------
+
+    const travel = await manager.findOne(Travel, {
+      where: { tickets: { id: ticketId } },
+    });
+
+    if (!travel) throw new NotFoundException('Travel not found');
+
+    //! --------------------------------------------
+    //! Expirar Reservas si es necesario
+    //! --------------------------------------------
+
+    await this.ticketExpirationService.expireTravelIfNeeded(travel.id, manager);
+
+    // --------------------------------------------
+    // 2. Buscar ticket con lock y validaciones
+    // --------------------------------------------
+
+    const ticket = await manager
+      .createQueryBuilder(Ticket, 'ticket')
+      .setLock('pessimistic_write')
+      .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
+      .innerJoinAndSelect('ticket.paymentQr', 'paymentQr')
+      .where('ticket.id = :ticketId', { ticketId })
+      .andWhere('ticket.status = :status', {
+        status: TicketStatus.PENDING_PAYMENT,
+      })
+      .andWhere('ticket.payment_type = :payment_type', {
+        payment_type: PaymentType.QR,
+      })
+      .andWhere('(ticket.reserve_expiresAt > NOW())')
+      .getOne();
+
+    if (!ticket)
+      throw new NotFoundException(
+        'Ticket not found, expired, or not in a confirmable state',
+      );
+
+    // --------------------------------------------
+    // 3. Actualizar estados
+    // --------------------------------------------
+
+    ticket.status = TicketStatus.SOLD;
+    ticket.reserve_expiresAt = null;
+
+    if (ticket.paymentQr) {
+      ticket.paymentQr.status = PaymentStatusEnum.PAID;
+    }
+
+    for (const seat of ticket.travelSeats) {
+      seat.status = SeatStatus.SOLD;
+    }
+
+    // --------------------------------------------
+    // 4. Persistir cambios (sin commit)
+    // --------------------------------------------
+
+    await manager.save(ticket);
+
+    return ticket;
+  } */
+
   //? ============================================================================================== */
 
   async confirm(ticketId: number) {

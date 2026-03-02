@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { CreatePassengerInAppDto, UpdateCustomerDto } from './dto';
+import { UpdateCustomerDto } from './dto';
 
 import { PassengersService } from './passengers.service';
 
@@ -98,7 +98,7 @@ export class CustomersInAppService {
   //?                               Create_Passenger                                                 */
   //? ============================================================================================== */
 
-  a; /* sync createPassenger(dto: CreatePassengerInAppDto, customer: Customer) {
+  /* sync createPassenger(dto: CreatePassengerInAppDto, customer: Customer) {
     return this.passengersService.createBase(dto, customer);
   } */
 

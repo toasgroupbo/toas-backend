@@ -175,8 +175,11 @@ export class PassengersService {
   //? ============================================================================================== */
 
   async findAllInApp(customer: Customer) {
-    return this.passengerRepository.find({
-      where: { customers: customer },
-    });
+    return this.passengerRepository
+      .createQueryBuilder('passenger')
+      .innerJoin('passenger.customers', 'customer')
+      .where('customer.id = :customerId', { customerId: customer.id })
+      .orderBy('passenger.createdAt', 'DESC')
+      .getMany();
   }
 }

@@ -24,7 +24,7 @@ export class TicketExpirationService {
   async expireTravelIfNeeded(
     travelId: number,
     manager?: EntityManager,
-  ): Promise<number> {
+  ) /* : Promise<number> */ {
     const internalManager = manager ?? this.dataSource.manager;
 
     const expiredTickets = await internalManager.find(Ticket, {
@@ -51,18 +51,11 @@ export class TicketExpirationService {
         await internalManager.save(seat);
       }
 
-      if (ticket.type === TicketType.IN_APP && ticket.buyer) {
-        await this.penaltyService.registerFailure(
-          ticket.buyer,
-          internalManager,
-        );
-      }
-
       await internalManager.save(ticket);
       expiredCount++;
     }
 
-    return expiredCount;
+    //return expiredCount;
   }
 
   //? ============================================================================================== */
