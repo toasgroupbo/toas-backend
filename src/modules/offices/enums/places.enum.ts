@@ -1,11 +1,11 @@
 export enum CitiesEnum {
-  SANTA_CRUZ_DE_LA_SIERRA = 'Santa Cruz de la Sierra',
-  COCHABAMBA = 'Cochabamba',
-  CHUQUISACA = 'Chuquisaca',
+  BENI = 'Beni',
+  ORURO = 'Oruro',
+  PANDO = 'Pando',
   LA_PAZ = 'La Paz',
   POTOSI = 'Potosi',
   TARIJA = 'Tarija',
-  PANDO = 'Pando',
-  ORURO = 'Oruro',
-  BENI = 'Beni',
+  COCHABAMBA = 'Cochabamba',
+  CHUQUISACA = 'Chuquisaca',
+  SANTA_CRUZ_DE_LA_SIERRA = 'Santa Cruz de la Sierra',
 }

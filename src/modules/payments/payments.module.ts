@@ -7,10 +7,11 @@ import { PaymentQR } from './entities/payment-qr.entity';
 
 import { HttpService } from './http/http.service';
 
+import { WalletModule } from '../wallet/wallet.module';
 import { TicketsModule } from '../tickets/tickets.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PaymentQR]), TicketsModule],
+  imports: [TypeOrmModule.forFeature([PaymentQR]), TicketsModule, WalletModule],
   controllers: [PaymentsController],
   providers: [PaymentsService, HttpService],
 })

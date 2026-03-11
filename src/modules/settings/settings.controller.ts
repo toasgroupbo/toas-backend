@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Body, Patch } from '@nestjs/common';
-import { SettingsService } from './settings.service';
-import { CreateSettingDto } from './dto/create-setting.dto';
-import { UpdateSettingDto } from './dto/update-setting.dto';
 import { ApiTags } from '@nestjs/swagger';
+
+import { UpdateSettingDto } from './dto';
+
+import { SettingsService } from './settings.service';
 
 @ApiTags('Settings')
 @Controller('settings')
@@ -14,8 +15,8 @@ export class SettingsController {
   //? ============================================================================================== */
 
   /*   @Post()
-  create(@Body() createSettingDto: CreateSettingDto) {
-    return this.settingsService.create(createSettingDto);
+  create(@Body() dto: CreateSettingDto) {
+    return this.settingsService.create(dto);
   } */
 
   //? ============================================================================================== */
@@ -32,7 +33,7 @@ export class SettingsController {
   //? ============================================================================================== */
 
   @Patch()
-  update(@Body() updateSettingDto: UpdateSettingDto) {
-    return this.settingsService.update(updateSettingDto);
+  update(@Body() dto: UpdateSettingDto) {
+    return this.settingsService.update(dto);
   }
 }

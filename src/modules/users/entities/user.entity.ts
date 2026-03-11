@@ -21,7 +21,7 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('text', { unique: true }) //! unique
+  @Column('text', { unique: true })
   email: string;
 
   @Column('text', {
@@ -32,7 +32,7 @@ export class User {
   @Column('text')
   fullName: string;
 
-  @Column('text', { unique: true }) //! unique
+  @Column('text', { unique: true })
   ci: string;
 
   @Column('text')
@@ -46,9 +46,9 @@ export class User {
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @ManyToOne(() => Rol, (rol) => rol.users, {
     onDelete: 'SET NULL',
@@ -56,19 +56,19 @@ export class User {
   rol: Rol;
 
   //! si es CompanyAdmin
-  @OneToOne(() => Company, (company) => company.admin, { nullable: true }) //! NULL
+  @OneToOne(() => Company, (company) => company.admin, { nullable: true })
   company?: Company;
 
   //! si es cajero
-  @ManyToOne(() => Office, (office) => office.cashiers, { nullable: true }) //! NULL
+  @ManyToOne(() => Office, (office) => office.cashiers, { nullable: true })
   office?: Office;
 
   @OneToMany(() => Ticket, (ticket) => ticket.soldBy)
   ticketsSold: Ticket[];
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Functions                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @BeforeInsert()
   hashingPassword() {

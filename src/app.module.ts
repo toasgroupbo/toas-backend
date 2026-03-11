@@ -1,29 +1,31 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ScheduleModule } from '@nestjs/schedule';
 import { envs } from './config/environments/environments';
 
-import { AuthModule } from './auth/auth.module';
-
-import { MailModule } from './mail/mail.module';
-import { FilesModule } from './files/files.module';
-import { RolesModule } from './modules/roles/roles.module';
-import { UsersModule } from './modules/users/users.module';
-import { BusesModule } from './modules/buses/buses.module';
-import { OwnersModule } from './modules/owners/owners.module';
-import { RoutesModule } from './modules/routes/routes.module';
-import { TravelsModule } from './modules/travels/travels.module';
-import { OfficesModule } from './modules/offices/offices.module';
-import { TicketsModule } from './modules/tickets/tickets.module';
-import { BalanceModule } from './modules/balances/balances.module';
-import { CustomersModule } from './modules/customers/customers.module';
-import { CompaniesModule } from './modules/companies/companies.module';
-import { TransactionsModule } from './modules/transactions/transactions.module';
-import { BankAccountsModule } from './modules/bank-accounts/bank-accounts.module';
-import { LoggerModule } from './logger/logger.module';
-import { SchedulerModule } from './scheduler/scheduler.module';
-import { PaymentsModule } from './modules/payments/payments.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { AuthModule } from './auth/auth.module';
+import { RolesModule } from './modules/roles/roles.module';
+
+import { UsersModule } from './modules/users/users.module';
+import { BankAccountsModule } from './modules/bank-accounts/bank-accounts.module';
+import { CompaniesModule } from './modules/companies/companies.module';
+
+import { OwnersModule } from './modules/owners/owners.module';
+import { OfficesModule } from './modules/offices/offices.module';
+
+import { RoutesModule } from './modules/routes/routes.module';
+import { BusesModule } from './modules/buses/buses.module';
+import { TravelsModule } from './modules/travels/travels.module';
+import { TicketsModule } from './modules/tickets/tickets.module';
+
+import { CustomersModule } from './modules/customers/customers.module';
+import { WalletModule } from './modules/wallet/wallet.module';
+
+import { FilesModule } from './files/files.module';
+import { LoggerModule } from './logger/logger.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { MailModule } from './mail/mail.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
 
 @Module({
   imports: [
@@ -36,10 +38,7 @@ import { SettingsModule } from './modules/settings/settings.module';
       password: envs.DB_PASSWORD,
       autoLoadEntities: true,
       synchronize: true,
-      //migrations: [process.env.NODE_ENV === 'production' ? 'dist/migrations/*.js' : 'src/migrations/*.ts'],
     }),
-
-    //SchedulerModule,
 
     AuthModule,
     RolesModule,
@@ -64,13 +63,13 @@ import { SettingsModule } from './modules/settings/settings.module';
 
     TransactionsModule,
 
-    BalanceModule,
-
     LoggerModule,
 
     PaymentsModule,
 
     SettingsModule,
+
+    WalletModule,
   ],
   controllers: [],
   providers: [],

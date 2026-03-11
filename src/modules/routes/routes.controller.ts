@@ -10,11 +10,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { CreateRouteDto, UpdateRouteDto } from './dto';
-
+import { Auth, GetCompany, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetCompany, Resource } from 'src/auth/decorators';
+import { CreateRouteDto, UpdateRouteDto } from './dto';
 
 import { RoutesService } from './routes.service';
 
@@ -36,8 +35,8 @@ export class RoutesController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
-  create(@Body() createRouteDto: CreateRouteDto) {
-    return this.routesService.create(createRouteDto);
+  create(@Body() dto: CreateRouteDto) {
+    return this.routesService.create(dto);
   }
 
   //? ============================================================================================== */
@@ -47,10 +46,10 @@ export class RoutesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Get()
   findAll(@GetCompany() companyId: number) {
-    return this.routesService.findAll(companyId); //! GetCompany
+    return this.routesService.findAll(companyId);
   }
 
   //? ============================================================================================== */
@@ -60,13 +59,13 @@ export class RoutesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
     @GetCompany() companyId: number,
   ) {
-    return this.routesService.findOne(id, companyId); //! GetCompany
+    return this.routesService.findOne(id, companyId);
   }
 
   //? ============================================================================================== */
@@ -76,14 +75,14 @@ export class RoutesController {
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateRouteDto: UpdateRouteDto,
+    @Body() dto: UpdateRouteDto,
     @GetCompany() companyId: number,
   ) {
-    return this.routesService.update(id, updateRouteDto, companyId); //! GetCompany
+    return this.routesService.update(id, dto, companyId);
   }
 
   //? ============================================================================================== */
@@ -93,12 +92,12 @@ export class RoutesController {
   //!
   @Auth(ValidPermissions.DELETE)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Delete(':id')
   remove(
     @Param('id', ParseIntPipe) id: number,
     @GetCompany() companyId: number,
   ) {
-    return this.routesService.remove(id, companyId); //! GetCompany
+    return this.routesService.remove(id, companyId);
   }
 }

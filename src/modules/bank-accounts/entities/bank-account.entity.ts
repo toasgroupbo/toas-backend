@@ -7,10 +7,16 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { Bank, BankAccountType } from '../enums';
+import { Bank } from '../enums/bank.enum';
 
 import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { Company } from 'src/modules/companies/entities/company.entity';
+
+export enum BankAccountType {
+  CAJA_AHORRO = 'caja_ahorro',
+  CUENTA_CORRIENTE = 'cuenta_corriente',
+  OTRA = 'otro',
+}
 
 @Entity('bank_accounts')
 export class BankAccount {
@@ -23,7 +29,7 @@ export class BankAccount {
   @Column('text')
   typeAccount: BankAccountType;
 
-  @Column('text', { unique: true }) //! unique
+  @Column('text', { unique: true })
   account: string;
 
   @CreateDateColumn({
@@ -34,9 +40,9 @@ export class BankAccount {
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @OneToOne(() => Company, (company) => company.bankAccount)
   company: Company;

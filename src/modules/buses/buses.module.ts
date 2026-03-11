@@ -3,9 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { BusesController } from './buses.controller';
 import { BusesService } from './buses.service';
-import { Bus } from './entities/bus.entity';
 
 import { BusType } from './entities/bus-type.entity';
+import { Bus } from './entities/bus.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Bus, BusType])],

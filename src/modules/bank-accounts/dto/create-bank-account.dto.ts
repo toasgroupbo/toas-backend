@@ -1,9 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString } from 'class-validator';
 
-import { Bank, BankAccountType } from '../enums';
+import { Bank } from '../enums/bank.enum';
+
+import { BankAccountType } from '../entities/bank-account.entity';
 
 export class CreateBankAccountDto {
+  @ApiProperty({ example: '1234567890' })
+  @IsString()
+  account: string;
+
   @ApiProperty({
     enum: Bank,
     example: Bank.BCP,
@@ -17,8 +23,4 @@ export class CreateBankAccountDto {
   })
   @IsEnum(BankAccountType)
   typeAccount: BankAccountType;
-
-  @ApiProperty({ example: '1234567890' })
-  @IsString()
-  account: string;
 }

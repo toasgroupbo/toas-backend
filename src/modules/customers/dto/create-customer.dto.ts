@@ -21,7 +21,7 @@ export class CreateCustomerDto {
 
   @ApiHideProperty()
   @IsEnum(AuthProviders)
-  provider: AuthProviders; //! Enum
+  provider: AuthProviders;
 
   @ApiHideProperty()
   @IsString()

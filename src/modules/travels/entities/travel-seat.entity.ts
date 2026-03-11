@@ -26,17 +26,17 @@ export class TravelSeat {
   @Column('int')
   deck: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: '0' }) //! default 0 (cambiar)
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: '0' })
   price: string;
 
   @Column('varchar', { length: 3, default: '' })
   seatNumber: string;
 
   @Column({ type: 'text', nullable: true })
-  type: SeatType; // 'seat' | 'aisle' | 'space'
+  type: SeatType;
 
   @Column({ type: 'text', default: SeatStatus.AVAILABLE })
-  status: SeatStatus; // 'available' | 'reserved' | 'sold' | 'unsold'
+  status: SeatStatus;
 
   @CreateDateColumn({
     type: 'timestamptz',
@@ -52,17 +52,17 @@ export class TravelSeat {
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @ManyToOne(() => Ticket, (ticket) => ticket.travelSeats, {
     nullable: true,
   })
-  ticket?: Ticket | null; //! puede ser null si el asiento esta disponible
+  ticket?: Ticket | null;
 
   @ManyToOne(() => Travel, (travel) => travel.travelSeats, {
-    onDelete: 'CASCADE', //! se elimina cuando se elimina su travel
+    onDelete: 'CASCADE',
   })
   travel: Travel;
 }

@@ -8,8 +8,6 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { CitiesEnum } from '../enums/places.enum';
-
 import { Place } from './place.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Route } from 'src/modules/routes/entities/route.entity';
@@ -23,17 +21,6 @@ export class Office {
   @Column('text', { nullable: true })
   url_gps: string;
 
-  /*   @Column({
-    type: 'text',
-  })
-  city: CitiesEnum;
- */
-  /*   @Column({
-    type: 'text',
-    default: 'central',
-  })
-  subsidiary: string; */
-
   @CreateDateColumn({
     type: 'timestamptz',
   })
@@ -42,15 +29,11 @@ export class Office {
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
-  @ManyToOne(
-    () => Company,
-    (company) => company.offices,
-    //{onDelete: 'SET NULL'},
-  )
+  @ManyToOne(() => Company, (company) => company.offices)
   company: Company;
 
   @ManyToOne(() => Place, (place) => place.offices, { eager: true })

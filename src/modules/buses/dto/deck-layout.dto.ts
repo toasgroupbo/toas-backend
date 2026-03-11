@@ -1,19 +1,27 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  Min,
+  Max,
   IsEnum,
-  IsNotEmpty,
+  Matches,
   IsNumber,
   IsString,
-  Matches,
-  Max,
-  Min,
+  IsNotEmpty,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+//import { DeckType } from '../enums/deck-type.enum';
+
 import { SeatsDto } from './seats.dto';
 
-import { DeckType } from '../enums/deck-type.enum';
+export enum DeckType {
+  LEITO = 'LEITO',
+  SEMICAMA = 'SEMICAMA',
+  CAMA = 'CAMA',
+  MIXTO = 'MIXTO',
+  SUIT_CAMA = 'suit_cama',
+}
 
 export class DeckLayoutDto {
   @ApiProperty()

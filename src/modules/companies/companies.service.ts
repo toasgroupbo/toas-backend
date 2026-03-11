@@ -29,9 +29,9 @@ export class CompanyService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  async create(createCompanyDto: CreateCompanyDto) {
+  async create(dto: CreateCompanyDto) {
     try {
-      const { bankAccount, manager, ...data } = createCompanyDto;
+      const { bankAccount, manager, ...data } = dto;
 
       // --------------------------------------------
       // 1. Busqueda del rol de COMPANY_ADMIN
@@ -88,10 +88,10 @@ export class CompanyService {
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
-  async update(id: number, updateCompanyDto: UpdateCompanyDto) {
+  async update(id: number, dto: UpdateCompanyDto) {
     const company = await this.findOne(id);
     try {
-      Object.assign(company, updateCompanyDto);
+      Object.assign(company, dto);
       return await this.companyRepository.save(company);
     } catch (error) {
       handleDBExceptions(error);

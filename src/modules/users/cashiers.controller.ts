@@ -9,11 +9,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { CreateUserCashierDto, UpdateUserOfficeDto } from './dto';
-
+import { Auth, GetCompany, Resource } from '../../auth/decorators';
 import { ValidResourses, ValidPermissions } from '../../common/enums';
 
-import { Auth, GetCompany, Resource } from '../../auth/decorators';
+import { CreateUserCashierDto, UpdateUserOfficeDto } from './dto';
 
 import { UsersService } from './users.service';
 
@@ -35,8 +34,8 @@ export class CashiersController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
-  createCashier(@Body() createCashierDto: CreateUserCashierDto) {
-    return this.usersService.createCashier(createCashierDto);
+  createCashier(@Body() dto: CreateUserCashierDto) {
+    return this.usersService.createCashier(dto);
   }
 
   //? ============================================================================================== */
@@ -45,10 +44,10 @@ export class CashiersController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Get()
   findAll(@GetCompany() companyId: number) {
-    return this.usersService.findAllCashiers(companyId); //! GetCompany
+    return this.usersService.findAllCashiers(companyId);
   }
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
@@ -57,13 +56,13 @@ export class CashiersController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
     @GetCompany() companyId: number,
   ) {
-    return this.usersService.findOneCashier(id, companyId); //! GetCompany
+    return this.usersService.findOneCashier(id, companyId);
   }
 
   //? ============================================================================================== */
@@ -73,13 +72,13 @@ export class CashiersController {
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Put('office/:id')
   updateOffice(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserOfficeDto: UpdateUserOfficeDto,
+    @Body() dto: UpdateUserOfficeDto,
     @GetCompany() companyId: number,
   ) {
-    return this.usersService.updateOffice(id, updateUserOfficeDto, companyId); //! GetCompany
+    return this.usersService.updateOffice(id, dto, companyId);
   }
 }

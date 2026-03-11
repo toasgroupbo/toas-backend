@@ -16,11 +16,8 @@ import { TravelsModule } from '../travels/travels.module';
   imports: [
     TypeOrmModule.forFeature([User]),
     forwardRef(() => AuthModule),
-
     RolesModule,
-
     BusesModule,
-
     TravelsModule,
   ],
   controllers: [UsersController, CashiersController],

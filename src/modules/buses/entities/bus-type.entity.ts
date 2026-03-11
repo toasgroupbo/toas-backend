@@ -1,11 +1,4 @@
-import {
-  Column,
-  Entity,
-  CreateDateColumn,
-  DeleteDateColumn,
-  PrimaryGeneratedColumn,
-  OneToOne,
-} from 'typeorm';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 import { DeckLayoutDto } from '../dto';
 
@@ -22,17 +15,9 @@ export class BusType {
   @Column('json')
   decks: DeckLayoutDto[];
 
-  @CreateDateColumn({
-    type: 'timestamptz',
-  })
-  createdAt: Date;
-
-  @DeleteDateColumn({ nullable: true, select: false })
-  deletedAt: Date;
-
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @OneToOne(() => Bus, (bus) => bus.busType)
   buses: Bus;

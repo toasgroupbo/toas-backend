@@ -3,8 +3,8 @@ export { CreateTicketInAppDto } from './create-ticket-in-app.dto';
 
 export {
   SelectedSeatsDto,
-  SeatSelectionInOfficeDto,
   SeatSelectionInAppDto,
+  SeatSelectionInOfficeDto,
 } from './selected-seats.dto';
 
 export { AssignPassengersBatchInAppDto } from './assign-passengers-batch-in-app.dto';

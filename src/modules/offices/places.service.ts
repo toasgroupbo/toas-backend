@@ -19,10 +19,10 @@ export class PlacesService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  async create(createPlaceDto: CreatePlaceDto) {
+  async create(dto: CreatePlaceDto) {
     try {
       const newPlace = this.PlaceRepository.create({
-        ...createPlaceDto,
+        ...dto,
       });
       return await this.PlaceRepository.save(newPlace);
     } catch (error) {

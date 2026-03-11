@@ -1,17 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  ArrayNotEmpty,
   IsArray,
   IsEnum,
   IsNumber,
   IsString,
+  ArrayNotEmpty,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 import { CreateBusTypeDto } from './create-bus-type.dto';
 
-import { Equipment } from '../enums';
+import { Equipment } from '../entities/bus.entity';
 
 export class CreateBusDto {
   @ApiProperty({
@@ -28,7 +28,7 @@ export class CreateBusDto {
   plaque: string;
 
   @ApiProperty({
-    description: 'equipamiento del bus',
+    description: 'Equipamiento del Bus',
     enum: Equipment,
     isArray: true,
     example: [Equipment.WIFI, Equipment.USB_CHARGER],
@@ -55,9 +55,9 @@ export class CreateBusDto {
   @IsString()
   model: string;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @ApiProperty({
     type: () => CreateBusTypeDto,
@@ -69,7 +69,7 @@ export class CreateBusDto {
 
   @ApiProperty({
     description: 'Owner ID',
-    example: '1',
+    example: 1,
   })
   @IsNumber()
   ownerId: number;

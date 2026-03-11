@@ -1,4 +1,5 @@
 import {
+  Put,
   Get,
   Post,
   Body,
@@ -6,21 +7,19 @@ import {
   Param,
   Delete,
   Controller,
-  Put,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import {
-  CreateUserAdminDto,
-  CreateUserDto,
-  UpdateUserDto,
-  UpdateUserPasswordDto,
-} from './dto';
-
+import { Auth, Resource } from '../../auth/decorators';
 import { ValidResourses, ValidPermissions } from '../../common/enums';
 
-import { Auth, Resource } from '../../auth/decorators';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  CreateUserAdminDto,
+  UpdateUserPasswordDto,
+} from './dto';
 
 import { UsersService } from './users.service';
 
@@ -47,8 +46,8 @@ export class UsersController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post('admins')
-  createAppAdmin(@Body() createUserAdminDto: CreateUserAdminDto) {
-    return this.usersService.createAppAdmin(createUserAdminDto);
+  createAppAdmin(@Body() dto: CreateUserAdminDto) {
+    return this.usersService.createAppAdmin(dto);
   }
 
   //? ============================================================================================== */
@@ -83,11 +82,8 @@ export class UsersController {
   @Auth(ValidPermissions.UPDATE)
   //!
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserDto: UpdateUserDto,
-  ) {
-    return this.usersService.update(id, updateUserDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(id, dto);
   }
 
   //? ============================================================================================== */
@@ -100,9 +96,9 @@ export class UsersController {
   @Put(':id')
   updatePassword(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserPasswordDto: UpdateUserPasswordDto,
+    @Body() dto: UpdateUserPasswordDto,
   ) {
-    return this.usersService.changePassword(id, updateUserPasswordDto);
+    return this.usersService.changePassword(id, dto);
   }
 
   //? ============================================================================================== */

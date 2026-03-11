@@ -1,17 +1,15 @@
 import {
   Get,
+  Post,
+  Query,
   Param,
   Controller,
   ParseIntPipe,
-  Post,
-  Body,
-  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { ValidPermissions, ValidResourses } from 'src/common/enums';
-
 import { Auth, GetCompany, Resource } from '../../auth/decorators';
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { TicketsService } from './tickets.service';
 
@@ -31,13 +29,13 @@ export class TicketsController {
   @Auth(ValidPermissions.READ)
   @ApiBearerAuth('access-token')
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Get(':travelId')
   findAll(
     @Param('travelId', ParseIntPipe) travelId: number,
     @GetCompany() companyId: number,
   ) {
-    return this.ticketsService.findAll(companyId, travelId); //! GetCompany
+    return this.ticketsService.findAll(companyId, travelId);
   }
 
   //? ============================================================================================== */

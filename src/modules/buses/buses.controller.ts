@@ -10,11 +10,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { CreateBusDto, UpdateBusDto } from './dto';
-
+import { Auth, GetCompany, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetCompany, Resource } from 'src/auth/decorators';
+import { CreateBusDto, UpdateBusDto } from './dto';
 
 import { BusesService } from './buses.service';
 
@@ -35,10 +34,10 @@ export class BusesController {
   //!
   @Auth(ValidPermissions.CREATE)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Post()
-  create(@Body() createBusDto: CreateBusDto, @GetCompany() companyId: number) {
-    return this.busesService.create(createBusDto, companyId); //! GetCompany
+  create(@Body() dto: CreateBusDto, @GetCompany() companyId: number) {
+    return this.busesService.create(dto, companyId);
   }
 
   //? ============================================================================================== */
@@ -48,10 +47,10 @@ export class BusesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Get()
   findAll(@GetCompany() companyId: number) {
-    return this.busesService.findAll(companyId); //! GetCompany
+    return this.busesService.findAll(companyId);
   }
 
   //? ============================================================================================== */
@@ -61,13 +60,13 @@ export class BusesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
     @GetCompany() companyId: number,
   ) {
-    return this.busesService.findOne(id, companyId); //! GetCompany
+    return this.busesService.findOne(id, companyId);
   }
 
   //? ============================================================================================== */
@@ -77,14 +76,14 @@ export class BusesController {
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateBusDto: UpdateBusDto,
+    @Body() dto: UpdateBusDto,
     @GetCompany() companyId: number,
   ) {
-    return this.busesService.update(id, updateBusDto, companyId); //! GetCompany
+    return this.busesService.update(id, dto, companyId);
   }
 
   //? ============================================================================================== */
@@ -94,12 +93,12 @@ export class BusesController {
   //!
   @Auth(ValidPermissions.DELETE)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Delete(':id')
   remove(
     @Param('id', ParseIntPipe) id: number,
     @GetCompany() companyId: number,
   ) {
-    return this.busesService.remove(id, companyId); //! GetCompany
+    return this.busesService.remove(id, companyId);
   }
 }

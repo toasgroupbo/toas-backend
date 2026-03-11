@@ -5,11 +5,11 @@ import { RoutesController } from './routes.controller';
 import { RoutesService } from './routes.service';
 import { Route } from './entities/route.entity';
 
-import { RoutesInAppController } from './routes-in-app.controller';
-import { RoutesInAppService } from './routes-in-app.service';
+import { RoutesInAppController } from './in-app/routes-in-app.controller';
+import { RoutesInAppService } from './in-app/routes-in-app.service';
 
-import { RoutesForCashierController } from './routes-for-cashiers.controller';
-import { RoutesForCashierService } from './routes-for-cashiers.service';
+import { RoutesForCashierController } from './in-office/routes-for-cashiers.controller';
+import { RoutesForCashierService } from './in-office/routes-for-cashiers.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Route])],

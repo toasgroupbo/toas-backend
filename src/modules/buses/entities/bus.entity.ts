@@ -1,21 +1,28 @@
 import {
   Column,
   Entity,
+  OneToOne,
   ManyToOne,
+  OneToMany,
+  JoinColumn,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
-  OneToOne,
-  JoinColumn,
-  OneToMany,
 } from 'typeorm';
 
-import { Equipment } from '../enums';
-
-import { Company } from 'src/modules/companies/entities/company.entity';
-import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { BusType } from './bus-type.entity';
+import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { Travel } from 'src/modules/travels/entities/travel.entity';
+import { Company } from 'src/modules/companies/entities/company.entity';
+
+export enum Equipment {
+  TV = 'tv',
+  WIFI = 'wifi',
+  TABLET = 'tablet',
+  BATHROOM = 'bathroom',
+  USB_CHARGER = 'usb_charger',
+  AIR_CONDITIONING = 'air_conditioning',
+}
 
 @Entity('buses')
 export class Bus {
@@ -25,7 +32,7 @@ export class Bus {
   @Column('text')
   name: string;
 
-  @Column('text', { unique: true }) //! unique
+  @Column('text', { unique: true })
   plaque: string;
 
   @Column({
@@ -57,12 +64,12 @@ export class Bus {
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
-  @ManyToOne(() => Owner, (owner) => owner.buses, { nullable: true }) //! NULL
-  owner?: Owner;
+  @ManyToOne(() => Owner, (owner) => owner.buses)
+  owner: Owner;
 
   @OneToOne(() => BusType, (busType) => busType.buses, { cascade: true })
   @JoinColumn()
@@ -73,8 +80,4 @@ export class Bus {
 
   @OneToMany(() => Travel, (travel) => travel.bus)
   travels: Travel[];
-
-  //* ---------------------------------------------------------------------------------------------- */
-  //*                                        Functions                                               */
-  //* ---------------------------------------------------------------------------------------------- */
 }

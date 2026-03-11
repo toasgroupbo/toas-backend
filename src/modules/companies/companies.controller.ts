@@ -10,11 +10,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { CreateCompanyDto, UpdateCompanyDto } from './dto';
-
+import { Auth, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, Resource } from 'src/auth/decorators';
+import { CreateCompanyDto, UpdateCompanyDto } from './dto';
 
 import { CompanyService } from './companies.service';
 
@@ -36,8 +35,8 @@ export class CompanyController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
-  create(@Body() createCompanyDto: CreateCompanyDto) {
-    return this.companyService.create(createCompanyDto);
+  create(@Body() dto: CreateCompanyDto) {
+    return this.companyService.create(dto);
   }
 
   //? ============================================================================================== */
@@ -72,11 +71,8 @@ export class CompanyController {
   @Auth(ValidPermissions.UPDATE)
   //!
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateCompnayDto: UpdateCompanyDto,
-  ) {
-    return this.companyService.update(id, updateCompnayDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCompanyDto) {
+    return this.companyService.update(id, dto);
   }
 
   //? ============================================================================================== */

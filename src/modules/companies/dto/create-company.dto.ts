@@ -1,11 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  Min,
+  Max,
   IsInt,
   IsNumber,
   IsString,
-  Max,
-  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -43,6 +43,10 @@ export class CreateCompanyDto {
   @IsInt()
   hours_before_closing: number;
 
+  //* ============================================================================================== */
+  //*                                        Relations                                               */
+  //* ============================================================================================== */
+
   @ApiProperty({
     type: () => CreateBankAccountDto,
     description: 'bank account of the company',
@@ -50,10 +54,6 @@ export class CreateCompanyDto {
   @ValidateNested({ each: true })
   @Type(() => CreateBankAccountDto)
   bankAccount: CreateBankAccountDto;
-
-  //* ---------------------------------------------------------------------------------------------- */
-  //*                              Create_User_Manager                                               */
-  //* ---------------------------------------------------------------------------------------------- */
 
   @ApiProperty({
     type: CreateUserDto,

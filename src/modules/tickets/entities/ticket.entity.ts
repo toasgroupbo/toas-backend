@@ -1,14 +1,14 @@
 import {
+  Index,
   Column,
   Entity,
   ManyToOne,
   OneToMany,
+  OneToOne,
+  JoinColumn,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
-  Index,
-  OneToOne,
-  JoinColumn,
 } from 'typeorm';
 
 import { SelectedSeatsDto } from '../dto';
@@ -43,6 +43,22 @@ export class Ticket {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   total_price: string;
 
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
+  qr_amount: string; //! monto pagado por qr
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
+  wallet_used: string; //! monto pagado por wallet
+
   @Column('json')
   seats: SelectedSeatsDto[];
 
@@ -76,9 +92,7 @@ export class Ticket {
   })
   soldBy?: User | null;
 
-  @ManyToOne(() => Customer, (customer) => customer.ticketsBought, {
-    //onDelete: 'SET NULL',
-  })
+  @ManyToOne(() => Customer, (customer) => customer.ticketsBought, {})
   buyer: Customer;
 
   @OneToOne(() => PaymentQR, (paymentQr) => paymentQr.ticket, {

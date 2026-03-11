@@ -4,18 +4,15 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
   Controller,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { UpdateBankAccountDto } from './dto';
-import { PaginationDto } from 'src/common/pagination/pagination.dto';
-
+import { Auth, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, Resource } from 'src/auth/decorators';
+import { UpdateBankAccountDto } from './dto';
 
 import { BankAccountsService } from './bank-accounts.service';
 
@@ -49,8 +46,8 @@ export class BankAccountsController {
   @Auth(ValidPermissions.READ)
   //!
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.bankAccountsService.findAll(pagination);
+  findAll() {
+    return this.bankAccountsService.findAll();
   }
 
   //? ============================================================================================== */
@@ -75,9 +72,9 @@ export class BankAccountsController {
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateBankAccountDto: UpdateBankAccountDto,
+    @Body() dto: UpdateBankAccountDto,
   ) {
-    return this.bankAccountsService.update(id, updateBankAccountDto);
+    return this.bankAccountsService.update(id, dto);
   }
 
   //? ============================================================================================== */

@@ -1,9 +1,9 @@
 import {
   Column,
   Entity,
+  ManyToMany,
   CreateDateColumn,
   PrimaryGeneratedColumn,
-  ManyToMany,
 } from 'typeorm';
 
 import { Customer } from './customer.entity';
@@ -24,9 +24,9 @@ export class Passenger {
   })
   createdAt: Date;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @ManyToMany(() => Customer, (customers) => customers.passengers)
   customers: Customer[];

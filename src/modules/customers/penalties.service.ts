@@ -6,8 +6,8 @@ import { Penalty } from './entities/penalty.entity';
 import { Customer } from './entities/customer.entity';
 
 const MAX_FAILED = 4;
-const WINDOW_HOURS = 24;
-const BLOCK_HOURS = 24;
+const WINDOW_HOURS = 1;
+const BLOCK_HOURS = 1;
 
 @Injectable()
 export class PenaltiesService {
@@ -16,23 +16,25 @@ export class PenaltiesService {
     private readonly penaltyRepository: Repository<Penalty>,
   ) {}
 
-  // -------------------------------
-  // VALIDAR antes de reservar
-  // -------------------------------
+  //? ============================================================================================== */
+  //?                          Validar_Penalizacion                                                  */
+  //? ============================================================================================== */
+
   async validateReservation(customer: Customer) {
     const penalty = await this.getOrCreate(customer);
     const now = new Date();
 
     if (penalty.blockedUntil && penalty.blockedUntil > now) {
       throw new ForbiddenException(
-        `Client penalized up to ${penalty.blockedUntil /* .toISOString() */}`,
+        `Client penalized up to ${penalty.blockedUntil}`,
       );
     }
   }
 
-  // -------------------------------
-  // REGISTRAR cancelación o expiración
-  // -------------------------------
+  //? ============================================================================================== */
+  //?                        Registrar_Penaliazcion                                                  */
+  //? ============================================================================================== */
+
   async registerFailure(customer: Customer, manager?: EntityManager) {
     const repository = manager
       ? manager.getRepository(Penalty)
@@ -42,6 +44,7 @@ export class PenaltiesService {
     const now = new Date();
 
     // ¿La ventana ya venció?
+
     if (
       !penalty.windowStartedAt ||
       this.isWindowExpired(penalty.windowStartedAt, now)
@@ -54,6 +57,7 @@ export class PenaltiesService {
     penalty.failedCount += 1;
 
     // ¿Llega al límite?
+
     if (penalty.failedCount >= MAX_FAILED) {
       penalty.blockedUntil = this.addHours(now, BLOCK_HOURS);
     }
@@ -61,9 +65,10 @@ export class PenaltiesService {
     await repository.save(penalty);
   }
 
-  // -------------------------------
-  // Helpers
-  // -------------------------------
+  //? ============================================================================================== */
+  //?                                       Helpers                                                  */
+  //? ============================================================================================== */
+
   private async getOrCreate(customer: Customer, manager?: EntityManager) {
     const repository = manager
       ? manager.getRepository(Penalty)
@@ -85,9 +90,13 @@ export class PenaltiesService {
     return penalty;
   }
 
+  //? ============================================================================================== */
+
   private isWindowExpired(start: Date, now: Date): boolean {
     return now.getTime() - start.getTime() > WINDOW_HOURS * 60 * 60 * 1000;
   }
+
+  //? ============================================================================================== */
 
   private addHours(date: Date, hours: number): Date {
     return new Date(date.getTime() + hours * 60 * 60 * 1000);

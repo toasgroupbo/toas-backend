@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import * as https from 'https';
+import { join } from 'path';
 import axios from 'axios';
 import * as fs from 'fs';
-import { join } from 'path';
 
 import { envs } from 'src/config/environments/environments';
 
-import { QrGenerateResponse } from '../interfaces/qr-generate-response.interface';
 import { QrGenerate } from '../interfaces/qr-generate.interface';
+import { QrGenerateResponse } from '../interfaces/qr-generate-response.interface';
 
 @Injectable()
 export class HttpService {
@@ -40,10 +40,6 @@ export class HttpService {
       validateStatus: () => true,
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-      //timeout: 30000,
-
-      //keepAlive: false, //  IMPORTANTE para APIs bancarias inestables
-      //maxSockets: 10, // evita saturación
       transitional: {
         clarifyTimeoutError: true,
       },
@@ -134,67 +130,4 @@ export class HttpService {
       };
     }
   }
-
-  /* async generateQr(dto: QrGenerate): Promise<QrGenerateResponse> {
-    try {
-      const user = envs.BCP_USER;
-      const password = envs.BCP_PASSWORD;
-      const authString = `${user}:${password}`;
-      const base64Auth = Buffer.from(authString).toString('base64');
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'Correlation-Id': dto.IdCorrelation,
-        Authorization: `Basic ${base64Auth}`,
-      };
-
-      const requestBody = {
-        appUserId: envs.BCP_APP_USER_ID,
-        currency: 'BOB',
-        amount: dto.amount,
-        gloss: dto.gloss || 'App Buses Toas',
-        serviceCode: '050',
-        businessCode: envs.BCP_BUSINESS_CODE,
-        singleUse: true,
-        enableBank: 'ALL',
-        city: 'Santa Cruz',
-        branchOffice: 'toas',
-        teller: '1',
-        publicToken: envs.BCP_PUBLIC_TOKEN,
-        expiration: dto.expiration, //'00/00:00',
-        collectors: dto.collectors,
-      };
-
-      const response = await this.axiosInstance.post(
-        '/Web_ApiQr/api/v4/Qr/Generated',
-        requestBody,
-        { headers },
-      );
-
-      const responseData = response.data as QrGenerateResponse;
-
-      if (responseData.state !== '00') {
-        throw {
-          state: responseData.state,
-          message: responseData.message,
-          details: responseData,
-        };
-      }
-
-      return responseData;
-    } catch (error) {
-      if (error.response?.data) {
-        throw {
-          state: error.response.data.state || '99',
-          message: error.response.data.message || 'Error general',
-          details: error.response.data,
-        };
-      }
-      throw {
-        state: '99',
-        message: 'Error de comunicación',
-        details: error.message,
-      };
-    }
-  } */
 }

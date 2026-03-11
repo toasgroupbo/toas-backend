@@ -19,12 +19,12 @@ export class OfficesService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  async create(createOfficeDto: CreateOfficeDto, companyId: number) {
+  async create(dto: CreateOfficeDto, companyId: number) {
     try {
       const newOffice = this.officeRepository.create({
-        ...createOfficeDto,
-        company: { id: companyId }, //! se añade la company del user que crea la
-        place: { id: createOfficeDto.placeId },
+        ...dto,
+        company: { id: companyId },
+        place: { id: dto.placeId },
       });
       return await this.officeRepository.save(newOffice);
     } catch (error) {
@@ -61,14 +61,10 @@ export class OfficesService {
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
-  async update(
-    id: number,
-    updateOfficeDto: UpdateOfficeDto,
-    companyId: number,
-  ) {
+  async update(id: number, dto: UpdateOfficeDto, companyId: number) {
     const office = await this.findOne(id, companyId);
     try {
-      Object.assign(office, updateOfficeDto);
+      Object.assign(office, dto);
       return await this.officeRepository.save(office);
     } catch (error) {
       handleDBExceptions(error);

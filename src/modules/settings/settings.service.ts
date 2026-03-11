@@ -4,8 +4,7 @@ import { Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { CreateSettingDto } from './dto/create-setting.dto';
-import { UpdateSettingDto } from './dto/update-setting.dto';
+import { CreateSettingDto, UpdateSettingDto } from './dto';
 
 import { Setting } from './entities/setting.entity';
 

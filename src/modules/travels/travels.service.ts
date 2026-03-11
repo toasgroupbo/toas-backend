@@ -8,14 +8,14 @@ import { DataSource, LessThan, MoreThan, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { paginate } from 'src/common/pagination/paginate';
+import { TravelStatus } from './enums';
+import { SeatStatus } from 'src/common/enums';
+
 import { CreateTravelDto } from './dto';
+import { paginate } from 'src/common/pagination/paginate';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 
-import { SeatStatus } from 'src/common/enums';
-import { TravelStatus } from './enums/travel-status.enum';
-
-import { TicketExpirationService } from '../tickets/services/ticket-expiration.service';
+import { TicketExpirationService } from '../tickets/ticket-expiration.service';
 
 import { Travel } from './entities/travel.entity';
 import { Bus } from '../buses/entities/bus.entity';
@@ -27,7 +27,6 @@ export class TravelsService {
     private readonly travelRepository: Repository<Travel>,
 
     private readonly ticketExpirationService: TicketExpirationService,
-
     private dataSource: DataSource,
   ) {}
 
@@ -115,10 +114,6 @@ export class TravelsService {
   async findAll(pagination: TravelPaginationDto, companyId: number) {
     const { status } = pagination;
 
-    //! --------------------------------------------
-    //! Expirar Reservas si es necesario
-    //! --------------------------------------------
-
     const travelsToExpire = await this.travelRepository.find({
       select: { id: true },
     });
@@ -131,7 +126,6 @@ export class TravelsService {
       where: { bus: { company: { id: companyId } } },
     };
 
-    //! filtrar por status
     if (status) {
       options.where.travel_status = status;
     }
@@ -156,10 +150,6 @@ export class TravelsService {
   //? ============================================================================================== */
 
   async findOne(id: number, companyId: number) {
-    //! --------------------------------------------
-    //! Expirar Reservas si es necesario
-    //! --------------------------------------------
-
     await this.ticketExpirationService.expireTravelIfNeeded(id);
 
     const travel = await this.travelRepository.findOne({
@@ -180,10 +170,6 @@ export class TravelsService {
   //? ============================================================================================== */
 
   async cancel(id: number, companyId: number) {
-    //! --------------------------------------------
-    //! Expirar Reservas si es necesario
-    //! --------------------------------------------
-
     await this.ticketExpirationService.expireTravelIfNeeded(id);
 
     const travel = await this.findOne(id, companyId);

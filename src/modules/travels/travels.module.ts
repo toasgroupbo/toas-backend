@@ -7,13 +7,14 @@ import { Travel } from './entities/travel.entity';
 
 import { TravelSeat } from './entities/travel-seat.entity';
 
-import { TravelsForCashiersController } from './travels-for-cashiers.controller';
-import { TravelsForCashierService } from './travels-for-cashiers.service';
+import { TravelsForCashiersController } from './in-office/travels-for-cashiers.controller';
+import { TravelsForCashierService } from './in-office/travels-for-cashiers.service';
 
-import { TravelsInAppController } from './travels-in-app.controller';
-import { TravelsInAppService } from './travels-in-app.service';
-import { RoutesModule } from '../routes/routes.module';
+import { TravelsInAppController } from './in-app/travels-in-app.controller';
+import { TravelsInAppService } from './in-app/travels-in-app.service';
+
 import { TicketsModule } from '../tickets/tickets.module';
+import { RoutesModule } from '../routes/routes.module';
 
 @Module({
   imports: [

@@ -4,8 +4,8 @@ import { EntityManager, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { paginate } from 'src/common/pagination/paginate';
 import { CreateCustomerNotVerifiedDto } from './dto';
+import { paginate } from 'src/common/pagination/paginate';
 import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
 
 import { Customer } from './entities/customer.entity';
@@ -21,13 +21,9 @@ export class CustomersService {
   //?                                         Create                                                 */
   //? ============================================================================================== */
 
-  async createNotVerified(
-    createCustomerNotVerifiedDto: CreateCustomerNotVerifiedDto,
-  ) {
+  async createNotVerified(dto: CreateCustomerNotVerifiedDto) {
     try {
-      const newCustomer = this.customerRepository.create(
-        createCustomerNotVerifiedDto,
-      );
+      const newCustomer = this.customerRepository.create(dto);
 
       return await this.customerRepository.save(newCustomer);
     } catch (error) {

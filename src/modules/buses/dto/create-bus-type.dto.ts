@@ -2,9 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-import { DeckLayoutDto } from './deck-layout.dto';
-
 import { SeatType } from '../enums';
+
+import { DeckLayoutDto } from './deck-layout.dto';
 
 export class CreateBusTypeDto {
   @ApiProperty({

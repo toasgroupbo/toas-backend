@@ -5,7 +5,6 @@ import { Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { CreateBankAccountDto, UpdateBankAccountDto } from './dto';
-import { PaginationDto } from 'src/common/pagination/pagination.dto';
 
 import { BankAccount } from './entities/bank-account.entity';
 
@@ -20,10 +19,9 @@ export class BankAccountsService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  async create(createBankAccountDto: CreateBankAccountDto) {
+  async create(dto: CreateBankAccountDto) {
     try {
-      const newBankAccount =
-        this.bankAccountRepository.create(createBankAccountDto);
+      const newBankAccount = this.bankAccountRepository.create(dto);
       return await this.bankAccountRepository.save(newBankAccount);
     } catch (error) {
       handleDBExceptions(error);
@@ -34,7 +32,7 @@ export class BankAccountsService {
   //?                                        FindAll                                                 */
   //? ============================================================================================== */
 
-  async findAll(pagination: PaginationDto) {
+  async findAll() {
     const bankAccounts = await this.bankAccountRepository.find({});
     return bankAccounts;
   }
@@ -57,10 +55,10 @@ export class BankAccountsService {
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
-  async update(id: number, updateBankAccountDto: UpdateBankAccountDto) {
+  async update(id: number, dto: UpdateBankAccountDto) {
     const bankAccount = await this.findOne(id);
     try {
-      Object.assign(bankAccount, updateBankAccountDto);
+      Object.assign(bankAccount, dto);
       return await this.bankAccountRepository.save(bankAccount);
     } catch (error) {
       handleDBExceptions(error);

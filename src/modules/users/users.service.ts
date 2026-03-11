@@ -1,6 +1,6 @@
 import {
-  ConflictException,
   Injectable,
+  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,11 +10,11 @@ import * as bcrypt from 'bcrypt';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import {
-  CreateUserAdminDto,
-  CreateUserCashierDto,
   CreateUserDto,
   UpdateUserDto,
+  CreateUserAdminDto,
   UpdateUserOfficeDto,
+  CreateUserCashierDto,
   UpdateUserPasswordDto,
 } from './dto';
 
@@ -36,7 +36,7 @@ export class UsersService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  async createAdmin(createUserDto: CreateUserDto) {
+  async createAdmin(dto: CreateUserDto) {
     //! busqueda del rol de Super-Admin
     const rol = await this.rolService.findOneByName(StaticRoles.SUPER_ADMIN);
     if (!rol) {
@@ -45,7 +45,7 @@ export class UsersService {
 
     try {
       const newUser = this.userRepository.create({
-        ...createUserDto,
+        ...dto,
         rol,
       });
       return await this.userRepository.save(newUser);
@@ -56,11 +56,11 @@ export class UsersService {
 
   //? ============================================================================================== */
 
-  async createAppAdmin(createUserDto: CreateUserAdminDto) {
+  async createAppAdmin(dto: CreateUserAdminDto) {
     try {
       const newUser = this.userRepository.create({
-        ...createUserDto,
-        rol: { id: createUserDto.rol },
+        ...dto,
+        rol: { id: dto.rol },
       });
       return await this.userRepository.save(newUser);
     } catch (error) {
@@ -70,8 +70,8 @@ export class UsersService {
 
   //? ============================================================================================== */
 
-  async createCashier(createUserDto: CreateUserCashierDto) {
-    const { officeId, ...data } = createUserDto;
+  async createCashier(dto: CreateUserCashierDto) {
+    const { officeId, ...data } = dto;
     //! busqueda del rol de Cashier
     const rol = await this.rolService.findOneByName(StaticRoles.CASHIER);
     if (!rol) {
@@ -188,12 +188,12 @@ export class UsersService {
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: number, dto: UpdateUserDto) {
     try {
       const user = await this.findOne(id);
 
-      if (updateUserDto.rol) {
-        const rol = await this.rolService.findOne(updateUserDto.rol);
+      if (dto.rol) {
+        const rol = await this.rolService.findOne(dto.rol);
 
         // --------------------------------------------
         // 1. No se puede asignar un rol estatico
@@ -218,7 +218,7 @@ export class UsersService {
         }
       }
 
-      Object.assign(user, updateUserDto);
+      Object.assign(user, dto);
       return await this.userRepository.save(user);
     } catch (error) {
       handleDBExceptions(error);
@@ -229,14 +229,11 @@ export class UsersService {
   //?                               Update_password                                                  */
   //? ============================================================================================== */
 
-  async changePassword(
-    id: number,
-    updateUserPasswordDto: UpdateUserPasswordDto,
-  ) {
+  async changePassword(id: number, dto: UpdateUserPasswordDto) {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) throw new NotFoundException('User not found');
 
-    user.password = await bcrypt.hash(updateUserPasswordDto.password, 10);
+    user.password = await bcrypt.hash(dto.password, 10);
     return this.userRepository.save(user);
   }
 
@@ -244,11 +241,7 @@ export class UsersService {
   //?                                 Update_Office                                                  */
   //? ============================================================================================== */
 
-  async updateOffice(
-    id: number,
-    updateUserOfficeDto: UpdateUserOfficeDto,
-    companyId: number,
-  ) {
+  async updateOffice(id: number, dto: UpdateUserOfficeDto, companyId: number) {
     try {
       const user = await this.findOneCashier(id, companyId);
       if (user.rol.name !== StaticRoles.CASHIER) {
@@ -256,7 +249,7 @@ export class UsersService {
       }
 
       Object.assign(user, {
-        office: { id: updateUserOfficeDto.NewOfficeId },
+        office: { id: dto.NewOfficeId },
       });
 
       return await this.userRepository.save(user);

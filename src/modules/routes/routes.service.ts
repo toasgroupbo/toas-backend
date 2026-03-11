@@ -19,22 +19,21 @@ export class RoutesService {
     private readonly routeRepository: Repository<Route>,
   ) {}
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Create                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
-  async create(createRouteDto: CreateRouteDto) {
+  async create(dto: CreateRouteDto) {
     try {
-      const { officeOriginId, officeDestinationId } = createRouteDto;
+      const { officeOriginId, officeDestinationId } = dto;
 
-      //! Validar que las oficinas de origen y destino sean diferentes
       if (officeOriginId == officeDestinationId)
         throw new ConflictException(
           'The origin and destination offices must be different',
         );
 
       const newRoute = this.routeRepository.create({
-        ...createRouteDto,
+        ...dto,
         officeOrigin: { id: officeOriginId },
         officeDestination: { id: officeDestinationId },
       });
@@ -44,9 +43,9 @@ export class RoutesService {
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindAll                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async findAll(companyId: number) {
     const routes = await this.routeRepository.find({
@@ -60,9 +59,9 @@ export class RoutesService {
     return routes;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        FindOne                                                 */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async findOne(id: number, companyId: number) {
     const Route = await this.routeRepository.findOne({
@@ -76,23 +75,23 @@ export class RoutesService {
     return Route;
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Update                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
-  async update(id: number, updateRouteDto: UpdateRouteDto, companyId: number) {
+  async update(id: number, dto: UpdateRouteDto, companyId: number) {
     const route = await this.findOne(id, companyId);
     try {
-      Object.assign(route, updateRouteDto);
+      Object.assign(route, dto);
       return await this.routeRepository.save(route);
     } catch (error) {
       handleDBExceptions(error);
     }
   }
 
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
   //?                                        Delete                                                  */
-  //? ---------------------------------------------------------------------------------------------- */
+  //? ============================================================================================== */
 
   async remove(id: number, companyId: number) {
     const route = await this.findOne(id, companyId);

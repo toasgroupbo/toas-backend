@@ -3,12 +3,13 @@ import { Type } from 'class-transformer';
 import {
   IsDate,
   IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
   Matches,
+  IsNumber,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
 } from 'class-validator';
+
 import { TravelType } from '../enums/travel-type.enum';
 
 export class CreateTravelDto {

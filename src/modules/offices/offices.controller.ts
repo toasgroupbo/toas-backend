@@ -10,11 +10,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { CreateOfficeDto, UpdateOfficeDto } from './dto';
-
+import { Auth, GetCompany, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, GetCompany, Resource } from 'src/auth/decorators';
+import { CreateOfficeDto, UpdateOfficeDto } from './dto';
 
 import { OfficesService } from './offices.service';
 
@@ -35,13 +34,10 @@ export class OfficesController {
   //!
   @Auth(ValidPermissions.CREATE)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Post()
-  create(
-    @Body() createOfficeDto: CreateOfficeDto,
-    @GetCompany() companyId: number,
-  ) {
-    return this.officesService.create(createOfficeDto, companyId); //! GetCompany
+  create(@Body() dto: CreateOfficeDto, @GetCompany() companyId: number) {
+    return this.officesService.create(dto, companyId);
   }
 
   //? ============================================================================================== */
@@ -51,10 +47,10 @@ export class OfficesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Get()
   findAll(@GetCompany() companyId: number) {
-    return this.officesService.findAll(companyId); //! GetCompany
+    return this.officesService.findAll(companyId);
   }
 
   //? ============================================================================================== */
@@ -64,13 +60,13 @@ export class OfficesController {
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
     @GetCompany() companyId: number,
   ) {
-    return this.officesService.findOne(id, companyId); //! GetCompany
+    return this.officesService.findOne(id, companyId);
   }
 
   //? ============================================================================================== */
@@ -80,14 +76,14 @@ export class OfficesController {
   //!
   @Auth(ValidPermissions.UPDATE)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateOfficeDto: UpdateOfficeDto,
+    @Body() dto: UpdateOfficeDto,
     @GetCompany() companyId: number,
   ) {
-    return this.officesService.update(id, updateOfficeDto, companyId); //! GetCompany
+    return this.officesService.update(id, dto, companyId);
   }
 
   //? ============================================================================================== */
@@ -97,12 +93,12 @@ export class OfficesController {
   //!
   @Auth(ValidPermissions.DELETE)
   //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Delete(':id')
   remove(
     @Param('id', ParseIntPipe) id: number,
     @GetCompany() companyId: number,
   ) {
-    return this.officesService.remove(id, companyId); //! GetCompany
+    return this.officesService.remove(id, companyId);
   }
 }

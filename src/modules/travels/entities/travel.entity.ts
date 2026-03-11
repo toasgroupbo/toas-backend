@@ -1,15 +1,14 @@
 import {
   Entity,
+  Column,
   ManyToOne,
   OneToMany,
   DeleteDateColumn,
   CreateDateColumn,
   PrimaryGeneratedColumn,
-  Column,
 } from 'typeorm';
 
-import { TravelType } from '../enums/travel-type.enum';
-import { TravelStatus } from '../enums/travel-status.enum';
+import { TravelType, TravelStatus } from '../enums';
 
 import { TravelSeat } from './travel-seat.entity';
 import { Bus } from 'src/modules/buses/entities/bus.entity';
@@ -54,11 +53,11 @@ export class Travel {
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
-  @ManyToOne(() => Bus, (bus) => bus.travels) //() => Travel, (travel) => travel.tickets
+  @ManyToOne(() => Bus, (bus) => bus.travels)
   bus: Bus;
 
   @OneToMany(() => TravelSeat, (seat) => seat.travel, {

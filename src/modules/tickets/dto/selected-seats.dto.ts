@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNumberString, IsOptional, IsString } from 'class-validator';
 
-//! para guaradr en la entity
+//! para guaradar en la entity
 export class SelectedSeatsDto {
   @IsString()
   seatNumber: string;

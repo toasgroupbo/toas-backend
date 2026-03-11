@@ -23,9 +23,9 @@ export class OwnersService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  async create(createOwnerDto: CreateOwnerDto, companyId: number) {
+  async create(dto: CreateOwnerDto, companyId: number) {
     try {
-      const { bankAccount, ci, ...data } = createOwnerDto;
+      const { bankAccount, ci, ...data } = dto;
 
       // --------------------------------------------
       // 1. Buscar si existe un owner con el mismo CI
@@ -110,10 +110,10 @@ export class OwnersService {
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
-  async update(id: number, updateOwnerDto: UpdateOwnerDto, companyId: number) {
+  async update(id: number, dto: UpdateOwnerDto, companyId: number) {
     const owner = await this.findOne(id, companyId);
     try {
-      Object.assign(owner, updateOwnerDto);
+      Object.assign(owner, dto);
       return await this.ownerRepository.save(owner);
     } catch (error) {
       handleDBExceptions(error);

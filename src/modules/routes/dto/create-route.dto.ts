@@ -23,20 +23,20 @@ export class CreateRouteDto {
   @IsNumber()
   travel_hours: number;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @ApiProperty({
     description: 'Office ID',
-    example: '1',
+    example: 1,
   })
   @IsNumber()
   officeOriginId: number;
 
   @ApiProperty({
     description: 'Office ID',
-    example: '2',
+    example: 2,
   })
   @IsNumber()
   officeDestinationId: number;

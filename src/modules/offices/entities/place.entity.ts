@@ -1,9 +1,9 @@
 import {
+  Entity,
   Column,
+  OneToMany,
   CreateDateColumn,
   DeleteDateColumn,
-  Entity,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -25,9 +25,9 @@ export class Place {
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @OneToMany(() => Office, (office) => office.place)
   offices: Office[];

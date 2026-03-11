@@ -13,12 +13,14 @@ export class Setting {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   commission: number;
 
+  @Column({ type: 'text', default: null })
+  terminos_y_condiciones: string;
+
+  @Column({ type: 'text', default: null })
+  politicas_de_privacidad: string;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })
   createdAt: Date;
-
-  //* ============================================================================================== */
-  //*                                        Relations                                               */
-  //* ============================================================================================== */
 }

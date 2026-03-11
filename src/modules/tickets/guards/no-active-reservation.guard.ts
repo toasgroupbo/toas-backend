@@ -1,14 +1,16 @@
 import {
   CanActivate,
-  ExecutionContext,
   Injectable,
+  ExecutionContext,
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Brackets } from 'typeorm';
-import { Ticket } from '../entities/ticket.entity';
-import { TicketStatus } from '../enums/ticket-status.enum';
+import { Repository, Brackets } from 'typeorm';
+
 import { TicketType } from '../enums/ticket-type.enum';
+import { TicketStatus } from '../enums/ticket-status.enum';
+
+import { Ticket } from '../entities/ticket.entity';
 
 @Injectable()
 export class NoActiveReservationGuard implements CanActivate {

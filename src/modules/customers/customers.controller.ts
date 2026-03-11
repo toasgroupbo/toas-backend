@@ -8,11 +8,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
-
+import { Auth, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, Resource } from 'src/auth/decorators';
+import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
 
 import { CustomersService } from './customers.service';
 

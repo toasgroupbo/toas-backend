@@ -4,6 +4,10 @@ import { Type } from 'class-transformer';
 
 import { PassengerSeatBatchDto } from './assign-passengers-batch-in-app.dto';
 
+//? ============================================================================================== */
+//?                       Passenger_Seat_InOffice                                                  */
+//? ============================================================================================== */
+
 export class AssignPassengersBatchInOfficeDto {
   @ApiProperty({ example: 1 })
   @IsNumber()

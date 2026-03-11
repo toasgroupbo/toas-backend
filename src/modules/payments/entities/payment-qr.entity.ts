@@ -1,14 +1,19 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   OneToOne,
+  CreateDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { QrCallbackResponse } from '../interfaces/qr-callback-response.interface';
-import { PaymentStatusEnum } from '../enum/payment-status.enum';
+
+export enum PaymentStatusEnum {
+  PAID = 'PAID',
+  PENDING = 'PENDING',
+  CANCELLED = 'CANCELLED',
+}
 
 @Entity('payments-qr')
 export class PaymentQR {
@@ -52,6 +57,5 @@ export class PaymentQR {
   //* ============================================================================================== */
 
   @OneToOne(() => Ticket, (ticket) => ticket.paymentQr)
-  //@JoinColumn()
   ticket: Ticket;
 }

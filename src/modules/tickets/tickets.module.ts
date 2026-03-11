@@ -5,21 +5,25 @@ import { TicketsController } from './tickets.controller';
 import { TicketsService } from './tickets.service';
 import { Ticket } from './entities/ticket.entity';
 
-import { CustomersModule } from '../customers/customers.module';
-import { TicketsForCashiersController } from './tickets-for-cashiers.controller';
 import { TravelsModule } from '../travels/travels.module';
-import { TicketsInAppController } from './tickets-in-app.controller';
+import { CustomersModule } from '../customers/customers.module';
 
-import { TicketsForCashierService } from './tickets-for-cashiers.service';
-import { TicketsInAppService } from './tickets-in-app.service';
+import { TicketsForCashiersController } from './in-office/tickets-for-cashiers.controller';
+import { TicketsForCashierService } from './in-office/tickets-for-cashiers.service';
 
-import { TicketExpirationService } from './services/ticket-expiration.service';
+import { TicketsInAppController } from './in-app/tickets-in-app.controller';
+import { TicketsInAppService } from './in-app/tickets-in-app.service';
+
+import { TicketExpirationService } from './ticket-expiration.service';
+
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Ticket]),
     CustomersModule,
     forwardRef(() => TravelsModule),
+    WalletModule,
   ],
   controllers: [
     TicketsController,

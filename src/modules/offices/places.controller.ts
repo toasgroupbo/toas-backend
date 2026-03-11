@@ -9,11 +9,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { CreatePlaceDto } from './dto';
-
+import { Auth, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
-import { Auth, Resource } from 'src/auth/decorators';
+import { CreatePlaceDto } from './dto';
 
 import { PlacesService } from './places.service';
 
@@ -35,8 +34,8 @@ export class PlaceController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
-  create(@Body() createPlaceDto: CreatePlaceDto) {
-    return this.placesService.create(createPlaceDto);
+  create(@Body() dto: CreatePlaceDto) {
+    return this.placesService.create(dto);
   }
 
   //? ============================================================================================== */

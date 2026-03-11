@@ -2,9 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { CreateBusDto, UpdateBusDto } from './dto';
-
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
+
+import { CreateBusDto, UpdateBusDto } from './dto';
 
 import { Bus } from './entities/bus.entity';
 
@@ -19,9 +19,9 @@ export class BusesService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  async create(createBusDto: CreateBusDto, companyId: number) {
+  async create(dto: CreateBusDto, companyId: number) {
     try {
-      const { busType, ...data } = createBusDto;
+      const { busType, ...data } = dto;
 
       // --------------------------------------------
       // 1. Determina si un bus tiene o no decks
@@ -38,7 +38,7 @@ export class BusesService {
 
       const newBus = this.busRepository.create({
         ...data,
-        owner: { id: createBusDto.ownerId },
+        owner: { id: dto.ownerId },
         busType,
         decks,
         company: { id: companyId },
@@ -83,10 +83,10 @@ export class BusesService {
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
-  async update(id: number, updateBusDto: UpdateBusDto, companyId: number) {
+  async update(id: number, dto: UpdateBusDto, companyId: number) {
     const bus = await this.findOne(id, companyId);
     try {
-      Object.assign(bus, updateBusDto);
+      Object.assign(bus, dto);
       return await this.busRepository.save(bus);
     } catch (error) {
       handleDBExceptions(error);

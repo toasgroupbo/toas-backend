@@ -1,14 +1,14 @@
 import {
   Column,
   Entity,
+  OneToOne,
   OneToMany,
+  JoinTable,
+  JoinColumn,
+  ManyToMany,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
-  OneToOne,
-  JoinColumn,
-  ManyToMany,
-  JoinTable,
 } from 'typeorm';
 
 import { AuthProviders } from 'src/auth/enums';
@@ -16,8 +16,8 @@ import { AuthProviders } from 'src/auth/enums';
 import { Penalty } from './penalty.entity';
 import { Billing } from './billing.entity';
 import { Passenger } from './passenger.entity';
-import { Balance } from 'src/modules/balances/entities/balance.entity';
-import { Ticket } from '../../../modules/tickets/entities/ticket.entity';
+import { Wallet } from 'src/modules/wallet/entities/wallet.entity';
+import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 
 @Entity('customers')
 export class Customer {
@@ -65,15 +65,12 @@ export class Customer {
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
   //*                                        Relations                                               */
-  //* ---------------------------------------------------------------------------------------------- */
+  //* ============================================================================================== */
 
   @OneToMany(() => Ticket, (ticket) => ticket.buyer)
   ticketsBought: Ticket[];
-
-  @OneToMany(() => Balance, (balance) => balance.customer)
-  balances: Balance[];
 
   @ManyToMany(() => Passenger, (passenger) => passenger.customers)
   @JoinTable({
@@ -102,4 +99,10 @@ export class Customer {
   })
   @JoinColumn()
   penalty?: Penalty;
+
+  @OneToOne(() => Wallet, (wallet) => wallet.customer, {
+    cascade: true,
+    nullable: true,
+  })
+  wallet?: Wallet;
 }

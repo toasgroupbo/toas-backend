@@ -14,7 +14,6 @@ export class BillingsService {
   constructor(
     @InjectRepository(Billing)
     private readonly billingRepository: Repository<Billing>,
-
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
   ) {}
