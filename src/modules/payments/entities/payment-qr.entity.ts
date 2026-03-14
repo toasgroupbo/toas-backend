@@ -53,7 +53,7 @@ export class PaymentQR {
   @Column('text', { default: PaymentStatusEnum.PENDING })
   status: PaymentStatusEnum;
 
-  @Column('text')
+  @Column('text', { default: QrPaymentTypeEnum.TICKET })
   payment_type: QrPaymentTypeEnum;
 
   @CreateDateColumn({
