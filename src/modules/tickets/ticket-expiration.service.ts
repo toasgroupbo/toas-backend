@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, EntityManager, In, LessThan } from 'typeorm';
 
 import { SeatStatus } from 'src/common/enums';
-import { TicketStatus, TicketType } from './enums';
+import { PaymentType, TicketStatus, TicketType } from './enums';
 import { TravelStatus } from '../travels/enums/travel-status.enum';
 
 import { WalletService } from '../wallet/wallet.service';
@@ -38,12 +38,14 @@ export class TicketExpirationService {
     let expiredCount = 0;
 
     for (const ticket of expiredTickets) {
-      if (ticket.wallet_used && Number(ticket.wallet_used) > 0) {
+      //! wallet
+      if (ticket.payment_type === PaymentType.WALLET) {
         await this.walletService.restoreCreditsFromExpiredTicket(
           ticket,
-          internalManager,
+          manager,
         );
       }
+      //! wallet
 
       ticket.status = TicketStatus.EXPIRED;
       ticket.deletedAt = new Date();

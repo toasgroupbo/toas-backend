@@ -8,11 +8,17 @@ import {
 
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { QrCallbackResponse } from '../interfaces/qr-callback-response.interface';
+import { WalletTransaction } from 'src/modules/wallet/entities/wallet-transactions.entity';
 
 export enum PaymentStatusEnum {
   PAID = 'PAID',
   PENDING = 'PENDING',
   CANCELLED = 'CANCELLED',
+}
+
+export enum QrPaymentTypeEnum {
+  TICKET = 'TICKET',
+  WALLET_RECHARGE = 'WALLET_RECHARGE',
 }
 
 @Entity('payments-qr')
@@ -32,20 +38,23 @@ export class PaymentQR {
   @Column({ type: 'text' })
   expirationDate: string;
 
-  @Column('text', { unique: true, nullable: true })
+  @Column('text', { unique: true })
   IdCorrelation: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text' })
   state: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text' })
   message: string;
 
   @Column('jsonb', { nullable: true })
   data: QrCallbackResponse;
 
-  @Column('text', { default: PaymentStatusEnum.PENDING, nullable: true })
+  @Column('text', { default: PaymentStatusEnum.PENDING })
   status: PaymentStatusEnum;
+
+  @Column('text')
+  payment_type: QrPaymentTypeEnum;
 
   @CreateDateColumn({
     type: 'timestamptz',
@@ -56,6 +65,11 @@ export class PaymentQR {
   //*                                        Relations                                               */
   //* ============================================================================================== */
 
-  @OneToOne(() => Ticket, (ticket) => ticket.paymentQr)
-  ticket: Ticket;
+  @OneToOne(() => Ticket, (ticket) => ticket.paymentQr, { nullable: true })
+  ticket?: Ticket | null;
+
+  @OneToOne(() => WalletTransaction, (transaction) => transaction.paymentQr, {
+    nullable: true,
+  })
+  walletTransaction?: WalletTransaction | null;
 }

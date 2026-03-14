@@ -18,6 +18,7 @@ import { CreateOrUpdateBillingDto, UpdateCustomerDto } from '../dto';
 import { Customer } from '../entities/customer.entity';
 
 import { BillingsService } from '../billings.service';
+import { WalletService } from 'src/modules/wallet/wallet.service';
 import { CustomersInAppService } from './customers-in-app.service';
 
 //!
@@ -31,6 +32,7 @@ export class CustomersInAppController {
   constructor(
     private readonly customerInAppService: CustomersInAppService,
     private readonly billingsSerrvices: BillingsService,
+    private readonly walletService: WalletService,
   ) {}
 
   //? ============================================================================================== */
@@ -112,5 +114,31 @@ export class CustomersInAppController {
   @Get('passengers')
   findAllPassengers(@GetCustomer() customer: Customer) {
     return this.customerInAppService.findAllPassengers(customer);
+  }
+
+  //? ============================================================================================== */
+  //?                                   Get_Balance                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @Get('balance')
+  getBalance(@GetCustomer() customer: Customer) {
+    return this.walletService.getAvailableBalance(customer);
+  }
+
+  //? ============================================================================================== */
+  //?                           Get_Balance_History                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @Get('balance/history')
+  getBalanceHistory(@GetCustomer() customer: Customer) {
+    return this.walletService.getBalanceHistory(customer);
   }
 }

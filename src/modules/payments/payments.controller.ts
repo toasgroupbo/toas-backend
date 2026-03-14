@@ -2,15 +2,18 @@ import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 
-import { Auth, Resource } from 'src/auth/decorators';
+import { Auth, GetCustomer, Resource } from 'src/auth/decorators';
 import { ValidResourses } from 'src/common/enums';
 import { BasicAuthGuard } from './guards/basic-auth.guard';
 
 import { VerifyQrDto } from './dto/verify-qr.dto';
 import { GenerateQrDto } from './dto/generate-qr.dto';
+import { CreateWalletRechargeDto } from './dto/recharge-qr.dto';
 import { QrCallbackResponse } from './interfaces/qr-callback-response.interface';
 
 import { PaymentsService } from './payments.service';
+
+import { Customer } from '../customers/entities/customer.entity';
 
 //!
 @Resource(ValidResourses.TICKET_CASHIER)
@@ -31,6 +34,21 @@ export class PaymentsController {
   @Post('generate')
   generateQr(@Body() dto: GenerateQrDto) {
     return this.paymentsService.generateQr(dto);
+  }
+
+  //? ============================================================================================== */
+  //?                                      Recharge                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @Auth()
+  //!
+  @Post('recharge/qr')
+  createRechargeQr(
+    @Body() dto: CreateWalletRechargeDto,
+    @GetCustomer() customer: Customer,
+  ) {
+    return this.paymentsService.generateQrForRecharge(customer, dto.amount);
   }
 
   //? ============================================================================================== */

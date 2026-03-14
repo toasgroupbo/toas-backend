@@ -15,7 +15,10 @@ export class HttpService {
 
   constructor() {
     // Leer el certificado PFX
-    const certPath = join(process.cwd(), 'static/certs/bcp_cert_prueba.pfx'); //! cambiar para producción
+    const certPath = join(
+      process.cwd(),
+      'static/certs/TOASL.pfx' /* 'static/certs/bcp_cert_prueba.pfx' */,
+    ); //! cambiar para producción
 
     const pfxBuffer = fs.readFileSync(certPath);
 

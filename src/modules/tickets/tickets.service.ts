@@ -121,10 +121,8 @@ export class TicketsService {
         reserve_expiresAt: this.getReservationExpiry(),
         payment_type: paymentType,
         commission: commission.toString(),
-
         total_price: totalPrice.toFixed(2),
-        wallet_used: '0',
-        qr_amount: '0',
+        status: TicketStatus.RESERVED,
       });
 
       await this.registerPenaltyIfNeeded(

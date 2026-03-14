@@ -20,8 +20,13 @@ import { Billing } from './entities/billing.entity';
 import { PenaltiesService } from './penalties.service';
 import { Penalty } from './entities/penalty.entity';
 
+import { WalletModule } from '../wallet/wallet.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Customer, Passenger, Billing, Penalty])],
+  imports: [
+    TypeOrmModule.forFeature([Customer, Passenger, Billing, Penalty]),
+    WalletModule,
+  ],
   controllers: [
     CustomersController,
     CustomersInAppController,

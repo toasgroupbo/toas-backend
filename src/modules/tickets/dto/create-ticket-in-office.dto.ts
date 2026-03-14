@@ -20,10 +20,10 @@ export class CreateTicketInOfficeDto {
 
   @ApiProperty({
     example: PaymentType.CASH,
-    enum: PaymentType,
+    enum: [PaymentType.QR, PaymentType.CASH],
   })
   @IsString()
-  @IsEnum(PaymentType)
+  @IsEnum([PaymentType.QR, PaymentType.CASH])
   payment_type: PaymentType;
 
   //* ============================================================================================== */

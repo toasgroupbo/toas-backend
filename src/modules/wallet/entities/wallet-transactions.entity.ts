@@ -1,14 +1,17 @@
 import {
+  Index,
   Entity,
   Column,
+  OneToOne,
   ManyToOne,
+  JoinColumn,
   CreateDateColumn,
   PrimaryGeneratedColumn,
-  Index,
 } from 'typeorm';
 
 import { Wallet } from './wallet.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
+import { PaymentQR } from 'src/modules/payments/entities/payment-qr.entity';
 
 export enum TransactionType {
   CREDIT = 'credit',
@@ -79,4 +82,8 @@ export class WalletTransaction {
 
   @ManyToOne(() => Ticket, { nullable: true, onDelete: 'SET NULL' })
   ticket?: Ticket | null;
+
+  @OneToOne(() => PaymentQR, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn()
+  paymentQr?: PaymentQR | null;
 }

@@ -2,7 +2,6 @@ import {
   Body,
   Get,
   Param,
-  Patch,
   Post,
   UseGuards,
   Controller,
@@ -23,7 +22,6 @@ import { NoActiveReservationGuard } from '../guards/no-active-reservation.guard'
 import { Customer } from '../../customers/entities/customer.entity';
 
 import { TicketsInAppService } from './tickets-in-app.service';
-import { WalletService } from 'src/modules/wallet/wallet.service';
 
 //!
 @Resource(ValidResourses.TICKET_APP)
@@ -33,11 +31,7 @@ import { WalletService } from 'src/modules/wallet/wallet.service';
 @ApiTags('Tickets: In App')
 @Controller('tickets/in-app')
 export class TicketsInAppController {
-  constructor(
-    private readonly ticketsInAppService: TicketsInAppService,
-
-    private readonly walletService: WalletService,
-  ) {}
+  constructor(private readonly ticketsInAppService: TicketsInAppService) {}
 
   //? ============================================================================================== */
   //?                                        Create                                                  */
@@ -50,6 +44,22 @@ export class TicketsInAppController {
   @Post()
   create(@Body() dto: CreateTicketInAppDto, @GetCustomer() customer: Customer) {
     return this.ticketsInAppService.create(dto, customer);
+  }
+
+  //? ============================================================================================== */
+  //?                                       Confirm                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @Post('confirm-wallet/:id')
+  confirmWalletPayment(
+    @Param('id', ParseIntPipe) ticketId: number,
+    @GetCustomer() customer: Customer,
+  ) {
+    return this.ticketsInAppService.confirmWalletPayment(ticketId, customer);
   }
 
   //? ============================================================================================== */
@@ -108,18 +118,5 @@ export class TicketsInAppController {
     @GetCustomer() customer: Customer,
   ) {
     return this.ticketsInAppService.assignPassenger(dto, customer);
-  }
-
-  //? ============================================================================================== */
-  //?                        Get_Active_Reservation                                                  */
-  //? ============================================================================================== */
-
-  //!
-  @UseGuards(IsVerifyGuard)
-  @Auth()
-  //!
-  @Get('balance')
-  getBalance(@GetCustomer() customer: Customer) {
-    return this.walletService.getAvailableBalance(customer);
   }
 }
