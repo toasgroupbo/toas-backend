@@ -7,8 +7,8 @@ import { envs } from '../../config/environments/environments';
 import { LoginType } from '../../common/enums/login-type.enum';
 import { IJwtPayload } from '../interfaces/jwt-payload.interface';
 
-import { CustomersService } from '../../modules/customers/customers.service';
 import { UsersService } from '../../modules/users/users.service';
+import { CustomersService } from '../../modules/customers/customers.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -19,10 +19,44 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: envs.JWT_SECRET,
+      passReqToCallback: true,
     });
   }
 
-  async validate(jwtPayload: IJwtPayload) {
+  async validate(req: Request, jwtPayload: IJwtPayload) {
+    const { id, type } = jwtPayload;
+
+    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+
+    if (type === LoginType.user) {
+      const user = await this.userService.findOne(id);
+      if (!user) throw new UnauthorizedException('Token inválido (user)');
+
+      if (user.sessionToken !== token) {
+        throw new UnauthorizedException(
+          'Session expired. You are logged in on another device.',
+        );
+      }
+
+      return user;
+    }
+
+    if (type === LoginType.customer) {
+      const customer = await this.customerService.findOne(id);
+      if (!customer)
+        throw new UnauthorizedException('Token inválido (customer)');
+      if (customer.sessionToken !== token) {
+        throw new UnauthorizedException(
+          'Session expired. You are logged in on another device.',
+        );
+      }
+
+      return customer;
+    }
+
+    throw new UnauthorizedException('Unrecognized type');
+  }
+  /* async validate(jwtPayload: IJwtPayload) {
     const { id, type } = jwtPayload;
 
     if (type === LoginType.user) {
@@ -39,5 +73,5 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     throw new UnauthorizedException('Unrecognized type');
-  }
+  } */
 }

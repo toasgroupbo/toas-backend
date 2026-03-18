@@ -126,7 +126,7 @@ export class CustomersInAppController {
   //!
   @Get('balance')
   getBalance(@GetCustomer() customer: Customer) {
-    return this.walletService.getAvailableBalance(customer);
+    return this.walletService.getAvailableBalance({ customer: customer });
   }
 
   //? ============================================================================================== */

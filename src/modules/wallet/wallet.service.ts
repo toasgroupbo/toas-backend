@@ -2,6 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, EntityManager, MoreThan, LessThan } from 'typeorm';
 
+import { TicketExpirationService } from '../tickets/ticket-expiration.service';
+
 import {
   WalletTransaction,
   TransactionType,
@@ -22,6 +24,8 @@ export class WalletService {
 
     @InjectRepository(WalletTransaction)
     private readonly transactionRepository: Repository<WalletTransaction>,
+
+    //private readonly ticketExpirationService: TicketExpirationService,
   ) {}
 
   //* ============================================================================================== */
@@ -128,10 +132,10 @@ export class WalletService {
   }
 
   //* ============================================================================================== */
-  //*                                Credit from Ticket Cancel QR                                    */
+  //*                                Credit from Ticket Cancel                                       */
   //* ============================================================================================== */
 
-  async creditFromTicketCancelQR(
+  async creditFromTicketCancel(
     ticket: Ticket,
     customer: Customer,
     manager?: EntityManager,
@@ -141,10 +145,14 @@ export class WalletService {
 
     const wallet = await this.getOrCreateWallet(customer, manager);
 
-    const amount = Number(ticket.total_price); //! solo el monto sin comision
+    const amount =
+      Number(ticket.wallet_amount) +
+      Number(ticket.qr_amount) -
+      Number(ticket.commission); //! comision  //0
+
     if (amount <= 0) return null;
 
-    // Idempotencia
+    // idempotencia
     const existingCredit = await transactionRepo.findOne({
       where: {
         wallet: { id: wallet.id },
@@ -153,9 +161,7 @@ export class WalletService {
       },
     });
 
-    if (existingCredit) {
-      return existingCredit;
-    }
+    if (existingCredit) return existingCredit;
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
@@ -163,94 +169,6 @@ export class WalletService {
     const currentBalance = Number(wallet.balance);
     const newBalance = currentBalance + amount;
 
-    const transaction = transactionRepo.create({
-      wallet,
-      type: TransactionType.CREDIT,
-      amount: amount.toString(),
-      remainingAmount: amount.toString(),
-      balanceAfter: newBalance.toString(),
-      expiresAt,
-      ticket,
-      metadata: {
-        reason: 'ticket_cancelled_qr',
-        originalTicketId: ticket.id,
-        originalStatus: ticket.status,
-        originalPaymentMethod: 'QR',
-        cancelledAt: new Date().toISOString(),
-      },
-    });
-
-    wallet.balance = newBalance.toString();
-
-    await walletRepo.save(wallet);
-    await transactionRepo.save(transaction);
-
-    // Actualizar estado del QR
-    if (ticket.paymentQr && manager) {
-      const paymentQrRepo = manager.getRepository(PaymentQR);
-      ticket.paymentQr.status = PaymentStatusEnum.CANCELLED;
-      await paymentQrRepo.save(ticket.paymentQr);
-    }
-
-    return transaction;
-  }
-
-  //* ============================================================================================== */
-  //*                    Credit from Ticket Cancel With Wallet                                       */
-  //* ============================================================================================== */
-
-  async creditFromTicketCancelWallet(
-    ticket: Ticket,
-    customer: Customer,
-    manager?: EntityManager,
-  ) {
-    const walletRepo = this.getWalletRepo(manager);
-    const transactionRepo = this.getTransactionRepo(manager);
-
-    const wallet = await this.getOrCreateWallet(customer, manager);
-
-    // Buscar el DEBIT asociado a este ticket para saber cuánto se consumió
-    const debit = await transactionRepo.findOne({
-      where: {
-        wallet: { id: wallet.id },
-        ticket: { id: ticket.id },
-        type: TransactionType.DEBIT,
-      },
-    });
-
-    if (!debit) {
-      // Si no hay DEBIT, no hay nada que devolver
-      return null;
-    }
-
-    const amount = Number(debit.amount);
-    if (amount <= 0) return null;
-
-    // Verificar que no haya un CREDIT previo para este ticket (idempotencia)
-    const existingCredit = await transactionRepo.findOne({
-      where: {
-        wallet: { id: wallet.id },
-        ticket: { id: ticket.id },
-        type: TransactionType.CREDIT,
-        metadata: {
-          reason: 'ticket_cancelled',
-          originalTicketId: ticket.id,
-          originalStatus: ticket.status,
-        },
-      },
-    });
-
-    if (existingCredit) {
-      return existingCredit; // Ya se devolvió
-    }
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
-
-    const currentBalance = Number(wallet.balance);
-    const newBalance = currentBalance + amount;
-
-    // Crear transacción CREDIT
     const transaction = transactionRepo.create({
       wallet,
       type: TransactionType.CREDIT,
@@ -261,9 +179,10 @@ export class WalletService {
       ticket,
       metadata: {
         reason: 'ticket_cancelled',
-        originalDebitId: debit.id,
         originalTicketId: ticket.id,
-        originalStatus: ticket.status,
+        originalWalletAmount: ticket.wallet_amount,
+        originalQrAmount: ticket.qr_amount,
+        cancelledAt: new Date().toISOString(),
       },
     });
 
@@ -279,7 +198,7 @@ export class WalletService {
   //*                                 Consume Wallet (FIFO)                                          */
   //* ============================================================================================== */
 
-  async consumeForTicket(data: {
+  /* async consumeForTicket(data: {
     customer: Customer;
     ticket: Ticket;
     amount: number;
@@ -305,17 +224,6 @@ export class WalletService {
 
     let remaining = data.amount;
     const usedCredits: { creditId: number; amount: number }[] = [];
-
-    /* const credits = await transactionRepo.find({
-      where: {
-        wallet: { id: wallet.id },
-        remainingAmount: MoreThan('0'),
-        expiresAt: MoreThan(new Date()),
-      },
-      order: {
-        expiresAt: 'ASC', // FIFO: los que expiran primero
-      },
-    }); */
 
     const credits = await transactionRepo
       .createQueryBuilder('credit')
@@ -370,49 +278,79 @@ export class WalletService {
     }
 
     return usedTotal;
-  }
+  } */
 
-  //* ============================================================================================== */
-  //*                                    Expire Credits                                              */
-  //* ============================================================================================== */
+  async consumeForTicket(data: {
+    customer: Customer;
+    ticket: Ticket;
+    amount: number;
+    manager?: EntityManager;
+  }): Promise<number> {
+    const walletRepo = this.getWalletRepo(data.manager);
+    const transactionRepo = this.getTransactionRepo(data.manager);
 
-  async expireCredits(manager?: EntityManager) {
-    const walletRepo = this.getWalletRepo(manager);
-    const transactionRepo = this.getTransactionRepo(manager);
+    const wallet = await this.getOrCreateWallet(data.customer, data.manager);
 
-    const expiredCredits = await transactionRepo.find({
-      where: {
-        remainingAmount: MoreThan('0'),
-        expiresAt: LessThan(new Date()),
-      },
-      relations: { wallet: true },
-    });
+    let remaining = data.amount;
+    const usedCredits: { creditId: number; amount: number }[] = [];
 
-    for (const credit of expiredCredits) {
-      const remaining = Number(credit.remainingAmount);
-      const wallet = credit.wallet;
+    const credits = await transactionRepo
+      .createQueryBuilder('credit')
+      .setLock('pessimistic_write')
+      .where('credit.walletId = :walletId', { walletId: wallet.id })
+      .andWhere('credit.remainingAmount > 0')
+      .andWhere('credit.expiresAt > :now', { now: new Date() })
+      .orderBy('credit.expiresAt', 'ASC')
+      .getMany();
 
-      const newBalance = Number(wallet.balance) - remaining;
+    for (const credit of credits) {
+      if (remaining <= 0) break;
 
-      const expired = transactionRepo.create({
+      const creditRemaining = Number(credit.remainingAmount);
+      const used = Math.min(creditRemaining, remaining);
+
+      credit.remainingAmount = (creditRemaining - used).toString();
+      await transactionRepo.save(credit);
+
+      usedCredits.push({
+        creditId: credit.id,
+        amount: used,
+      });
+
+      remaining -= used;
+    }
+
+    const usedTotal = data.amount - remaining;
+
+    // VALIDACIÓN CRÍTICA
+    if (remaining > 0) {
+      throw new BadRequestException('Insufficient wallet balance');
+    }
+
+    if (usedTotal > 0) {
+      const currentBalance = Number(wallet.balance);
+      const newBalance = currentBalance - usedTotal;
+
+      const debit = transactionRepo.create({
         wallet,
-        type: TransactionType.EXPIRED,
-        amount: remaining.toString(),
+        type: TransactionType.DEBIT,
+        amount: usedTotal.toString(),
         balanceAfter: newBalance.toString(),
+        ticket: data.ticket,
         metadata: {
-          originalCreditId: credit.id,
-          reason: 'credit_expired',
-          expiredAt: new Date().toISOString(),
+          usedCredits,
+          totalAmount: usedTotal,
+          consumedAt: new Date().toISOString(),
         },
       });
 
-      credit.remainingAmount = '0';
       wallet.balance = newBalance.toString();
 
-      await transactionRepo.save(credit);
       await walletRepo.save(wallet);
-      await transactionRepo.save(expired);
+      await transactionRepo.save(debit);
     }
+
+    return usedTotal;
   }
 
   //* ============================================================================================== */
@@ -428,78 +366,71 @@ export class WalletService {
 
     const wallet = await this.getOrCreateWallet(ticket.buyer, manager);
 
-    // Buscar el DEBIT asociado a este ticket
-    const debit = await transactionRepo.findOne({
-      where: {
-        wallet: { id: wallet.id },
-        ticket: { id: ticket.id },
-        type: TransactionType.DEBIT,
-      },
-    });
+    // Buscar el DEBIT asociado a este ticket con lock
+    const debit = await transactionRepo
+      .createQueryBuilder('tx')
+      .setLock('pessimistic_write')
+      .where('tx.walletId = :walletId', { walletId: wallet.id })
+      .andWhere('tx.ticketId = :ticketId', { ticketId: ticket.id })
+      .andWhere('tx.type = :type', { type: TransactionType.DEBIT })
+      .getOne();
 
     if (!debit) return;
 
-    // Verificar si ya se restauró (idempotencia)
+    // Idempotencia
     if (debit.metadata?.reversedAt) {
-      return; // Ya se restauró
+      return;
     }
 
-    // Restaurar los créditos originales usando el metadata
     const usedCredits =
       (debit.metadata?.usedCredits as { creditId: number; amount: number }[]) ||
       [];
 
-    for (const uc of usedCredits) {
-      const originalCredit = await transactionRepo.findOne({
-        where: { id: uc.creditId },
-      });
+    let restoredTotal = 0;
 
-      if (originalCredit) {
-        const currentRemaining = Number(originalCredit.remainingAmount);
-        originalCredit.remainingAmount = (
-          currentRemaining + uc.amount
-        ).toString();
-        await transactionRepo.save(originalCredit);
-      }
+    for (const uc of usedCredits) {
+      const originalCredit = await transactionRepo
+        .createQueryBuilder('credit')
+        .setLock('pessimistic_write')
+        .where('credit.id = :id', { id: uc.creditId })
+        .getOne();
+
+      if (!originalCredit) continue;
+
+      const currentRemaining = Number(originalCredit.remainingAmount);
+      const restoredAmount = Number(uc.amount);
+
+      originalCredit.remainingAmount = (
+        currentRemaining + restoredAmount
+      ).toString();
+
+      await transactionRepo.save(originalCredit);
+
+      restoredTotal += restoredAmount;
     }
 
-    // Recalcular balance de la wallet (suma de créditos vigentes)
-    const validCredits = await transactionRepo.find({
-      where: {
-        wallet: { id: wallet.id },
-        type: TransactionType.CREDIT,
-        remainingAmount: MoreThan('0'),
-        expiresAt: MoreThan(new Date()),
-      },
-    });
+    // Actualizar balance de wallet
+    const currentBalance = Number(wallet.balance);
 
-    const newBalance = validCredits.reduce(
-      (sum, credit) => sum + Number(credit.remainingAmount),
-      0,
-    );
+    wallet.balance = (currentBalance + restoredTotal).toString();
 
-    // Actualizar wallet y marcar débito como revertido
-    wallet.balance = newBalance.toString();
-
+    // Marcar el DEBIT como revertido
     debit.metadata = {
       ...debit.metadata,
       reversedAt: new Date().toISOString(),
       reversedBecause: 'ticket_expired',
     };
 
-    // Crear una transacción de ajuste para auditoría
+    // Crear transacción de auditoría
     const adjustment = transactionRepo.create({
       wallet,
       type: TransactionType.EXPIRED,
-      amount: debit.amount,
-      balanceAfter: newBalance.toString(),
+      amount: restoredTotal.toString(),
+      balanceAfter: wallet.balance,
       ticket,
       metadata: {
         originalDebitId: debit.id,
-        restoredCredits: usedCredits.map((uc) => ({
-          creditId: uc.creditId,
-          amount: uc.amount,
-        })),
+        restoredCredits: usedCredits,
         reason: 'ticket_expired',
       },
     });
@@ -513,12 +444,17 @@ export class WalletService {
   //*                                   Get Available Balance                                        */
   //* ============================================================================================== */
 
-  async getAvailableBalance(
-    customer: Customer,
-    manager?: EntityManager,
-  ): Promise<number> {
-    const transactionRepo = this.getTransactionRepo(manager);
-    const wallet = await this.getOrCreateWallet(customer, manager);
+  async getAvailableBalance(data: {
+    customer: Customer;
+    manager?: EntityManager;
+  }): Promise<number> {
+    const transactionRepo = this.getTransactionRepo(data.manager);
+    const wallet = await this.getOrCreateWallet(data.customer, data.manager);
+
+    /* await this.ticketExpirationService.expireTravelIfNeeded(
+      dto.travelId,
+      queryRunner.manager,
+    ); */
 
     const credits = await transactionRepo.find({
       where: {
@@ -539,6 +475,7 @@ export class WalletService {
 
     return balance;
   }
+
   //* ============================================================================================== */
   //*                                    Get Transaction History                                     */
   //* ============================================================================================== */

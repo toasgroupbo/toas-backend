@@ -57,6 +57,9 @@ export class Customer {
   @Column('text', { nullable: true })
   photo?: string;
 
+  @Column('text', { nullable: true })
+  sessionToken?: string | null;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })

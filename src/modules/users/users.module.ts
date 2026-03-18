@@ -15,7 +15,7 @@ import { TravelsModule } from '../travels/travels.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
-    forwardRef(() => AuthModule),
+    //forwardRef(() => AuthModule),
     RolesModule,
     BusesModule,
     TravelsModule,

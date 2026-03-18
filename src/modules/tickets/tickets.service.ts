@@ -27,6 +27,7 @@ import {
 
 import { PassengerSeatBatchDto } from './dto/assign-passengers-batch-in-app.dto';
 
+import { WalletService } from '../wallet/wallet.service';
 import { PenaltiesService } from '../customers/penalties.service';
 import { CustomersService } from '../customers/customers.service';
 import { PassengersService } from '../customers/passengers.service';
@@ -51,6 +52,7 @@ export class TicketsService {
     private readonly penaltiesService: PenaltiesService,
     private readonly ticketExpirationService: TicketExpirationService,
     private readonly passengersService: PassengersService,
+    private readonly walletService: WalletService,
 
     private dataSource: DataSource,
   ) {}
@@ -111,6 +113,21 @@ export class TicketsService {
         queryRunner.manager,
       );
 
+      const totalTicketAmount = Number(totalPrice) + Number(commission);
+
+      let walletAmount = 0;
+      let qrAmount = totalTicketAmount;
+
+      if (type === TicketType.IN_APP && resolvedBuyer) {
+        const availableBalance = await this.walletService.getAvailableBalance({
+          customer: resolvedBuyer,
+          manager: queryRunner.manager,
+        });
+
+        walletAmount = Math.min(availableBalance, totalTicketAmount);
+        qrAmount = totalTicketAmount - walletAmount;
+      }
+
       const ticket = await this.createTicket(queryRunner.manager, {
         type,
         travel,
@@ -121,7 +138,10 @@ export class TicketsService {
         reserve_expiresAt: this.getReservationExpiry(),
         payment_type: paymentType,
         commission: commission.toString(),
+
         total_price: totalPrice.toFixed(2),
+        wallet_amount: walletAmount.toFixed(2),
+        qr_amount: qrAmount.toFixed(2),
         status: TicketStatus.RESERVED,
       });
 

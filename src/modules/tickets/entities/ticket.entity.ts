@@ -43,6 +43,22 @@ export class Ticket {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   total_price: string;
 
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
+  wallet_amount: string;
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
+  qr_amount: string;
+
   @Column('json')
   seats: SelectedSeatsDto[];
 

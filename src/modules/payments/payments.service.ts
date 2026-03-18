@@ -60,6 +60,9 @@ export class PaymentsService {
         .andWhere('ticket.payment_type = :paymentType', {
           paymentType: PaymentType.QR,
         })
+        //! wallet
+        //.andWhere('ticket.qr_amount > 0')
+        //! wallet
         .andWhere(
           '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
         )
@@ -69,7 +72,41 @@ export class PaymentsService {
         throw new BadRequestException('Ticket not available for QR generation');
       }
 
-      IdCorrelation = `TICKET-${Date.now()}-${ticket.id}-${randomUUID()}`; //this.generateCorrelationId();
+      IdCorrelation = `TICKET-${Date.now()}-${ticket.id}-${randomUUID()}`;
+
+      //! wallet
+      const walletAmount = Number(ticket.wallet_amount);
+
+      if (walletAmount > 0) {
+        await this.walletService.consumeForTicket({
+          customer: ticket.buyer,
+          ticket,
+          amount: walletAmount,
+          manager: queryRunner.manager,
+        });
+      }
+
+      const qrAmount = Number(ticket.qr_amount);
+
+      if (qrAmount === 0) {
+        await queryRunner.manager.update(Ticket, ticket.id, {
+          status: TicketStatus.SOLD,
+          reserve_expiresAt: null,
+        });
+
+        for (const seat of ticket.travelSeats) {
+          seat.status = SeatStatus.SOLD;
+          await queryRunner.manager.save(seat);
+        }
+        await queryRunner.commitTransaction();
+        return {
+          message: 'Ticket paid fully with wallet',
+          status: TicketStatus.SOLD,
+          ticketId: ticket,
+        };
+      }
+
+      //! wallet
 
       // 2. NO hacer commit todavía, esperamos al QR
       await queryRunner.commitTransaction();
@@ -85,13 +122,14 @@ export class PaymentsService {
     // ============================================================
 
     let result: QrGenerateResponse;
-    const amount = Number(ticket.total_price) + Number(ticket.commission);
+    const amount = Number(ticket.qr_amount);
+    //const amount = Number(ticket.total_price) + Number(ticket.commission);
 
     try {
       result = await this.httpService.generateQr({
         IdCorrelation,
         expiration: this.formatExpirationForBcp(),
-        amount,
+        amount: 0.1, //! para pruebas
         gloss: dto.gloss,
         collectors: [
           {
@@ -102,6 +140,14 @@ export class PaymentsService {
         ],
       });
     } catch (error) {
+      //await this.walletService.restoreCreditsFromExpiredTicket(ticket);
+
+      await this.dataSource.transaction(async (manager) => {
+        await this.walletService.restoreCreditsFromExpiredTicket(
+          ticket,
+          manager,
+        );
+      });
       throw new BadRequestException('QR generation failed. Please try again.');
     }
 
@@ -144,7 +190,7 @@ export class PaymentsService {
       ...result,
       ticketId: ticket.id,
       status: TicketStatus.PENDING_PAYMENT,
-      reserve_expiresAt: ticket.reserve_expiresAt,
+      reserve_expiresAt: this.getReservationExpiryQr(),
     };
   }
 
@@ -216,6 +262,8 @@ export class PaymentsService {
 
   async callback(dto: QrCallbackResponse) {
     const { CorrelationId, Collectors } = dto;
+
+    console.log(dto);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();

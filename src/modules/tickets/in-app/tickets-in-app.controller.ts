@@ -47,22 +47,6 @@ export class TicketsInAppController {
   }
 
   //? ============================================================================================== */
-  //?                                       Confirm                                                  */
-  //? ============================================================================================== */
-
-  //!
-  @UseGuards(IsVerifyGuard)
-  @Auth()
-  //!
-  @Post('confirm-wallet/:id')
-  confirmWalletPayment(
-    @Param('id', ParseIntPipe) ticketId: number,
-    @GetCustomer() customer: Customer,
-  ) {
-    return this.ticketsInAppService.confirmWalletPayment(ticketId, customer);
-  }
-
-  //? ============================================================================================== */
   //?                                         Cancel                                                 */
   //? ============================================================================================== */
 

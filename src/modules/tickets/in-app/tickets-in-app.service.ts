@@ -47,7 +47,7 @@ export class TicketsInAppService {
       dto,
       buyer,
       type: TicketType.IN_APP,
-      paymentType: dto.payment_type,
+      paymentType: PaymentType.QR,
     });
   }
 
@@ -74,90 +74,6 @@ export class TicketsInAppService {
   }
 
   //? ============================================================================================== */
-  //?                           Confirm_With_Wallet                                                  */
-  //? ============================================================================================== */
-
-  async confirmWalletPayment(ticketId: number, customer: Customer) {
-    const queryRunner = this.createTransaction();
-    try {
-      const ticket = await queryRunner.manager
-        .createQueryBuilder(Ticket, 'ticket')
-        .setLock('pessimistic_write')
-        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
-        .where('ticket.id = :ticketId', { ticketId })
-        .andWhere('ticket.buyerId = :buyerId', { buyerId: customer.id })
-        .andWhere('ticket.type = :type', { type: TicketType.IN_APP })
-        .andWhere('ticket.payment_type = :paymentType', {
-          paymentType: PaymentType.WALLET,
-        })
-        .andWhere('ticket.status = :status', {
-          status: TicketStatus.RESERVED,
-        })
-        .andWhere('ticket.reserve_expiresAt > NOW()')
-        .getOne();
-
-      if (!ticket) {
-        throw new NotFoundException(
-          'Ticket not found or not available for wallet payment',
-        );
-      }
-
-      // 2. VALIDAR SALDO SUFICIENTE
-      const totalPrice = Number(ticket.total_price) + Number(ticket.commission); //! ticket + comision
-      /*  const availableBalance = await this.walletService.getAvailableBalance(
-        customer,
-        queryRunner.manager,
-      );
-
-      if (availableBalance < totalPrice) {
-        throw new BadRequestException(
-          `Insufficient wallet balance. Available: ${availableBalance.toFixed(2)}, Required: ${totalPrice.toFixed(2)}`,
-        );
-      } */
-
-      // 3. CONSUMIR WALLET (FIFO)
-      const consumed = await this.walletService.consumeForTicket({
-        customer,
-        ticket,
-        amount: totalPrice,
-        manager: queryRunner.manager,
-      });
-
-      if (consumed < totalPrice) {
-        throw new BadRequestException('Failed to consume wallet balance');
-      }
-
-      // 4. ACTUALIZAR TICKET A SOLD
-      await queryRunner.manager.update(Ticket, ticket.id, {
-        status: TicketStatus.SOLD,
-        reserve_expiresAt: null,
-      });
-
-      // 5. ACTUALIZAR ASIENTOS A SOLD
-      for (const seat of ticket.travelSeats) {
-        seat.status = SeatStatus.SOLD;
-        await queryRunner.manager.save(seat);
-      }
-
-      await queryRunner.commitTransaction();
-
-      return {
-        message: 'Ticket paid successfully with wallet',
-        ticket: {
-          id: ticket.id,
-          total_price: ticket.total_price,
-          status: TicketStatus.SOLD,
-        },
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      handleDBExceptions(error);
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  //? ============================================================================================== */
   //?                                        Cancel                                                  */
   //? ============================================================================================== */
 
@@ -178,22 +94,13 @@ export class TicketsInAppService {
       }
 
       //! wallet
-      if (ticket.payment_type === PaymentType.WALLET) {
-        await this.walletService.creditFromTicketCancelWallet(
+      if (ticket.status == TicketStatus.SOLD) {
+        await this.walletService.creditFromTicketCancel(
           ticket,
           ticket.buyer,
           queryRunner.manager,
         );
       }
-
-      if (ticket.payment_type === PaymentType.QR) {
-        await this.walletService.creditFromTicketCancelQR(
-          ticket,
-          ticket.buyer,
-          queryRunner.manager,
-        );
-      }
-
       //! wallet
 
       this.changeTicketState(ticket, TicketStatus.CANCELLED);

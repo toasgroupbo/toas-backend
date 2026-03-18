@@ -14,13 +14,13 @@ export class CreateTicketInAppDto {
   @Type(() => SeatSelectionInAppDto)
   seatSelections: SeatSelectionInAppDto[];
 
-  @ApiProperty({
+  /* @ApiProperty({
     example: PaymentType.QR,
     enum: [PaymentType.QR, PaymentType.WALLET],
   })
   @IsString()
   @IsEnum([PaymentType.QR, PaymentType.WALLET])
-  payment_type: PaymentType;
+  payment_type: PaymentType; */
 
   //* ============================================================================================== */
   //*                                        Relations                                               */

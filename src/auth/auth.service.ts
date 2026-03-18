@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 
 import { OAuth2Client } from 'google-auth-library';
 
@@ -16,22 +16,25 @@ import * as bcrypt from 'bcrypt';
 
 import { CreateCustomerDto } from 'src/modules/customers/dto';
 
+import { AuthProviders } from './enums';
 import { LoginType } from '../common/enums/login-type.enum';
 
 import { IGooglePayload } from './interfaces';
 
 import { UsersService } from '../modules/users/users.service';
 
-import { Customer } from '../modules/customers/entities/customer.entity';
-
 import { envs } from 'src/config/environments/environments';
-import { AuthProviders } from './enums';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Customer } from '../modules/customers/entities/customer.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Customer)
     private customerRepository: Repository<Customer>,
+
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
 
     private readonly jwtService: JwtService,
     private readonly userService: UsersService,
@@ -82,13 +85,34 @@ export class AuthService {
 
     const { password: _, ...entityWithoutPassword } = user;
 
+    //!
+
+    // Generar nuevo token
+    const token = this.generateJwt({
+      id: entityWithoutPassword.id,
+      type: LoginType.user,
+    });
+
+    // Invalidar sesión anterior (si existe) guardando el nuevo token
+    await this.userRepository.update(
+      { id: entityWithoutPassword.id },
+      { sessionToken: token },
+    );
+
     return {
+      user: entityWithoutPassword,
+      token,
+    };
+
+    //!
+
+    /* return {
       user: entityWithoutPassword,
       token: this.generateJwt({
         id: entityWithoutPassword.id,
         type: LoginType.user,
       }),
-    };
+    }; */
   }
 
   //? ============================================================================================== */
@@ -166,13 +190,33 @@ export class AuthService {
       );
     }
 
+    //!
+
+    // Generar token
+    const token = this.generateJwt({
+      id: customer.id,
+      type: LoginType.customer,
+    });
+
+    // Invalidar sesión anterior guardando el nuevo token
+    await this.customerRepository.update(
+      { id: customer.id },
+      { sessionToken: token },
+    );
+
     return {
+      token,
+      user: customer,
+    };
+
+    //!
+    /* return {
       token: this.generateJwt({
         id: customer.id,
         type: LoginType.customer,
       }),
       user: customer,
-    };
+    }; */
   }
 
   //? ============================================================================================== */
@@ -216,12 +260,48 @@ export class AuthService {
 
     const { password: _, ...entityWithoutPassword } = customer;
 
+    // Generar token
+    const token = this.generateJwt({
+      id: entityWithoutPassword.id,
+      type: LoginType.customer,
+    });
+
+    // Invalidar sesión anterior guardando el nuevo token
+    await this.customerRepository.update(
+      { id: customer.id },
+      { sessionToken: token },
+    );
+
     return {
+      customer: entityWithoutPassword,
+      token,
+    };
+
+    /* return {
       customer: entityWithoutPassword,
       token: this.generateJwt({
         id: entityWithoutPassword.id,
         type: LoginType.customer,
       }),
+    }; */
+  }
+
+  //? ============================================================================================== */
+  //?                                        Logout                                                  */
+  //? ============================================================================================== */
+
+  async logout(user: User | Customer, userType: LoginType) {
+    if (userType === LoginType.user) {
+      await this.userRepository.update({ id: user.id }, { sessionToken: null });
+    } else {
+      await this.customerRepository.update(
+        { id: user.id },
+        { sessionToken: null },
+      );
+    }
+
+    return {
+      message: 'Sesión cerrada exitosamente',
     };
   }
 

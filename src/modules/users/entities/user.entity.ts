@@ -38,6 +38,9 @@ export class User {
   @Column('text')
   phone: string;
 
+  @Column('text', { nullable: true })
+  sessionToken?: string | null;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })
