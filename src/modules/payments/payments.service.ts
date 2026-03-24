@@ -263,8 +263,6 @@ export class PaymentsService {
   async callback(dto: QrCallbackResponse) {
     const { CorrelationId, Collectors } = dto;
 
-    console.log(dto);
-
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
