@@ -72,7 +72,7 @@ export class PaymentsService {
         throw new BadRequestException('Ticket not available for QR generation');
       }
 
-      IdCorrelation = `TICKET-${Date.now()}-${ticket.id}-${randomUUID()}`;
+      IdCorrelation = `TICKET-${ticket.id}-${randomUUID().slice(0, 8)}`; //`TICKET-${Date.now()}-${ticket.id}-${randomUUID()}`;
 
       //! wallet
       const walletAmount = Number(ticket.wallet_amount);
@@ -199,7 +199,7 @@ export class PaymentsService {
   //? ============================================================================================== */
 
   async generateQrForRecharge(customer: Customer, amount: number) {
-    const IdCorrelation = `RECHARGE-${Date.now()}-${customer.id}-${randomUUID()}`;
+    const IdCorrelation = `RECHARGE-${customer.id}-${randomUUID().slice(0, 8)}`; //`RECHARGE-${Date.now()}-${customer.id}-${randomUUID()}`;
     let result: QrGenerateResponse;
 
     try {
