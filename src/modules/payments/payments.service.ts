@@ -275,7 +275,7 @@ export class PaymentsService {
         relations: {
           ticket: true,
         },
-        lock: { mode: 'pessimistic_write' },
+        //lock: { mode: 'pessimistic_write' },
       });
 
       console.log('hola 2');
