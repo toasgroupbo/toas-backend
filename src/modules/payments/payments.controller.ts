@@ -71,10 +71,10 @@ export class PaymentsController {
   @UseGuards(BasicAuthGuard)
   async receiveQrCallback(@Body() response: QrCallbackResponse) {
     try {
-      //await this.paymentsService.callback(response);
+      await this.paymentsService.callback(response);
       const id = response.Id;
 
-      console.log(response);
+      console.log(id);
 
       return {
         State: '000',
