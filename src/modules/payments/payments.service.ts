@@ -267,7 +267,7 @@ export class PaymentsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    console.log('hola 1');
+    console.log(CorrelationId);
 
     try {
       const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
@@ -278,7 +278,7 @@ export class PaymentsService {
         //lock: { mode: 'pessimistic_write' },
       });
 
-      console.log('hola 2');
+      console.log(paymentQr);
 
       if (!paymentQr) {
         await queryRunner.rollbackTransaction();
@@ -290,13 +290,9 @@ export class PaymentsService {
         return;
       }
 
-      console.log('hola 3');
-
       paymentQr.data = dto;
       paymentQr.status = PaymentStatusEnum.PAID;
       await queryRunner.manager.save(paymentQr);
-
-      console.log('hola 4');
 
       // ============================================================
       // IDENTIFICAR EL TIPO POR EL COLLECTOR

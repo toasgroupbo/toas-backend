@@ -74,8 +74,6 @@ export class PaymentsController {
       await this.paymentsService.callback(response);
       const id = response.Id;
 
-      console.log(id);
-
       return {
         State: '000',
         Mensaje: 'COMPLETADO',
