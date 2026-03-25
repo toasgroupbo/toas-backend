@@ -267,18 +267,14 @@ export class PaymentsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    console.log(CorrelationId);
-
     try {
       const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
         where: { IdCorrelation: CorrelationId },
         relations: {
           ticket: true,
         },
-        //lock: { mode: 'pessimistic_write' },
+        lock: { mode: 'pessimistic_write' },
       });
-
-      console.log(paymentQr);
 
       if (!paymentQr) {
         await queryRunner.rollbackTransaction();
