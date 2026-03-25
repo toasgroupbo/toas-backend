@@ -43,7 +43,22 @@ export class FilesController {
   //!
   @Post()
   @ApiConsumes('multipart/form-data')
+  /* @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+      },
+    },
+  }) */
   @ApiBody({
+    required: true,
     schema: {
       type: 'object',
       properties: {
