@@ -43,7 +43,7 @@ export class TicketExpirationService {
       if (Number(ticket.wallet_amount) > 0) {
         await this.walletService.restoreCreditsFromExpiredTicket(
           ticket,
-          manager,
+          internalManager,
         );
       }
       //! wallet

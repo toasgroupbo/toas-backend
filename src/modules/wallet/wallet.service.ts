@@ -359,7 +359,7 @@ export class WalletService {
 
   async restoreCreditsFromExpiredTicket(
     ticket: Ticket,
-    manager?: EntityManager,
+    manager: EntityManager,
   ): Promise<void> {
     const walletRepo = this.getWalletRepo(manager);
     const transactionRepo = this.getTransactionRepo(manager);
