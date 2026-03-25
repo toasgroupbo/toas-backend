@@ -112,6 +112,46 @@ export class TravelsService {
   //? ============================================================================================== */
 
   async findAll(pagination: TravelPaginationDto, companyId: number) {
+    return await this.dataSource.transaction(async (manager) => {
+      const { status } = pagination;
+
+      const travelsToExpire = await manager.find(Travel, {
+        select: { id: true },
+      });
+
+      for (const travel of travelsToExpire) {
+        await this.ticketExpirationService.expireTravelIfNeeded(
+          travel.id,
+          manager,
+        );
+      }
+
+      const options: any = {
+        where: { bus: { company: { id: companyId } } },
+      };
+
+      if (status) {
+        options.where.travel_status = status;
+      }
+
+      const travels = await paginate(
+        manager.getRepository(Travel),
+        {
+          ...options,
+          order: { id: 'DESC' },
+          relations: {
+            bus: true,
+            route: { officeOrigin: true, officeDestination: true },
+          },
+        },
+        pagination,
+      );
+
+      return travels;
+    });
+  }
+
+  /* async findAll(pagination: TravelPaginationDto, companyId: number) {
     const { status } = pagination;
 
     const travelsToExpire = await this.travelRepository.find({
@@ -143,13 +183,31 @@ export class TravelsService {
       pagination,
     );
     return travels;
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
   //? ============================================================================================== */
 
   async findOne(id: number, companyId: number) {
+    return await this.dataSource.transaction(async (manager) => {
+      await this.ticketExpirationService.expireTravelIfNeeded(id, manager);
+
+      const travel = await manager.findOne(Travel, {
+        where: { id, bus: { company: { id: companyId } } },
+        relations: {
+          bus: true,
+          route: { officeOrigin: true, officeDestination: true },
+          travelSeats: true,
+        },
+      });
+
+      if (!travel) throw new NotFoundException('Travel not found');
+
+      return travel;
+    });
+  }
+  /* async findOne(id: number, companyId: number) {
     await this.ticketExpirationService.expireTravelIfNeeded(id);
 
     const travel = await this.travelRepository.findOne({
@@ -163,13 +221,32 @@ export class TravelsService {
     });
     if (!travel) throw new NotFoundException('Travel not found');
     return travel;
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        Cancel                                                  */
   //? ============================================================================================== */
 
   async cancel(id: number, companyId: number) {
+    return await this.dataSource.transaction(async (manager) => {
+      await this.ticketExpirationService.expireTravelIfNeeded(id, manager);
+
+      const travel = await manager.findOne(Travel, {
+        where: { id, bus: { company: { id: companyId } } },
+      });
+
+      if (!travel) throw new NotFoundException('Travel not found');
+
+      try {
+        travel.travel_status = TravelStatus.CANCELLED;
+
+        return await manager.save(travel);
+      } catch (error) {
+        handleDBExceptions(error);
+      }
+    });
+  }
+  /* async cancel(id: number, companyId: number) {
     await this.ticketExpirationService.expireTravelIfNeeded(id);
 
     const travel = await this.findOne(id, companyId);
@@ -182,7 +259,7 @@ export class TravelsService {
       handleDBExceptions(error);
     }
   }
-
+ */
   //? ============================================================================================== */
   //?                                        Delete                                                  */
   //? ============================================================================================== */

@@ -56,9 +56,31 @@ export class TicketsInAppService {
   //? ============================================================================================== */
 
   async findAll(customer: Customer) {
+    return await this.dataSource.transaction(async (manager) => {
+      const travelsToExpire = await manager.find(Travel, {
+        select: { id: true },
+        where: { tickets: { buyer: customer } },
+      });
+
+      for (const travel of travelsToExpire) {
+        await this.ticketExpirationService.expireTravelIfNeeded(
+          travel.id,
+          manager, // querryRunner
+        );
+      }
+
+      return await manager.find(Ticket, {
+        where: {
+          buyer: { id: customer.id },
+        },
+      });
+    });
+  }
+
+  /* async findAll(customer: Customer) {
     const travelsToExpire = await this.travelRepository.find({
-      /* select: { id: true },
-      where: { tickets: { buyer: customer } }, */
+      select: { id: true },
+      where: { tickets: { buyer: customer } },
       //! revisar
     });
 
@@ -72,7 +94,48 @@ export class TicketsInAppService {
       },
     });
   }
+ */
+  //? ============================================================================================== */
+  //?                                       FindOne                                                  */
+  //? ============================================================================================== */
 
+  async findOne(ticketId: number, customer: Customer) {
+    return await this.dataSource.transaction(async (manager) => {
+      const ticket = await manager.findOne(Ticket, {
+        where: { id: ticketId, buyer: { id: customer.id } },
+        relations: { travel: true },
+      });
+
+      if (!ticket) throw new NotFoundException('Ticket not Found');
+
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        ticket.travel.id,
+        manager,
+      );
+
+      return await manager.findOne(Ticket, {
+        where: { id: ticketId },
+        relations: { travelSeats: true, paymentQr: true },
+      });
+    });
+  }
+
+  /* async findOne(ticketId: number, customer: Customer) {
+    const travelsToExpire = await this.ticketRepository.find({
+      where: { id: ticketId, buyer: { id: customer.id } },
+    });
+
+    for (const travel of travelsToExpire) {
+      await this.ticketExpirationService.expireTravelIfNeeded(travel.id);
+    }
+
+    return await this.ticketRepository.find({
+      where: {
+        buyer: { id: customer.id },
+      },
+    });
+  }
+ */
   //? ============================================================================================== */
   //?                                        Cancel                                                  */
   //? ============================================================================================== */

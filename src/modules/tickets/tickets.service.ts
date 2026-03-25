@@ -551,87 +551,6 @@ export class TicketsService {
     }
   }
 
-  /*  async confirm(ticketId: number) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const travel = await queryRunner.manager.findOne(Travel, {
-        where: { tickets: { id: ticketId } },
-      });
-      if (!travel) throw new NotFoundException('Travel not found');
-
-      //! --------------------------------------------
-      //! Expirar Reservas si es necesario
-      //! --------------------------------------------
-
-      await this.ticketExpirationService.expireTravelIfNeeded(
-        travel.id,
-        queryRunner.manager,
-      );
-
-      // --------------------------------------------
-      // 1. Buscar ticket con sus relaciones
-      // --------------------------------------------
-
-      const ticket = await queryRunner.manager
-        .createQueryBuilder(Ticket, 'ticket')
-        .setLock('pessimistic_write')
-
-        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
-        .innerJoinAndSelect('ticket.paymentQr', 'paymentQr')
-
-        .where('ticket.id = :ticketId', { ticketId })
-
-        .andWhere('ticket.status = :status', {
-          status: TicketStatus.PENDING_PAYMENT,
-        })
-        .andWhere('ticket.payment_type = :payment_type', {
-          payment_type: PaymentType.QR,
-        })
-        .andWhere('(ticket.reserve_expiresAt > NOW())')
-        .getOne();
-
-      if (!ticket)
-        throw new NotFoundException(
-          'Ticket not found, expired, or not in a confirmable state',
-        );
-
-      // --------------------------------------------
-      // 2. Actualizar estados
-      // --------------------------------------------
-
-      ticket.status = TicketStatus.SOLD;
-      ticket.reserve_expiresAt = null; //! (para la limpieza)
-
-      if (ticket.paymentQr) {
-        ticket.paymentQr.status = PaymentStatusEnum.PAID;
-      }
-
-      for (const seat of ticket.travelSeats) {
-        seat.status = SeatStatus.SOLD;
-      }
-
-      // --------------------------------------------
-      // 3. Persistir cambios
-      // --------------------------------------------
-
-      await queryRunner.manager.save(Ticket, ticket);
-      await queryRunner.commitTransaction();
-
-      return {
-        message: 'Ticket payment confirmed successfully',
-        ticket: { id: ticket.id, total_price: ticket.total_price },
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      handleDBExceptions(error);
-    } finally {
-      await queryRunner.release();
-    }
-  } */
-
   //? ============================================================================================== */
   //?                                    Verify_QR                                                   */
   //? ============================================================================================== */
@@ -658,6 +577,24 @@ export class TicketsService {
   //? ============================================================================================== */
 
   async findAll(companyId: number, travelId: number) {
+    return await this.dataSource.transaction(async (manager) => {
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travelId,
+        manager,
+      );
+
+      return await manager.find(Ticket, {
+        where: {
+          travel: {
+            id: travelId,
+            bus: { owner: { companies: { id: companyId } } },
+          },
+        },
+      });
+    });
+  }
+
+  /* async findAll(companyId: number, travelId: number) {
     await this.ticketExpirationService.expireTravelIfNeeded(travelId);
 
     return this.ticketRepository.find({
@@ -668,7 +605,7 @@ export class TicketsService {
         },
       },
     });
-  }
+  } */
 
   //? ============================================================================================== */
   //?                               Assign_Passenger                                                 */
@@ -779,86 +716,6 @@ export class TicketsService {
       })),
     };
   }
-
-  /* async assignPassengerBase(data: {
-    passengers: PassengerSeatBatchDto[];
-    customer: Customer;
-    ticketId: number;
-  }) {
-    const { passengers, customer, ticketId } = data;
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    //! --------------------------------------------
-    //! Expirar Reservas si es necesario
-    //! --------------------------------------------
-
-    try {
-      const travel = await queryRunner.manager.findOne(Travel, {
-        where: { tickets: { id: data.ticketId } },
-        select: { id: true },
-      });
-
-      if (!travel) {
-        throw new NotFoundException('Travel not found');
-      }
-
-      await this.ticketExpirationService.expireTravelIfNeeded(
-        travel.id,
-        queryRunner.manager,
-      );
-      for (const item of passengers) {
-        const seat = await queryRunner.manager
-          .createQueryBuilder(TravelSeat, 'seat')
-          .leftJoinAndSelect('seat.ticket', 'ticket')
-          .where('seat.id = :seatId', { seatId: item.seatId })
-          .andWhere('ticket.id = :ticketId', { ticketId })
-          .andWhere('ticket.buyerId = :customerId', {
-            customerId: customer.id,
-          })
-          .andWhere('ticket.status = :status', {
-            status: TicketStatus.RESERVED,
-          })
-          .getOne();
-
-        if (!seat) {
-          throw new BadRequestException(`Seat ${item.seatId} not editable`);
-        }
-
-        const passenger = await this.passengersService.createBase(
-          {
-            fullName: item.passenger.name,
-            ci: item.passenger.ci,
-          },
-          customer,
-          queryRunner.manager,
-        );
-
-        seat.passenger = {
-          name: passenger.fullName,
-          ci: passenger.ci,
-        };
-
-        await queryRunner.manager.save(seat);
-      }
-      await queryRunner.commitTransaction();
-      return {
-        message: 'Passengers assigned successfully',
-        ticketId,
-        assignedSeats: passengers.map((p) => ({
-          seatId: p.seatId,
-          ci: p.passenger.ci,
-        })),
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  } */
 
   //? ============================================================================================== */
   //?                                      Functions                                                 */

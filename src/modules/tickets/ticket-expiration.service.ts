@@ -23,7 +23,7 @@ export class TicketExpirationService {
   //?                           ExpireTravelIfNeeded                                                 */
   //? ============================================================================================== */
 
-  async expireTravelIfNeeded(travelId: number, manager?: EntityManager) {
+  async expireTravelIfNeeded(travelId: number, manager: EntityManager) {
     const internalManager = manager ?? this.dataSource.manager;
 
     const expiredTickets = await internalManager.find(Ticket, {

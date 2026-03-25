@@ -76,6 +76,22 @@ export class TicketsInAppController {
   }
 
   //? ============================================================================================== */
+  //?                                       FindOne                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @Get(':id')
+  findOne(
+    @Param('id', ParseIntPipe) ticketId: number,
+    @GetCustomer() customer: Customer,
+  ) {
+    return this.ticketsInAppService.findOne(ticketId, customer);
+  }
+
+  //? ============================================================================================== */
   //?                        Get_Active_Reservation                                                  */
   //? ============================================================================================== */
 

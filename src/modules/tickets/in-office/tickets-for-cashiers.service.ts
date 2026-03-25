@@ -123,6 +123,26 @@ export class TicketsForCashierService {
   //? ============================================================================================== */
 
   async findAll(travelId: number, cashier: User) {
+    return await this.dataSource.transaction(async (manager) => {
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travelId,
+        manager,
+      );
+
+      const tickets = await manager.find(Ticket, {
+        order: { id: 'DESC' },
+        where: {
+          travel: { id: travelId },
+          soldBy: { id: cashier.id },
+        },
+        relations: { travelSeats: true, buyer: true },
+      });
+
+      return tickets;
+    });
+  }
+
+  /* async findAll(travelId: number, cashier: User) {
     await this.ticketExpirationService.expireTravelIfNeeded(travelId);
 
     const tickets = await this.ticketRepository.find({
@@ -134,7 +154,7 @@ export class TicketsForCashierService {
       relations: { travelSeats: true, buyer: true },
     });
     return tickets;
-  }
+  } */
 
   //? ============================================================================================== */
   //?                               Assign_Passenger                                                 */

@@ -93,6 +93,30 @@ export class TravelsForCashierService {
   //? ============================================================================================== */
 
   async findOne(travelId: number, office: Office) {
+    return await this.dataSource.transaction(async (manager) => {
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travelId,
+        manager,
+      );
+
+      const travel = await manager.findOne(Travel, {
+        where: {
+          id: travelId,
+          route: { officeOrigin: { id: office.id } },
+        },
+        relations: {
+          bus: true,
+          route: { officeOrigin: true, officeDestination: true },
+          travelSeats: true,
+        },
+      });
+
+      if (!travel) throw new NotFoundException('Travel not found');
+
+      return travel;
+    });
+  }
+  /* async findOne(travelId: number, office: Office) {
     await this.ticketExpirationService.expireTravelIfNeeded(travelId);
 
     const travel = await this.travelRepository.findOne({
@@ -105,13 +129,30 @@ export class TravelsForCashierService {
     });
     if (!travel) throw new NotFoundException('Travel not found');
     return travel;
-  }
+  } */
 
   //? ============================================================================================== */
   //?                           Get_Seats_Available                                                  */
   //? ============================================================================================== */
 
   async getSeatsAvailable(travelId: number) {
+    return await this.dataSource.transaction(async (manager) => {
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travelId,
+        manager,
+      );
+
+      return await manager
+        .createQueryBuilder(TravelSeat, 'seat')
+        .where('seat.travelId = :travelId', { travelId })
+        .andWhere(`seat.status = :available OR seat.status = :reserved`, {
+          available: SeatStatus.AVAILABLE,
+          reserved: SeatStatus.RESERVED,
+        })
+        .getMany();
+    });
+  }
+  /* async getSeatsAvailable(travelId: number) {
     await this.ticketExpirationService.expireTravelIfNeeded(travelId);
 
     return await this.travelSeatRepository
@@ -122,12 +163,28 @@ export class TravelsForCashierService {
         reserved: SeatStatus.RESERVED,
       })
       .getMany();
-  }
+  } */
 
   //? ============================================================================================== */
   //? ============================================================================================== */
 
   private async getSeatsAvailableCount(travelId: number): Promise<number> {
+    return await this.dataSource.transaction(async (manager) => {
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travelId,
+        manager,
+      );
+
+      return await manager
+        .createQueryBuilder(TravelSeat, 'seat')
+        .where('seat.travelId = :travelId', { travelId })
+        .andWhere('seat.status IN (:...statuses)', {
+          statuses: [SeatStatus.AVAILABLE, SeatStatus.RESERVED],
+        })
+        .getCount();
+    });
+  }
+  /* private async getSeatsAvailableCount(travelId: number): Promise<number> {
     await this.ticketExpirationService.expireTravelIfNeeded(travelId);
 
     return await this.travelSeatRepository
@@ -137,7 +194,7 @@ export class TravelsForCashierService {
         statuses: [SeatStatus.AVAILABLE, SeatStatus.RESERVED],
       })
       .getCount();
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        Closed                                                  */
