@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, DataSource, Repository } from 'typeorm';
 
 import { TravelStatus } from '../enums/travel-status.enum';
 
@@ -17,6 +17,8 @@ export class TravelsInAppService {
     private readonly travelRepository: Repository<Travel>,
 
     private readonly ticketExpirationService: TicketExpirationService,
+
+    private readonly dataSource: DataSource,
   ) {}
 
   //? ============================================================================================== */
@@ -66,6 +68,52 @@ export class TravelsInAppService {
   //? ============================================================================================== */
 
   async findOne(travelId: number) {
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travelId,
+        queryRunner.manager,
+      );
+
+      const travel = await queryRunner.manager.findOne(Travel, {
+        where: { id: travelId },
+        relations: {
+          bus: { busType: true, company: true },
+          route: {
+            officeOrigin: { place: true },
+            officeDestination: { place: true },
+          },
+          travelSeats: true,
+        },
+        select: {
+          travelSeats: {
+            id: true,
+            row: true,
+            column: true,
+            deck: true,
+            price: true,
+            seatNumber: true,
+            type: true,
+            status: true,
+          },
+        },
+      });
+
+      await queryRunner.commitTransaction();
+      return travel;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /* async findOne(travelId: number) {
     await this.ticketExpirationService.expireTravelIfNeeded(travelId);
 
     return await this.travelRepository.findOne({
@@ -95,5 +143,5 @@ export class TravelsInAppService {
         },
       },
     });
-  }
+  } */
 }
