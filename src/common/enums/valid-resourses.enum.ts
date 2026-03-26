@@ -38,6 +38,8 @@ export enum ValidResourses {
   FILE = 'FILE',
 
   //! solo el cashier
+
+  BUS_CASHIER = 'BUS_CASHIER',
   TRAVEL_CASHIER = 'TRAVEL_CASHIER',
   TICKET_CASHIER = 'TICKET_CASHIER',
   CUSTOMER_CASHIER = 'CUSTOMER_CASHIER',

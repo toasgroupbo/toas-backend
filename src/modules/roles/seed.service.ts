@@ -117,7 +117,7 @@ export class SeedService implements OnModuleInit {
           {
             resourse: ValidResourses.TRAVEL,
             permissions: [
-              ValidPermissions.CREATE,
+              //ValidPermissions.CREATE,
               ValidPermissions.READ,
               ValidPermissions.UPDATE,
               ValidPermissions.DELETE,
@@ -213,7 +213,7 @@ export class SeedService implements OnModuleInit {
           {
             resourse: ValidResourses.TRAVEL,
             permissions: [
-              ValidPermissions.CREATE,
+              //ValidPermissions.CREATE,
               ValidPermissions.READ,
               ValidPermissions.UPDATE,
               ValidPermissions.DELETE,
@@ -251,8 +251,17 @@ export class SeedService implements OnModuleInit {
         isStatic: true,
         permissions: [
           {
+            resourse: ValidResourses.BUS_CASHIER,
+            permissions: [ValidPermissions.READ],
+          },
+
+          {
             resourse: ValidResourses.TRAVEL_CASHIER,
-            permissions: [ValidPermissions.READ, ValidPermissions.CLOSE],
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.CLOSE,
+            ],
           },
 
           {

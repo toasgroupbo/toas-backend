@@ -65,7 +65,7 @@ export class TicketsInAppService {
       for (const travel of travelsToExpire) {
         await this.ticketExpirationService.expireTravelIfNeeded(
           travel.id,
-          manager, // querryRunner
+          manager,
         );
       }
 
@@ -73,28 +73,11 @@ export class TicketsInAppService {
         where: {
           buyer: { id: customer.id },
         },
+        relations: { travel: true },
       });
     });
   }
 
-  /* async findAll(customer: Customer) {
-    const travelsToExpire = await this.travelRepository.find({
-      select: { id: true },
-      where: { tickets: { buyer: customer } },
-      //! revisar
-    });
-
-    for (const travel of travelsToExpire) {
-      await this.ticketExpirationService.expireTravelIfNeeded(travel.id);
-    }
-
-    return await this.ticketRepository.find({
-      where: {
-        buyer: { id: customer.id },
-      },
-    });
-  }
- */
   //? ============================================================================================== */
   //?                                       FindOne                                                  */
   //? ============================================================================================== */
@@ -115,27 +98,15 @@ export class TicketsInAppService {
 
       return await manager.findOne(Ticket, {
         where: { id: ticketId },
-        relations: { travelSeats: true, paymentQr: true },
+        relations: {
+          travel: { route: { officeDestination: true, officeOrigin: true } },
+          travelSeats: true,
+          paymentQr: true,
+        },
       });
     });
   }
 
-  /* async findOne(ticketId: number, customer: Customer) {
-    const travelsToExpire = await this.ticketRepository.find({
-      where: { id: ticketId, buyer: { id: customer.id } },
-    });
-
-    for (const travel of travelsToExpire) {
-      await this.ticketExpirationService.expireTravelIfNeeded(travel.id);
-    }
-
-    return await this.ticketRepository.find({
-      where: {
-        buyer: { id: customer.id },
-      },
-    });
-  }
- */
   //? ============================================================================================== */
   //?                                        Cancel                                                  */
   //? ============================================================================================== */

@@ -1,7 +1,6 @@
 import {
   Get,
   Post,
-  Body,
   Query,
   Param,
   Delete,
@@ -14,7 +13,6 @@ import { Auth, GetCompany, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 import { TravelStatus } from './enums/travel-status.enum';
 
-import { CreateTravelDto } from './dto';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 
 import { TravelsService } from './travels.service';
@@ -33,13 +31,13 @@ export class TravelsController {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  //!
+  /* //!
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
   create(@Body() dto: CreateTravelDto) {
     return this.travelsService.create(dto);
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */

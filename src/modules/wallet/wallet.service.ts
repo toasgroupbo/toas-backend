@@ -482,7 +482,7 @@ export class WalletService {
 
   async getBalanceHistory(
     customer: Customer,
-    pagination?: { page?: number; limit?: number },
+    //pagination?: { page?: number; limit?: number },
     manager?: EntityManager,
   ) {
     const transactionRepo = this.getTransactionRepo(manager);
@@ -494,18 +494,18 @@ export class WalletService {
       .leftJoinAndSelect('transaction.ticket', 'ticket')
       .orderBy('transaction.createdAt', 'DESC');
 
-    if (pagination?.page && pagination?.limit) {
+    /* if (pagination?.page && pagination?.limit) {
       const skip = (pagination.page - 1) * pagination.limit;
       queryBuilder.skip(skip).take(pagination.limit);
-    }
+    } */
 
     const [items, total] = await queryBuilder.getManyAndCount();
 
     return {
       items,
-      total,
-      page: pagination?.page || 1,
-      limit: pagination?.limit || 10,
+      //total,
+      /* page: pagination?.page || 1,
+      limit: pagination?.limit || 10, */
     };
   }
 }

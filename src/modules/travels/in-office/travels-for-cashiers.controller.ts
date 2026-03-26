@@ -5,6 +5,7 @@ import {
   Param,
   Controller,
   ParseIntPipe,
+  Body,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -13,6 +14,9 @@ import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { TravelForCashierFilterDto } from '../pagination';
 
+import { CreateTravelDto } from '../dto';
+
+import { TravelsService } from '../travels.service';
 import { TravelsForCashierService } from './travels-for-cashiers.service';
 
 import { User } from '../../users/entities/user.entity';
@@ -28,7 +32,21 @@ import { Office } from '../../offices/entities/office.entity';
 export class TravelsForCashiersController {
   constructor(
     private readonly travelsForCashierService: TravelsForCashierService,
+
+    private readonly travelsService: TravelsService,
   ) {}
+
+  //? ============================================================================================== */
+  //?                                        Create                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.CREATE)
+  //!
+  @Post()
+  create(@Body() dto: CreateTravelDto) {
+    return this.travelsService.create(dto);
+  }
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */

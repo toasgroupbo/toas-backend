@@ -5,19 +5,30 @@ interface IEnvironmentVariables {
   // Server
   PORT: number;
   HOST: string;
+
   // JWT
   JWT_SECRET: string;
   SIGN_OPTIONS: string;
+
   // DB
   DB_HOST: string;
   DB_PORT: number;
   DB_NAME_DATABASE: string;
   DB_USERNAME: string;
   DB_PASSWORD: string;
+
   //GOOGLE
   GOOGLE_ID_OAUTH: string;
   GOOGLE_SECRET_KEY: string;
   GOOGLE_CALLBACK: string;
+
+  //Mail
+  MAIL_HOST: string;
+  MAIL_PORT: number;
+  MAIL_USER: string;
+  MAIL_PASS: string;
+  MAIL_FROM: string;
+
   //BCP
   BCP_USER: string;
   BCP_PASSWORD: string;
@@ -27,6 +38,7 @@ interface IEnvironmentVariables {
   BCP_URL: string;
   BCP_PASSPHRASE: string;
   BCP_SERVER_NAME: string;
+
   //constants
   RESERVATION_EXPIRE_MINUTES: number;
   RESERVATION_QR_EXPIRE_MINUTES: number;
@@ -51,19 +63,30 @@ export const envs = {
   // Server
   PORT: envVariables.PORT,
   HOST: envVariables.HOST,
+
   // JWT
   JWT_SECRET: envVariables.JWT_SECRET,
   SIGN_OPTIONS: envVariables.SIGN_OPTIONS,
+
   // DB
   DB_HOST: envVariables.DB_HOST,
   DB_PORT: envVariables.DB_PORT,
   DB_NAME_DATABASE: envVariables.DB_NAME_DATABASE,
   DB_USERNAME: envVariables.DB_USERNAME,
   DB_PASSWORD: envVariables.DB_PASSWORD,
+
   //GOOGLE
   GOOGLE_ID_OAUTH: envVariables.GOOGLE_ID_OAUTH,
   GOOGLE_SECRET_KEY: envVariables.GOOGLE_SECRET_KEY,
   GOOGLE_CALLBACK: envVariables.GOOGLE_CALLBACK,
+
+  //Mail
+  MAIL_HOST: envVariables.MAIL_HOST,
+  MAIL_PORT: envVariables.MAIL_PORT,
+  MAIL_USER: envVariables.MAIL_USER,
+  MAIL_PASS: envVariables.MAIL_PASS,
+  MAIL_FROM: envVariables.MAIL_FROM,
+
   //BCP
   BCP_USER: envVariables.BCP_USER,
   BCP_PASSWORD: envVariables.BCP_PASSWORD,
@@ -73,6 +96,7 @@ export const envs = {
   BCP_URL: envVariables.BCP_URL,
   BCP_PASSPHRASE: envVariables.BCP_PASSPHRASE,
   BCP_SERVER_NAME: envVariables.BCP_SERVER_NAME,
+
   //constants
   RESERVATION_EXPIRE_MINUTES: envVariables.RESERVATION_EXPIRE_MINUTES,
   BALANCE_EXPIRATION_DAYS: envVariables.BALANCE_EXPIRATION_DAYS,

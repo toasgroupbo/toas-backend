@@ -37,6 +37,7 @@ export function setupSwagger(app: INestApplication): void {
     { name: 'Routes: For Cashier' },
 
     { name: 'Buses' },
+    { name: 'Buses: For Cashiers' },
 
     { name: 'Travels' },
     { name: 'Travels: In App' },
