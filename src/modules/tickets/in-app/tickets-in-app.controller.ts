@@ -76,6 +76,19 @@ export class TicketsInAppController {
   }
 
   //? ============================================================================================== */
+  //?                        Get_Active_Reservation                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @Get('get-active-reservation')
+  getActiveReservation(@GetCustomer() customer: Customer) {
+    return this.ticketsInAppService.getActiveReservation(customer);
+  }
+
+  //? ============================================================================================== */
   //?                                       FindOne                                                  */
   //? ============================================================================================== */
 
@@ -89,19 +102,6 @@ export class TicketsInAppController {
     @GetCustomer() customer: Customer,
   ) {
     return this.ticketsInAppService.findOne(ticketId, customer);
-  }
-
-  //? ============================================================================================== */
-  //?                        Get_Active_Reservation                                                  */
-  //? ============================================================================================== */
-
-  //!
-  @UseGuards(IsVerifyGuard)
-  @Auth()
-  //!
-  @Get('get-active-reservation')
-  getActiveReservation(@GetCustomer() customer: Customer) {
-    return this.ticketsInAppService.getActiveReservation(customer);
   }
 
   //? ============================================================================================== */
