@@ -21,10 +21,11 @@ import { PenaltiesService } from './penalties.service';
 import { Penalty } from './entities/penalty.entity';
 
 import { WalletModule } from '../wallet/wallet.module';
+import { Person } from './entities/person.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Customer, Passenger, Billing, Penalty]),
+    TypeOrmModule.forFeature([Customer, Passenger, Billing, Penalty, Person]),
     WalletModule,
   ],
   controllers: [

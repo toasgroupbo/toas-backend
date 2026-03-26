@@ -66,11 +66,11 @@ export class CustomersService {
 
   //? ============================================================================================== */
 
-  async findOneByCi(ci: string) {
+  /*   async findOneByC(ci: string) {
     const customer = await this.customerRepository.findOne({ where: { ci } });
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
-  }
+  } */
 
   //? ============================================================================================== */
 

@@ -451,11 +451,6 @@ export class WalletService {
     const transactionRepo = this.getTransactionRepo(data.manager);
     const wallet = await this.getOrCreateWallet(data.customer, data.manager);
 
-    /* await this.ticketExpirationService.expireTravelIfNeeded(
-      dto.travelId,
-      queryRunner.manager,
-    ); */
-
     const credits = await transactionRepo.find({
       where: {
         wallet: { id: wallet.id },
@@ -488,9 +483,21 @@ export class WalletService {
     const transactionRepo = this.getTransactionRepo(manager);
     const wallet = await this.getOrCreateWallet(customer, manager);
 
+    /* const queryBuilder = transactionRepo
+      .createQueryBuilder('transaction')
+      .where('transaction.walletId = :walletId', { walletId: wallet.id })
+      .leftJoinAndSelect('transaction.ticket', 'ticket')
+      .orderBy('transaction.createdAt', 'DESC'); */
+
     const queryBuilder = transactionRepo
       .createQueryBuilder('transaction')
       .where('transaction.walletId = :walletId', { walletId: wallet.id })
+      .andWhere('transaction.type != :expiredType', {
+        expiredType: TransactionType.EXPIRED,
+      })
+      .andWhere(
+        '(transaction.expiresAt IS NULL OR transaction.expiresAt > NOW())',
+      )
       .leftJoinAndSelect('transaction.ticket', 'ticket')
       .orderBy('transaction.createdAt', 'DESC');
 

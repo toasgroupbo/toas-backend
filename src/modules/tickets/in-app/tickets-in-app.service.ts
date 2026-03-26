@@ -73,7 +73,9 @@ export class TicketsInAppService {
         where: {
           buyer: { id: customer.id },
         },
-        relations: { travel: true },
+        relations: {
+          travel: { route: { officeOrigin: true, officeDestination: true } },
+        },
       });
     });
   }
@@ -99,7 +101,10 @@ export class TicketsInAppService {
       return await manager.findOne(Ticket, {
         where: { id: ticketId },
         relations: {
-          travel: { route: { officeDestination: true, officeOrigin: true } },
+          travel: {
+            bus: true,
+            route: { officeDestination: true, officeOrigin: true },
+          },
           travelSeats: true,
           paymentQr: true,
         },

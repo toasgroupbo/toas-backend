@@ -9,6 +9,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
+  ManyToOne,
 } from 'typeorm';
 
 import { AuthProviders } from 'src/auth/enums';
@@ -18,6 +19,7 @@ import { Billing } from './billing.entity';
 import { Passenger } from './passenger.entity';
 import { Wallet } from 'src/modules/wallet/entities/wallet.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
+import { Person } from './person.entity';
 
 @Entity('customers')
 export class Customer {
@@ -108,4 +110,7 @@ export class Customer {
     nullable: true,
   })
   wallet?: Wallet;
+
+  @ManyToOne(() => Person, (person) => person.customers)
+  person: Person;
 }
