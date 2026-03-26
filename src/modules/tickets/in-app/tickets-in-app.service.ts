@@ -102,11 +102,10 @@ export class TicketsInAppService {
         where: { id: ticketId },
         relations: {
           travel: {
-            bus: true,
+            bus: { busType: true },
             route: { officeDestination: true, officeOrigin: true },
           },
           travelSeats: true,
-          paymentQr: true,
         },
       });
     });
