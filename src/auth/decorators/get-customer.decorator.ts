@@ -1,7 +1,7 @@
 import {
   ExecutionContext,
-  UnauthorizedException,
   createParamDecorator,
+  UnauthorizedException,
 } from '@nestjs/common';
 
 import { Customer } from 'src/modules/customers/entities/customer.entity';
