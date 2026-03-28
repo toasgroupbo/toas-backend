@@ -17,6 +17,7 @@ import { TicketType } from '../enums/ticket-type.enum';
 import { PaymentType } from '../enums/payment-type.enum';
 import { TicketStatus } from '../enums/ticket-status.enum';
 
+import { Billing } from './billing.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Travel } from 'src/modules/travels/entities/travel.entity';
 import { Customer } from 'src/modules/customers/entities/customer.entity';
@@ -92,8 +93,10 @@ export class Ticket {
   })
   soldBy?: User | null;
 
-  @ManyToOne(() => Customer, (customer) => customer.ticketsBought, {})
-  buyer: Customer;
+  @ManyToOne(() => Customer, (customer) => customer.ticketsBought, {
+    nullable: true, //! permitir null si la venta fue en oficina
+  })
+  buyer?: Customer | null;
 
   @OneToOne(() => PaymentQR, (paymentQr) => paymentQr.ticket, {
     cascade: true,
@@ -101,4 +104,7 @@ export class Ticket {
   })
   @JoinColumn()
   paymentQr?: PaymentQR;
+
+  @ManyToOne(() => Billing, (billing) => billing.tickets, { nullable: true }) //! nullable momentaneo
+  billing: Billing | null;
 }

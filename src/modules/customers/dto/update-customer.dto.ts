@@ -1,39 +1,37 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class UpdateCustomerDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '123456789',
   })
   @IsOptional()
   @IsString()
   ci?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'juan',
   })
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 78926281,
   })
   @IsOptional()
   phone?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '1998-04-15',
   })
   @IsOptional()
   @IsDateString()
   birthDate?: string;
 
-  @ApiProperty({
-    example: 'image.jpg',
-  })
+  @ApiPropertyOptional({})
   @IsOptional()
-  @IsString()
-  photo?: string;
+  @IsObject()
+  billingObject?: any;
 }

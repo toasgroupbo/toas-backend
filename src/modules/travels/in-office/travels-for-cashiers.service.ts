@@ -116,20 +116,6 @@ export class TravelsForCashierService {
       return travel;
     });
   }
-  /* async findOne(travelId: number, office: Office) {
-    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
-
-    const travel = await this.travelRepository.findOne({
-      where: { id: travelId, route: { officeOrigin: { id: office.id } } },
-      relations: {
-        bus: true,
-        route: { officeOrigin: true, officeDestination: true },
-        travelSeats: true,
-      },
-    });
-    if (!travel) throw new NotFoundException('Travel not found');
-    return travel;
-  } */
 
   //? ============================================================================================== */
   //?                           Get_Seats_Available                                                  */
@@ -152,18 +138,6 @@ export class TravelsForCashierService {
         .getMany();
     });
   }
-  /* async getSeatsAvailable(travelId: number) {
-    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
-
-    return await this.travelSeatRepository
-      .createQueryBuilder('seat')
-      .where('seat.travelId = :travelId', { travelId })
-      .andWhere(`seat.status = :available OR seat.status = :reserved`, {
-        available: SeatStatus.AVAILABLE,
-        reserved: SeatStatus.RESERVED,
-      })
-      .getMany();
-  } */
 
   //? ============================================================================================== */
   //? ============================================================================================== */
@@ -184,17 +158,6 @@ export class TravelsForCashierService {
         .getCount();
     });
   }
-  /* private async getSeatsAvailableCount(travelId: number): Promise<number> {
-    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
-
-    return await this.travelSeatRepository
-      .createQueryBuilder('seat')
-      .where('seat.travelId = :travelId', { travelId })
-      .andWhere('seat.status IN (:...statuses)', {
-        statuses: [SeatStatus.AVAILABLE, SeatStatus.RESERVED],
-      })
-      .getCount();
-  } */
 
   //? ============================================================================================== */
   //?                                        Closed                                                  */

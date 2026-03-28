@@ -4,7 +4,6 @@ import { EntityManager, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { CreateCustomerNotVerifiedDto } from './dto';
 import { paginate } from 'src/common/pagination/paginate';
 import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
 
@@ -16,20 +15,6 @@ export class CustomersService {
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
   ) {}
-
-  //? ============================================================================================== */
-  //?                                         Create                                                 */
-  //? ============================================================================================== */
-
-  async createNotVerified(dto: CreateCustomerNotVerifiedDto) {
-    try {
-      const newCustomer = this.customerRepository.create(dto);
-
-      return await this.customerRepository.save(newCustomer);
-    } catch (error) {
-      handleDBExceptions(error);
-    }
-  }
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */

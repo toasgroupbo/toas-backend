@@ -13,11 +13,10 @@ import { IsVerifyGuard } from '../../tickets/guards/is-verify.guard';
 import { Auth, GetCustomer, Resource } from 'src/auth/decorators';
 import { ValidResourses } from 'src/common/enums';
 
-import { CreateOrUpdateBillingDto, UpdateCustomerDto } from '../dto';
+import { UpdateCustomerDto } from '../dto';
 
 import { Customer } from '../entities/customer.entity';
 
-import { BillingsService } from '../billings.service';
 import { WalletService } from 'src/modules/wallet/wallet.service';
 import { CustomersInAppService } from './customers-in-app.service';
 
@@ -31,7 +30,7 @@ import { CustomersInAppService } from './customers-in-app.service';
 export class CustomersInAppController {
   constructor(
     private readonly customerInAppService: CustomersInAppService,
-    private readonly billingsSerrvices: BillingsService,
+    //private readonly billingsSerrvices: BillingsService,
     private readonly walletService: WalletService,
   ) {}
 
@@ -85,22 +84,6 @@ export class CustomersInAppController {
   @Delete('penalities')
   deletePenalities(@GetCustomer() customer: Customer) {
     return this.customerInAppService.deletePenalities(customer);
-  }
-
-  //? ============================================================================================== */
-  //?                      Create_or_Update_Billing                                                  */
-  //? ============================================================================================== */
-
-  //!
-  @UseGuards(IsVerifyGuard)
-  @Auth()
-  //!
-  @Post('billing')
-  createOrUpdateBilling(
-    @Body() dto: CreateOrUpdateBillingDto,
-    @GetCustomer() customer: Customer,
-  ) {
-    return this.billingsSerrvices.createOrUpdateBilling(customer, dto);
   }
 
   //? ============================================================================================== */

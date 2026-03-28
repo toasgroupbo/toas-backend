@@ -25,7 +25,7 @@ export class CustomersInAppService {
   async me(customer: Customer) {
     const customerEntity = await this.customerRepository.findOne({
       where: { id: customer.id },
-      relations: { billing: true },
+      //relations: { billing: true },
     });
 
     if (!customerEntity) {

@@ -14,18 +14,14 @@ import { CustomersForCashierService } from './in-office/customers-for-cashiers.s
 import { PassengersService } from './passengers.service';
 import { Passenger } from './entities/passenger.entity';
 
-import { BillingsService } from './billings.service';
-import { Billing } from './entities/billing.entity';
-
 import { PenaltiesService } from './penalties.service';
 import { Penalty } from './entities/penalty.entity';
 
 import { WalletModule } from '../wallet/wallet.module';
-import { Person } from './entities/person.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Customer, Passenger, Billing, Penalty, Person]),
+    TypeOrmModule.forFeature([Customer, Passenger, Penalty]),
     WalletModule,
   ],
   controllers: [
@@ -34,7 +30,6 @@ import { Person } from './entities/person.entity';
     CustomersForCashiersController,
   ],
   providers: [
-    BillingsService,
     CustomersService,
     PenaltiesService,
     PassengersService,

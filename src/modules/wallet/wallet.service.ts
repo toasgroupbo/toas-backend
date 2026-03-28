@@ -359,12 +359,13 @@ export class WalletService {
 
   async restoreCreditsFromExpiredTicket(
     ticket: Ticket,
+    buyer: Customer,
     manager: EntityManager,
   ): Promise<void> {
     const walletRepo = this.getWalletRepo(manager);
     const transactionRepo = this.getTransactionRepo(manager);
 
-    const wallet = await this.getOrCreateWallet(ticket.buyer, manager);
+    const wallet = await this.getOrCreateWallet(buyer, manager);
 
     // Buscar el DEBIT asociado a este ticket con lock
     const debit = await transactionRepo

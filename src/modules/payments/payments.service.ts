@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { envs } from 'src/config/environments/environments';
 
 import { SeatStatus } from 'src/common/enums';
+import { TicketType } from '../tickets/enums';
 import { PaymentType } from '../tickets/enums/payment-type.enum';
 import { TicketStatus } from '../tickets/enums/ticket-status.enum';
 
@@ -77,7 +78,11 @@ export class PaymentsService {
       //! wallet
       const walletAmount = Number(ticket.wallet_amount);
 
-      if (walletAmount > 0) {
+      if (
+        walletAmount > 0 &&
+        ticket.type == TicketType.IN_APP &&
+        ticket.buyer
+      ) {
         await this.walletService.consumeForTicket({
           customer: ticket.buyer,
           ticket,
@@ -142,12 +147,16 @@ export class PaymentsService {
     } catch (error) {
       //await this.walletService.restoreCreditsFromExpiredTicket(ticket);
 
-      await this.dataSource.transaction(async (manager) => {
-        await this.walletService.restoreCreditsFromExpiredTicket(
-          ticket,
-          manager,
-        );
-      });
+      if (ticket.buyer) {
+        await this.dataSource.transaction(async (manager) => {
+          await this.walletService.restoreCreditsFromExpiredTicket(
+            ticket,
+            ticket.buyer!,
+            manager,
+          );
+        });
+      }
+
       throw new BadRequestException('QR generation failed. Please try again.');
     }
 

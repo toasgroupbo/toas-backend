@@ -1,15 +1,20 @@
 import {
   Body,
   Get,
-  Param,
   Post,
+  Patch,
+  Param,
   UseGuards,
   Controller,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { AssignPassengersBatchInAppDto, CreateTicketInAppDto } from '../dto';
+import {
+  AssignBillingDto,
+  AssignPassengersBatchInAppDto,
+  CreateTicketInAppDto,
+} from '../dto';
 
 import { ValidResourses } from 'src/common/enums';
 
@@ -102,6 +107,18 @@ export class TicketsInAppController {
     @GetCustomer() customer: Customer,
   ) {
     return this.ticketsInAppService.findOne(ticketId, customer);
+  }
+
+  //? ============================================================================================== */
+  //?                                 Assign-Billing                                                 */
+  //? ============================================================================================== */
+
+  @Patch('billing/:id')
+  assignBilling(
+    @Param('id', ParseIntPipe) ticketId: number,
+    @Body() dto: AssignBillingDto,
+  ) {
+    return this.ticketsInAppService.assignBilling(ticketId, dto);
   }
 
   //? ============================================================================================== */

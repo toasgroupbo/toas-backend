@@ -11,9 +11,14 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 import { SeatStatus } from 'src/common/enums';
 import { PaymentType, TicketStatus, TicketType } from '../enums';
 
-import { CreateTicketInAppDto, AssignPassengersBatchInAppDto } from '../dto';
+import {
+  CreateTicketInAppDto,
+  AssignPassengersBatchInAppDto,
+  AssignBillingDto,
+} from '../dto';
 
 import { TicketsService } from '../tickets.service';
+import { BillingsService } from '../billings.service';
 import { WalletService } from 'src/modules/wallet/wallet.service';
 import { TicketExpirationService } from '../ticket-expiration.service';
 
@@ -34,6 +39,8 @@ export class TicketsInAppService {
     private readonly ticketsService: TicketsService,
 
     private readonly walletService: WalletService,
+
+    private readonly billingsService: BillingsService,
 
     private dataSource: DataSource,
   ) {}
@@ -119,6 +126,9 @@ export class TicketsInAppService {
     const queryRunner = this.createTransaction();
 
     try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
       const ticket = await this.findCancelableTicket(
         ticketId,
         customer,
@@ -132,7 +142,7 @@ export class TicketsInAppService {
       }
 
       //! wallet
-      if (ticket.status == TicketStatus.SOLD) {
+      if (ticket.status == TicketStatus.SOLD && ticket.buyer) {
         await this.walletService.creditFromTicketCancel(
           ticket,
           ticket.buyer,
@@ -186,6 +196,65 @@ export class TicketsInAppService {
   //?                               Assign_Passenger                                                 */
   //? ============================================================================================== */
 
+  async assignBilling(ticketId: number, dto: AssignBillingDto) {
+    const queryRunner = this.createTransaction();
+
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      const manager = queryRunner.manager;
+
+      const ticket = await manager.findOne(Ticket, {
+        where: { id: ticketId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!ticket) {
+        throw new NotFoundException('Ticket not found');
+      }
+
+      // Solo tickets creados desde la APP
+      if (ticket.type !== TicketType.IN_APP) {
+        throw new BadRequestException(
+          'Only app tickets can assign billing later',
+        );
+      }
+
+      if (ticket.status !== TicketStatus.RESERVED) {
+        throw new BadRequestException(
+          'Cannot assign billing to a processed ticket',
+        );
+      }
+
+      const billing = await this.billingsService.createOrUpdateBilling(
+        dto.billing,
+        manager,
+      );
+
+      //  Asignar billing al ticket
+      ticket.billing = billing;
+
+      await manager.save(ticket);
+      await queryRunner.commitTransaction();
+
+      return {
+        message: 'Billing assigned successfully',
+        ticket: ticket,
+        billing: billing,
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      handleDBExceptions(error);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  //? ============================================================================================== */
+  //?                               Assign_Passenger                                                 */
+  //? ============================================================================================== */
+
   async assignPassenger(
     dto: AssignPassengersBatchInAppDto,
     customer: Customer,
@@ -202,10 +271,7 @@ export class TicketsInAppService {
   //? ============================================================================================== */
 
   private createTransaction(): QueryRunner {
-    const queryRunner = this.dataSource.createQueryRunner();
-    queryRunner.connect();
-    queryRunner.startTransaction();
-    return queryRunner;
+    return this.dataSource.createQueryRunner();
   }
 
   //? ============================================================================================== */

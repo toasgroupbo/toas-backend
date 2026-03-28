@@ -27,6 +27,7 @@ import {
 
 import { PassengerSeatBatchDto } from './dto/assign-passengers-batch-in-app.dto';
 
+import { BillingsService } from './billings.service';
 import { WalletService } from '../wallet/wallet.service';
 import { PenaltiesService } from '../customers/penalties.service';
 import { CustomersService } from '../customers/customers.service';
@@ -34,6 +35,7 @@ import { PassengersService } from '../customers/passengers.service';
 import { TicketExpirationService } from './ticket-expiration.service';
 
 import { Ticket } from './entities/ticket.entity';
+import { Billing } from './entities/billing.entity';
 import { User } from '../users/entities/user.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Setting } from '../settings/entities/setting.entity';
@@ -53,6 +55,7 @@ export class TicketsService {
     private readonly ticketExpirationService: TicketExpirationService,
     private readonly passengersService: PassengersService,
     private readonly walletService: WalletService,
+    private readonly billingService: BillingsService,
 
     private dataSource: DataSource,
   ) {}
@@ -77,63 +80,57 @@ export class TicketsService {
     const queryRunner = this.createTransaction();
 
     try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      const manager = queryRunner.manager;
+
       await this.ticketExpirationService.expireTravelIfNeeded(
         dto.travelId,
-        queryRunner.manager,
+        manager,
       );
 
-      const travel = await this.findActiveTravel(
-        dto.travelId,
-        queryRunner.manager,
-      );
+      const travel = await this.findActiveTravel(dto.travelId, manager);
 
       const seats = await this.getAndValidateAvailableSeats(
         dto.travelId,
         dto.seatSelections,
-        queryRunner.manager,
+        manager,
       );
 
-      const resolvedBuyer = await this.getBuyer(
-        type,
-        dto,
-        buyer,
-        queryRunner.manager,
-      );
+      let billing: Billing | null = null;
+      if (type === TicketType.IN_OFFICE) {
+        const officeDto = dto as CreateTicketInOfficeDto;
+        billing = await this.billingService.createOrUpdateBilling(
+          officeDto.billing,
+          manager,
+        );
+      }
 
       const { seatsWithPrices, totalPrice } =
         await this.calculateAndUpdateSeatPrices(
           seats,
           dto.seatSelections,
           travel,
-          queryRunner.manager,
+          manager,
         );
 
-      const commission = await this.calculateCommission(
+      const commission = await this.calculateCommission(type, manager);
+      const totalTicketAmount = totalPrice + commission;
+
+      const { walletAmount, qrAmount } = await this.resolvePaymentAmounts({
         type,
-        queryRunner.manager,
-      );
+        buyer,
+        totalTicketAmount,
+        manager,
+      });
 
-      const totalTicketAmount = Number(totalPrice) + Number(commission);
-
-      let walletAmount = 0;
-      let qrAmount = totalTicketAmount;
-
-      if (type === TicketType.IN_APP && resolvedBuyer) {
-        const availableBalance = await this.walletService.getAvailableBalance({
-          customer: resolvedBuyer,
-          manager: queryRunner.manager,
-        });
-
-        walletAmount = Math.min(availableBalance, totalTicketAmount);
-        qrAmount = totalTicketAmount - walletAmount;
-      }
-
-      const ticket = await this.createTicket(queryRunner.manager, {
+      const ticket = await this.createTicket(manager, {
         type,
         travel,
-        buyer: resolvedBuyer,
-        seats: this.prepareSeatsArray(seatsWithPrices),
+        buyer: type === TicketType.IN_APP ? buyer : null,
         soldBy: type === TicketType.IN_OFFICE ? user : null,
+        seats: this.prepareSeatsArray(seatsWithPrices),
         travelSeats: seatsWithPrices,
         reserve_expiresAt: this.getReservationExpiry(),
         payment_type: paymentType,
@@ -143,13 +140,14 @@ export class TicketsService {
         wallet_amount: walletAmount.toFixed(2),
         qr_amount: qrAmount.toFixed(2),
         status: TicketStatus.RESERVED,
+
+        billing: billing ?? null, //! null si es en app (momentaneo)
       });
 
-      await this.registerPenaltyIfNeeded(
-        resolvedBuyer,
-        user,
-        queryRunner.manager,
-      );
+      //! Penalty
+      if (type === TicketType.IN_APP && buyer) {
+        await this.registerPenaltyIfNeeded(buyer, user, manager);
+      }
 
       await queryRunner.commitTransaction();
       return ticket;
@@ -161,6 +159,34 @@ export class TicketsService {
     }
   }
 
+  //? ============================================================================================== */
+
+  private async resolvePaymentAmounts({
+    type,
+    buyer,
+    totalTicketAmount,
+    manager,
+  }: {
+    type: TicketType;
+    buyer?: Customer;
+    totalTicketAmount: number;
+    manager: EntityManager;
+  }) {
+    let walletAmount = 0;
+    let qrAmount = totalTicketAmount;
+
+    if (type === TicketType.IN_APP && buyer) {
+      const availableBalance = await this.walletService.getAvailableBalance({
+        customer: buyer,
+        manager,
+      });
+
+      walletAmount = Math.min(availableBalance, totalTicketAmount);
+      qrAmount = totalTicketAmount - walletAmount;
+    }
+
+    return { walletAmount, qrAmount };
+  }
   //? ============================================================================================== */
 
   private async findActiveTravel(
@@ -224,21 +250,6 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  private async getBuyer(
-    type: TicketType,
-    dto: CreateTicketInAppDto | CreateTicketInOfficeDto,
-    buyer: Customer | undefined,
-    manager: EntityManager,
-  ): Promise<Customer | undefined> {
-    if (type === TicketType.IN_OFFICE && !buyer) {
-      const officeDto = dto as CreateTicketInOfficeDto;
-      return this.customersService.findOne(officeDto.customerId, manager);
-    }
-    return buyer;
-  }
-
-  //? ============================================================================================== */
-
   private async calculateAndUpdateSeatPrices(
     seats: TravelSeat[],
     seatSelections: { seatId: string; price?: string }[],
@@ -281,7 +292,7 @@ export class TicketsService {
   ): Promise<number> {
     if (type === TicketType.IN_APP) {
       const settings = await manager.find(Setting);
-      return settings[0]?.commission || 0;
+      return Number(settings[0]?.commission) || 0;
     }
     return 0;
   }
@@ -416,83 +427,15 @@ export class TicketsService {
     }
   }
 
-  /* async confirmWithManager(ticketId: number, manager: EntityManager) {
-    // --------------------------------------------
-    // 2. Buscar ticket con lock y validaciones
-    // --------------------------------------------
-
-    const ticket = await manager
-      .createQueryBuilder(Ticket, 'ticket')
-      .setLock('pessimistic_write')
-      .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
-      .innerJoinAndSelect('ticket.paymentQr', 'paymentQr')
-      .innerJoinAndSelect('ticket.buyer', 'buyer') // ← necesario
-      .where('ticket.id = :ticketId', { ticketId })
-      .andWhere('ticket.status = :status', {
-        status: TicketStatus.PENDING_PAYMENT,
-      })
-      .andWhere('ticket.payment_type = :payment_type', {
-        payment_type: PaymentType.QR,
-      })
-      .andWhere('(ticket.reserve_expiresAt > NOW())')
-      .getOne();
-
-    if (!ticket)
-      throw new NotFoundException(
-        'Ticket not found, expired, or not in a confirmable state',
-      );
-
-    // --------------------------------------------
-    // 3. Actualizar estados
-    // --------------------------------------------
-
-    ticket.status = TicketStatus.SOLD;
-    ticket.reserve_expiresAt = null;
-
-    if (ticket.paymentQr) {
-      ticket.paymentQr.status = PaymentStatusEnum.PAID;
-    }
-
-    for (const seat of ticket.travelSeats) {
-      seat.status = SeatStatus.SOLD;
-    }
-
-    // --------------------------------------------
-    // 4. Quitar penalización SOLO si es IN_APP
-    // --------------------------------------------
-
-    if (
-      ticket.type === TicketType.IN_APP &&
-      ticket.buyer 
-    ) {
-      const penaltyRepository = manager.getRepository(Penalty);
-
-      const penalty = await penaltyRepository.findOne({
-        where: { customer: { id: ticket.buyer.id } },
-      });
-
-      if (penalty && penalty.failedCount > 0) {
-        penalty.failedCount -= 1;
-
-        await penaltyRepository.save(penalty);
-      }
-    }
-
-    // --------------------------------------------
-    // 5. Persistir cambios
-    // --------------------------------------------
-
-    await manager.save(Ticket, ticket);
-
-    return ticket;
-  }
- */
   //? ============================================================================================== */
 
   async confirm(ticketId: number) {
     const queryRunner = this.createTransaction();
 
     try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
       await this.validateTravelForTicket(ticketId, queryRunner.manager);
       await this.expireTravelReservations(ticketId, queryRunner.manager);
 
@@ -594,26 +537,47 @@ export class TicketsService {
     });
   }
 
-  /* async findAll(companyId: number, travelId: number) {
-    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
-
-    return this.ticketRepository.find({
-      where: {
-        travel: {
-          id: travelId,
-          bus: { owner: { companies: { id: companyId } } },
-        },
-      },
-    });
-  } */
-
   //? ============================================================================================== */
   //?                               Assign_Passenger                                                 */
   //? ============================================================================================== */
 
   async assignPassengerBase(data: {
     passengers: PassengerSeatBatchDto[];
-    customer: Customer;
+    ticketId: number;
+    customer?: Customer;
+  }) {
+    const queryRunner = this.createTransaction();
+
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      await this.expireTravelReservations(data.ticketId, queryRunner.manager);
+
+      await this.assignPassengersToSeats(
+        data.passengers,
+        data.ticketId,
+        queryRunner.manager,
+        data.customer,
+      );
+
+      await queryRunner.commitTransaction();
+
+      return this.buildAssignmentResponse({
+        ticketId: data.ticketId,
+        passengers: data.passengers,
+      });
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /*   async assignPassengerBase(data: {
+    passengers: PassengerSeatBatchDto[];
+    customer?: Customer;
     ticketId: number;
   }) {
     const queryRunner = this.createTransaction();
@@ -623,9 +587,9 @@ export class TicketsService {
 
       await this.assignPassengersToSeats(
         data.passengers,
-        data.customer,
         data.ticketId,
         queryRunner.manager,
+        data.customer,
       );
 
       await queryRunner.commitTransaction();
@@ -637,22 +601,22 @@ export class TicketsService {
     } finally {
       await queryRunner.release();
     }
-  }
+  } */
 
   //? ============================================================================================== */
 
   private async assignPassengersToSeats(
     passengers: PassengerSeatBatchDto[],
-    customer: Customer,
     ticketId: number,
     manager: EntityManager,
+    customer?: Customer,
   ): Promise<void> {
     for (const item of passengers) {
       const seat = await this.findAndValidateEditableSeat(
         item.seatId,
         ticketId,
-        customer.id,
         manager,
+        //customer?.id,
       );
 
       const passenger = await this.passengersService.createBase(
@@ -660,8 +624,8 @@ export class TicketsService {
           fullName: item.passenger.name,
           ci: item.passenger.ci,
         },
-        customer,
         manager,
+        customer,
       );
 
       seat.passenger = {
@@ -678,15 +642,15 @@ export class TicketsService {
   private async findAndValidateEditableSeat(
     seatId: number,
     ticketId: number,
-    customerId: number,
     manager: EntityManager,
+    //customerId?: number,
   ): Promise<TravelSeat> {
     const seat = await manager
       .createQueryBuilder(TravelSeat, 'seat')
       .leftJoinAndSelect('seat.ticket', 'ticket')
       .where('seat.id = :seatId', { seatId })
       .andWhere('ticket.id = :ticketId', { ticketId })
-      .andWhere('ticket.buyerId = :customerId', { customerId })
+      //.andWhere('ticket.buyerId = :customerId', { customerId })
       .andWhere('ticket.status = :status', {
         status: TicketStatus.RESERVED,
       })
@@ -712,6 +676,7 @@ export class TicketsService {
       ticketId: data.ticketId,
       assignedSeats: data.passengers.map((p) => ({
         seatId: p.seatId,
+        //name: p.passenger.name,
         ci: p.passenger.ci,
       })),
     };
@@ -722,9 +687,8 @@ export class TicketsService {
   //? ============================================================================================== */
 
   private createTransaction(): QueryRunner {
-    const queryRunner = this.dataSource.createQueryRunner();
-    queryRunner.connect();
-    queryRunner.startTransaction();
-    return queryRunner;
+    return this.dataSource.createQueryRunner();
+    /* queryRunner.connect();
+    queryRunner.startTransaction(); */
   }
 }

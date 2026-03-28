@@ -20,6 +20,116 @@ export class PassengersService {
 
   async createBase(
     dto: { fullName: string; ci: string },
+    manager: EntityManager,
+    customer?: Customer,
+  ): Promise<Passenger> {
+    const repository = manager.getRepository(Passenger);
+    const entityManager = manager; //?? repository.manager;
+
+    try {
+      // Buscar passenger por CI (común para ambos flujos)
+      let passenger = await repository.findOne({
+        where: { ci: dto.ci },
+      });
+
+      if (passenger && passenger.fullName !== dto.fullName) {
+        passenger.fullName = dto.fullName;
+        await repository.save(passenger);
+      }
+
+      //  =========================
+      //  OFFICE (sin customer)
+      // =========================
+
+      if (!customer) {
+        if (!passenger) {
+          passenger = repository.create({
+            fullName: dto.fullName,
+            ci: dto.ci,
+          });
+
+          await repository.save(passenger);
+        }
+
+        return passenger;
+      }
+
+      /* if (!customer) {
+        if (!passenger) {
+          passenger = repository.create({
+            fullName: dto.fullName,
+            ci: dto.ci,
+          });
+
+          await repository.save(passenger);
+        } else {
+          if (passenger.fullName !== dto.fullName) {
+            passenger.fullName = dto.fullName;
+            await repository.save(passenger);
+          }
+        }
+
+        return passenger;
+      } */
+
+      //  =========================
+      //  APP (con customer)
+      //  =========================
+
+      const customerWithPassengers = await entityManager.findOne(Customer, {
+        where: { id: customer.id },
+        relations: { passengers: true },
+      });
+
+      if (!customerWithPassengers) {
+        throw new Error('Customer not found');
+      }
+
+      // Verificar si ya está vinculado
+      const alreadyLinked = customerWithPassengers.passengers.some(
+        (p) => p.ci === dto.ci,
+      );
+
+      if (alreadyLinked) {
+        return passenger!;
+      }
+
+      // Validar límite
+      if (customerWithPassengers.passengers.length >= 10) {
+        const oldestPassenger = customerWithPassengers.passengers.sort(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+        )[0];
+
+        customerWithPassengers.passengers =
+          customerWithPassengers.passengers.filter(
+            (p) => p.id !== oldestPassenger.id,
+          );
+      }
+
+      // Crear si no existe
+      if (!passenger) {
+        passenger = repository.create({
+          fullName: dto.fullName,
+          ci: dto.ci,
+        });
+
+        await repository.save(passenger);
+      }
+
+      // Relacionar
+      customerWithPassengers.passengers.push(passenger);
+
+      await entityManager.save(Customer, customerWithPassengers);
+
+      return passenger;
+    } catch (error) {
+      handleDBExceptions(error);
+      throw error;
+    }
+  }
+
+  /*  async createBase(
+    dto: { fullName: string; ci: string },
     customer: Customer,
     manager?: EntityManager,
   ): Promise<Passenger> {
@@ -86,7 +196,7 @@ export class PassengersService {
       handleDBExceptions(error);
       throw error;
     }
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */

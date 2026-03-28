@@ -1,11 +1,12 @@
 import {
   Get,
   Post,
+  Body,
   Query,
   Param,
+  Delete,
   Controller,
   ParseIntPipe,
-  Body,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -44,8 +45,8 @@ export class TravelsForCashiersController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
-  create(@Body() dto: CreateTravelDto) {
-    return this.travelsService.create(dto);
+  create(@Body() dto: CreateTravelDto /* @GetOffice() office: Office */) {
+    return this.travelsService.create(dto /* , office */); //! Get Office
   }
 
   //? ============================================================================================== */
@@ -70,7 +71,7 @@ export class TravelsForCashiersController {
     @Query() filters: TravelForCashierFilterDto,
     @GetOffice() office: Office,
   ) {
-    return this.travelsForCashierService.findAll(filters, office);
+    return this.travelsForCashierService.findAll(filters, office); //! Get Office
   }
 
   //? ============================================================================================== */
@@ -82,7 +83,7 @@ export class TravelsForCashiersController {
   //!
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number, @GetOffice() office: Office) {
-    return this.travelsForCashierService.findOne(id, office);
+    return this.travelsForCashierService.findOne(id, office); //! Get Office
   }
 
   //? ============================================================================================== */
@@ -106,6 +107,32 @@ export class TravelsForCashiersController {
   //!
   @Post('closed/:id')
   closed(@Param('id', ParseIntPipe) id: number, @GetUser() cashier: User) {
-    return this.travelsForCashierService.close(id, cashier);
+    return this.travelsForCashierService.close(id, cashier); //! Get Cashier
   }
+
+  //? ============================================================================================== */
+  //?                                        Cancel                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.CANCEL)
+  //!
+  //@ApiQuery({ name: 'companyId', required: false, type: Number })
+  @Post('cancel/:id')
+  cancel(@Param('id', ParseIntPipe) id: number, @GetOffice() office: Office) {
+    return this.travelsService.cancel(id, office); //! Get Office
+  }
+
+  //? ============================================================================================== */
+  //?                                        Delete                                                  */
+  //? ============================================================================================== */
+
+  /* //!
+  @Auth(ValidPermissions.DELETE)
+  //!
+  @ApiQuery({ name: 'companyId', required: false, type: Number })
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number, @GetOffice() office: Office) {
+    return this.travelsService.remove(id, office); //! Get Office
+  } */
 }

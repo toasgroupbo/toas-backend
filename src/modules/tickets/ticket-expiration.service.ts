@@ -40,9 +40,10 @@ export class TicketExpirationService {
     for (const ticket of expiredTickets) {
       //! wallet
 
-      if (Number(ticket.wallet_amount) > 0) {
+      if (Number(ticket.wallet_amount) > 0 && ticket.buyer) {
         await this.walletService.restoreCreditsFromExpiredTicket(
           ticket,
+          ticket.buyer,
           internalManager,
         );
       }

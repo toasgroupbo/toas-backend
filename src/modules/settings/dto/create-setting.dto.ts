@@ -8,7 +8,7 @@ export class CreateSettingDto {
   @IsString()
   @IsNotEmpty()
   @Matches(/^\d+(\.\d{1,2})?$/)
-  commission: number;
+  commission: string;
 
   @ApiProperty({
     example: 'Terminos y condiciones',

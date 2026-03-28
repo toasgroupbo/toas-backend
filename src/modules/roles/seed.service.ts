@@ -260,6 +260,7 @@ export class SeedService implements OnModuleInit {
             permissions: [
               ValidPermissions.CREATE,
               ValidPermissions.READ,
+              ValidPermissions.CANCEL,
               ValidPermissions.CLOSE,
             ],
           },

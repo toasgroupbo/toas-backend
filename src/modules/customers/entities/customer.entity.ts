@@ -9,17 +9,14 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
-  ManyToOne,
 } from 'typeorm';
 
 import { AuthProviders } from 'src/auth/enums';
 
 import { Penalty } from './penalty.entity';
-import { Billing } from './billing.entity';
 import { Passenger } from './passenger.entity';
 import { Wallet } from 'src/modules/wallet/entities/wallet.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
-import { Person } from './person.entity';
 
 @Entity('customers')
 export class Customer {
@@ -33,31 +30,31 @@ export class Customer {
     //select: false,
     nullable: true,
   })
-  password: string; //! solo para pruebas
+  password: string; //! pruebas
 
   @Column('text')
   name: string;
 
-  @Column('text', { unique: true, nullable: true })
+  @Column('text', { nullable: true })
   ci?: string;
 
   @Column('text', { nullable: true })
   phone?: string;
 
-  @Column('boolean', { default: false })
+  @Column('boolean', { default: true })
   is_verified: boolean;
 
-  @Column({ type: 'enum', enum: AuthProviders, nullable: true })
-  provider?: AuthProviders;
+  @Column({ type: 'enum', enum: AuthProviders })
+  provider: AuthProviders;
 
-  @Column('text', { nullable: true })
-  idProvider?: string;
+  @Column('text')
+  idProvider: string;
 
   @Column({ type: 'date', nullable: true })
   birthDate?: Date;
 
-  @Column('text', { nullable: true })
-  photo?: string;
+  @Column('json', { nullable: true })
+  billingObject?: any;
 
   @Column('text', { nullable: true })
   sessionToken?: string | null;
@@ -91,13 +88,6 @@ export class Customer {
   })
   passengers: Passenger[];
 
-  @OneToOne(() => Billing, (billing) => billing.customer, {
-    cascade: true,
-    nullable: true,
-  })
-  @JoinColumn()
-  billing?: Billing;
-
   @OneToOne(() => Penalty, (penalty) => penalty.customer, {
     cascade: true,
     nullable: true,
@@ -110,7 +100,4 @@ export class Customer {
     nullable: true,
   })
   wallet?: Wallet;
-
-  @ManyToOne(() => Person, (person) => person.customers)
-  person: Person;
 }

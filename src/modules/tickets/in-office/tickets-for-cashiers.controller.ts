@@ -16,6 +16,7 @@ import {
   AssignPassengersBatchInOfficeDto,
 } from '../dto';
 
+import { BillingsService } from '../billings.service';
 import { TicketsForCashierService } from './tickets-for-cashiers.service';
 
 import { User } from '../../users/entities/user.entity';
@@ -30,6 +31,7 @@ import { User } from '../../users/entities/user.entity';
 export class TicketsForCashiersController {
   constructor(
     private readonly ticketsForCashierService: TicketsForCashierService,
+    private readonly billingsService: BillingsService,
   ) {}
 
   //? ============================================================================================== */
@@ -42,6 +44,18 @@ export class TicketsForCashiersController {
   @Post()
   create(@Body() dto: CreateTicketInOfficeDto, @GetUser() user: User) {
     return this.ticketsForCashierService.create(dto, user);
+  }
+
+  //? ============================================================================================== */
+  //?                                Find_Billing_CI                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
+  @Get('billing/:ci')
+  findOneBilllingForCi(@Param('ci') ci: string) {
+    return this.billingsService.FindOne(ci);
   }
 
   //? ============================================================================================== */

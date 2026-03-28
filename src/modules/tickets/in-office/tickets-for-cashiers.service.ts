@@ -41,10 +41,10 @@ export class TicketsForCashierService {
   //?                                          Create                                                */
   //? ============================================================================================== */
 
-  async create(dto: CreateTicketInOfficeDto, user: User) {
+  async create(dto: CreateTicketInOfficeDto, cashier: User) {
     return this.ticketsService.createTicketBase({
       dto,
-      user,
+      user: cashier,
       type: TicketType.IN_OFFICE,
       paymentType: dto.payment_type,
     });
@@ -142,34 +142,12 @@ export class TicketsForCashierService {
     });
   }
 
-  /* async findAll(travelId: number, cashier: User) {
-    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
-
-    const tickets = await this.ticketRepository.find({
-      order: { id: 'DESC' },
-      where: {
-        travel: { id: travelId },
-        soldBy: { id: cashier.id },
-      },
-      relations: { travelSeats: true, buyer: true },
-    });
-    return tickets;
-  } */
-
   //? ============================================================================================== */
   //?                               Assign_Passenger                                                 */
   //? ============================================================================================== */
 
   async assignPassenger(dto: AssignPassengersBatchInOfficeDto) {
-    const customer = await this.customerRepository.findOne({
-      where: { id: dto.customerId },
-    });
-
-    if (!customer) {
-      throw new NotFoundException('Customer not found');
-    }
     return this.ticketsService.assignPassengerBase({
-      customer: customer,
       passengers: dto.passengers,
       ticketId: dto.ticketId,
     });

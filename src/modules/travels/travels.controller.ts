@@ -80,7 +80,7 @@ export class TravelsController {
   //?                                        Cancel                                                  */
   //? ============================================================================================== */
 
-  //!
+  /*   //!
   @Auth(ValidPermissions.CANCEL)
   //!
   @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
@@ -90,13 +90,13 @@ export class TravelsController {
     @GetCompany() companyId: number,
   ) {
     return this.travelsService.cancel(id, companyId);
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        Delete                                                  */
   //? ============================================================================================== */
 
-  //!
+  /* //!
   @Auth(ValidPermissions.DELETE)
   //!
   @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
@@ -106,5 +106,5 @@ export class TravelsController {
     @GetCompany() companyId: number,
   ) {
     return this.travelsService.remove(id, companyId);
-  }
+  } */
 }

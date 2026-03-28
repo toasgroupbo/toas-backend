@@ -11,7 +11,7 @@ export class Setting {
   id: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  commission: number;
+  commission: string;
 
   @Column({ type: 'text', default: null })
   terminos_y_condiciones: string;

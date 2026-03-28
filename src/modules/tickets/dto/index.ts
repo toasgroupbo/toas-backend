@@ -9,3 +9,6 @@ export {
 
 export { AssignPassengersBatchInAppDto } from './assign-passengers-batch-in-app.dto';
 export { AssignPassengersBatchInOfficeDto } from './assign-passengers-batch-in-office.dto';
+
+export { BillingDto } from './billing.dto';
+export { AssignBillingDto } from './asign-billing.dto';

@@ -13,10 +13,6 @@ export class AssignPassengersBatchInOfficeDto {
   @IsNumber()
   ticketId: number;
 
-  @ApiProperty({ example: 5 })
-  @IsNumber()
-  customerId: number;
-
   @ApiProperty({ type: [PassengerSeatBatchDto] })
   @ValidateNested({ each: true })
   @Type(() => PassengerSeatBatchDto)

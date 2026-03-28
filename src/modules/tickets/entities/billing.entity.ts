@@ -1,13 +1,13 @@
 import {
   Column,
   Entity,
-  OneToOne,
+  OneToMany,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { Customer } from './customer.entity';
+import { Ticket } from './ticket.entity';
 
 @Entity('billings')
 export class Billing {
@@ -17,7 +17,7 @@ export class Billing {
   @Column('text')
   nombre: string;
 
-  @Column('text', { unique: true })
+  @Column('text', { unique: true }) //! unique
   ci: string;
 
   @CreateDateColumn({
@@ -32,6 +32,6 @@ export class Billing {
   //*                                        Relations                                               */
   //* ============================================================================================== */
 
-  @OneToOne(() => Customer, (customer) => customer.billing)
-  customer: Customer;
+  @OneToMany(() => Ticket, (ticket) => ticket.billing)
+  tickets: Ticket[];
 }

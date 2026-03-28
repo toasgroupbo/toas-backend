@@ -19,6 +19,7 @@ import { TicketExpirationService } from '../tickets/ticket-expiration.service';
 
 import { Travel } from './entities/travel.entity';
 import { Bus } from '../buses/entities/bus.entity';
+import { Office } from '../offices/entities/office.entity';
 
 @Injectable()
 export class TravelsService {
@@ -34,7 +35,7 @@ export class TravelsService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  async create(createTravelDto: CreateTravelDto) {
+  async create(createTravelDto: CreateTravelDto /* office: Office */) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -227,15 +228,21 @@ export class TravelsService {
   //?                                        Cancel                                                  */
   //? ============================================================================================== */
 
-  async cancel(id: number, companyId: number) {
+  async cancel(id: number, office: Office) {
     return await this.dataSource.transaction(async (manager) => {
       await this.ticketExpirationService.expireTravelIfNeeded(id, manager);
 
       const travel = await manager.findOne(Travel, {
-        where: { id, bus: { company: { id: companyId } } },
+        where: {
+          id,
+          route: { officeOrigin: { company: { id: office.company.id } } },
+        },
       });
 
       if (!travel) throw new NotFoundException('Travel not found');
+
+      if (travel.travel_status != TravelStatus.ACTIVE)
+        throw new NotFoundException('The Travel is not active');
 
       try {
         travel.travel_status = TravelStatus.CANCELLED;
@@ -246,26 +253,13 @@ export class TravelsService {
       }
     });
   }
-  /* async cancel(id: number, companyId: number) {
-    await this.ticketExpirationService.expireTravelIfNeeded(id);
 
-    const travel = await this.findOne(id, companyId);
-
-    try {
-      travel.travel_status = TravelStatus.CANCELLED;
-
-      return await this.travelRepository.save(travel);
-    } catch (error) {
-      handleDBExceptions(error);
-    }
-  }
- */
   //? ============================================================================================== */
   //?                                        Delete                                                  */
   //? ============================================================================================== */
 
-  async remove(id: number, companyId: number) {
-    const travel = await this.findOne(id, companyId);
+  /* async remove(id: number, office: Office) {
+    const travel = await this.findOne(id, office.company.id);
 
     try {
       const hasSoldOrReserved = travel.travelSeats.some(
@@ -285,5 +279,5 @@ export class TravelsService {
     } catch (error) {
       handleDBExceptions(error);
     }
-  }
+  } */
 }
