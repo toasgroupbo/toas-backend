@@ -16,11 +16,14 @@ import { TicketsInAppService } from './in-app/tickets-in-app.service';
 
 import { TicketExpirationService } from './ticket-expiration.service';
 
+import { BillingsService } from './billings.service';
+import { Billing } from './entities/billing.entity';
+
 import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Ticket]),
+    TypeOrmModule.forFeature([Ticket, Billing]),
     CustomersModule,
     forwardRef(() => TravelsModule),
     WalletModule,
@@ -35,6 +38,7 @@ import { WalletModule } from '../wallet/wallet.module';
     TicketsInAppService,
     TicketsForCashierService,
     TicketExpirationService,
+    BillingsService,
   ],
   exports: [TicketExpirationService, TicketsService],
 })
