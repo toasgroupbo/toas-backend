@@ -287,6 +287,58 @@ export class SeedService implements OnModuleInit {
           },
         ],
       },
+
+      //! CASHIER_TRIPS
+
+      {
+        name: StaticRoles.CASHIER_TRIPS,
+        isStatic: true,
+        permissions: [
+          {
+            resourse: ValidResourses.BUS_CASHIER,
+            permissions: [ValidPermissions.READ],
+          },
+
+          {
+            resourse: ValidResourses.ROUTES_CASHIER,
+            permissions: [ValidPermissions.READ],
+          },
+
+          {
+            resourse: ValidResourses.TRAVEL_CASHIER,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.CANCEL,
+              ValidPermissions.CLOSE,
+            ],
+          },
+        ],
+      },
+
+      //! CASHIER_SELLER
+
+      {
+        name: StaticRoles.CASHIER_SELLER,
+        isStatic: true,
+        permissions: [
+          {
+            resourse: ValidResourses.TRAVEL_CASHIER,
+            permissions: [ValidPermissions.READ],
+          },
+
+          {
+            resourse: ValidResourses.TICKET_CASHIER,
+            permissions: [
+              ValidPermissions.CREATE,
+              ValidPermissions.READ,
+              ValidPermissions.UPDATE,
+              ValidPermissions.CONFIRM,
+              ValidPermissions.CANCEL,
+            ],
+          },
+        ],
+      },
     ];
 
     // --------------------------------------------------------------------------
