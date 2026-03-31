@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 import { CreateRoleDto, UpdateRoleDto } from './dto';
 
@@ -12,6 +12,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { Permission } from './entities/permission.entity';
 import { Rol } from './entities/rol.entity';
+import { StaticRoles } from 'src/auth/enums';
 
 @Injectable()
 export class RolesService {
@@ -57,6 +58,24 @@ export class RolesService {
     return roles;
   }
 
+  //? ============================================================================================== */
+  //?                               FindAll_Cashiers                                                 */
+  //? ============================================================================================== */
+
+  async findAllCashiers() {
+    const roles = await this.rolRepository.find({
+      where: {
+        name: In([
+          StaticRoles.CASHIER,
+          StaticRoles.CASHIER_TRIPS,
+          StaticRoles.CASHIER_SELLER,
+        ]),
+      },
+      relations: { permissions: true },
+    });
+
+    return roles;
+  }
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
   //? ============================================================================================== */

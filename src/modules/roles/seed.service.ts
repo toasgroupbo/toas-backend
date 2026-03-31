@@ -171,6 +171,11 @@ export class SeedService implements OnModuleInit {
         isStatic: true,
         permissions: [
           {
+            resourse: ValidResourses.ROL,
+            permissions: [ValidPermissions.READ],
+          },
+
+          {
             resourse: ValidResourses.OFFICE,
             permissions: [
               ValidPermissions.CREATE,
