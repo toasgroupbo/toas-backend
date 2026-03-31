@@ -55,7 +55,7 @@ export class RolesController {
   //? ============================================================================================== */
 
   //!
-  @Auth(ValidPermissions.READ)
+  @Auth(ValidPermissions.READ_CASHIERS)
   //!
   @Get('cashiers/all')
   findAllCashiers() {

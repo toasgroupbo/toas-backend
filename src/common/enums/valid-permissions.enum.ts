@@ -7,4 +7,7 @@ export enum ValidPermissions {
   CLOSE = 'CLOSE',
   CONFIRM = 'CONFIRM',
   CANCEL = 'CANCEL',
+
+  READ_CASHIERS = 'READ_CASHIERS',
+  UPDATE_CASHIERS = 'UPDATE_CASHIERS',
 }

@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
@@ -83,10 +83,6 @@ export class UsersService {
 
     const rol = await this.rolService.findOne(rolId);
 
-    if (!rol) {
-      throw new NotFoundException('Role Cashier not found');
-    }
-
     if (!allowedCashierRoles.includes(rol.name as StaticRoles)) {
       throw new BadRequestException('Invalid role. Must be a cashier role');
     }
@@ -121,7 +117,13 @@ export class UsersService {
     const cashiers = await this.userRepository.find({
       where: {
         office: { company: { id: companyId } },
-        rol: { name: StaticRoles.CASHIER },
+        rol: {
+          name: In[
+            (StaticRoles.CASHIER,
+            StaticRoles.CASHIER_SELLER,
+            StaticRoles.CASHIER_TRIPS)
+          ],
+        },
       },
       relations: { rol: true, office: true, company: true },
     });
@@ -220,6 +222,8 @@ export class UsersService {
           StaticRoles.SUPER_ADMIN,
           StaticRoles.COMPANY_ADMIN,
           StaticRoles.CASHIER,
+          StaticRoles.CASHIER_TRIPS,
+          StaticRoles.CASHIER_SELLER,
         ];
 
         // --------------------------------------------
@@ -233,6 +237,34 @@ export class UsersService {
 
       Object.assign(user, dto);
       return await this.userRepository.save(user);
+    } catch (error) {
+      handleDBExceptions(error);
+    }
+  }
+  //? ============================================================================================== */
+  //?                              Update_Cashiers                                                  */
+  //? ============================================================================================== */
+
+  async updateCashiers(id: number, companyId: number, dto: UpdateUserDto) {
+    try {
+      const allowedCashierRoles = [
+        StaticRoles.CASHIER,
+        StaticRoles.CASHIER_TRIPS,
+        StaticRoles.CASHIER_SELLER,
+      ];
+
+      const cashier = await this.findOneCashier(id, companyId);
+
+      if (dto.rol) {
+        const rol = await this.rolService.findOne(dto.rol);
+
+        if (!allowedCashierRoles.includes(rol.name as StaticRoles)) {
+          throw new BadRequestException('Invalid role. Must be a cashier role');
+        }
+      }
+
+      Object.assign(cashier, dto);
+      return await this.userRepository.save(cashier);
     } catch (error) {
       handleDBExceptions(error);
     }

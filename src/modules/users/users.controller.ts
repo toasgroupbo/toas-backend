@@ -9,9 +9,9 @@ import {
   Controller,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { Auth, Resource } from '../../auth/decorators';
+import { Auth, GetCompany, Resource } from '../../auth/decorators';
 import { ValidResourses, ValidPermissions } from '../../common/enums';
 
 import {
@@ -84,6 +84,23 @@ export class UsersController {
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
+  }
+
+  //? ============================================================================================== */
+  //?                               Update_Cashiers                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.UPDATE_CASHIERS)
+  //!
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
+  @Patch('cashiers/:id')
+  updateCashiers(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserDto,
+    @GetCompany() companyId: number,
+  ) {
+    return this.usersService.updateCashiers(id, companyId, dto);
   }
 
   //? ============================================================================================== */

@@ -41,6 +41,8 @@ export class SeedService implements OnModuleInit {
               ValidPermissions.READ,
               ValidPermissions.UPDATE,
               ValidPermissions.DELETE,
+
+              ValidPermissions.READ_CASHIERS, //! cashier
             ],
           },
 
@@ -61,6 +63,8 @@ export class SeedService implements OnModuleInit {
               ValidPermissions.READ,
               ValidPermissions.UPDATE,
               ValidPermissions.DELETE,
+
+              ValidPermissions.UPDATE_CASHIERS, //! cashier
             ],
           },
 
@@ -116,12 +120,7 @@ export class SeedService implements OnModuleInit {
 
           {
             resourse: ValidResourses.TRAVEL,
-            permissions: [
-              //ValidPermissions.CREATE,
-              ValidPermissions.READ,
-              //ValidPermissions.UPDATE,
-              //ValidPermissions.DELETE,
-            ],
+            permissions: [ValidPermissions.READ],
           },
 
           {
@@ -131,6 +130,8 @@ export class SeedService implements OnModuleInit {
               ValidPermissions.READ,
               ValidPermissions.UPDATE,
               ValidPermissions.DELETE,
+
+              ValidPermissions.READ_CASHIERS, //! cashier
             ],
           },
 
@@ -172,7 +173,12 @@ export class SeedService implements OnModuleInit {
         permissions: [
           {
             resourse: ValidResourses.ROL,
-            permissions: [ValidPermissions.READ],
+            permissions: [ValidPermissions.READ_CASHIERS], //! cashier
+          },
+
+          {
+            resourse: ValidResourses.USER,
+            permissions: [ValidPermissions.UPDATE_CASHIERS], //! cashier
           },
 
           {
@@ -218,12 +224,11 @@ export class SeedService implements OnModuleInit {
           {
             resourse: ValidResourses.TRAVEL,
             permissions: [
-              //ValidPermissions.CREATE,
               ValidPermissions.READ,
-              ValidPermissions.UPDATE,
-              ValidPermissions.DELETE,
-              ValidPermissions.CLOSE,
-              ValidPermissions.CANCEL,
+              //ValidPermissions.UPDATE,
+              //ValidPermissions.DELETE,
+              //ValidPermissions.CLOSE,
+              //ValidPermissions.CANCEL,
             ],
           },
 
@@ -234,6 +239,8 @@ export class SeedService implements OnModuleInit {
               ValidPermissions.READ,
               ValidPermissions.UPDATE,
               ValidPermissions.DELETE,
+
+              ValidPermissions.READ_CASHIERS, //! cashier
             ],
           },
 
