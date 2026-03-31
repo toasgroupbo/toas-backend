@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -71,11 +72,23 @@ export class UsersService {
   //? ============================================================================================== */
 
   async createCashier(dto: CreateUserCashierDto) {
-    const { officeId, ...data } = dto;
+    const { officeId, cashierRol: rolId, ...data } = dto;
     //! busqueda del rol de Cashier
-    const rol = await this.rolService.findOneByName(StaticRoles.CASHIER);
+
+    const allowedCashierRoles = [
+      StaticRoles.CASHIER,
+      StaticRoles.CASHIER_TRIPS,
+      StaticRoles.CASHIER_SELLER,
+    ];
+
+    const rol = await this.rolService.findOne(rolId);
+
     if (!rol) {
       throw new NotFoundException('Role Cashier not found');
+    }
+
+    if (!allowedCashierRoles.includes(rol.name as StaticRoles)) {
+      throw new BadRequestException('Invalid role. Must be a cashier role');
     }
 
     try {
