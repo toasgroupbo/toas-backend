@@ -9,7 +9,6 @@ import { DataSource, LessThan, MoreThan, Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { TravelStatus } from './enums';
-import { SeatStatus } from 'src/common/enums';
 
 import { CreateTravelDto } from './dto';
 import { paginate } from 'src/common/pagination/paginate';
@@ -19,6 +18,7 @@ import { TicketExpirationService } from '../tickets/ticket-expiration.service';
 
 import { Travel } from './entities/travel.entity';
 import { Bus } from '../buses/entities/bus.entity';
+import { User } from '../users/entities/user.entity';
 import { Office } from '../offices/entities/office.entity';
 
 @Injectable()
@@ -35,7 +35,11 @@ export class TravelsService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  async create(createTravelDto: CreateTravelDto /* office: Office */) {
+  async create(
+    createTravelDto: CreateTravelDto,
+    office: Office,
+    cashier: User,
+  ) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -48,8 +52,8 @@ export class TravelsService {
       // --------------------------------------------
 
       const bus = await queryRunner.manager.findOne(Bus, {
-        where: { id: busId },
-        relations: { busType: true },
+        where: { id: busId, company: { id: office.company.id } },
+        relations: { busType: true, company: true },
       });
 
       if (!bus) throw new NotFoundException('Bus not found');
@@ -95,6 +99,7 @@ export class TravelsService {
         route: { id: routeId },
         bus: bus,
         travelSeats,
+        createdBy: cashier,
       });
 
       await queryRunner.manager.save(newTravel);
@@ -152,40 +157,6 @@ export class TravelsService {
     });
   }
 
-  /* async findAll(pagination: TravelPaginationDto, companyId: number) {
-    const { status } = pagination;
-
-    const travelsToExpire = await this.travelRepository.find({
-      select: { id: true },
-    });
-
-    for (const travel of travelsToExpire) {
-      await this.ticketExpirationService.expireTravelIfNeeded(travel.id);
-    }
-
-    const options: any = {
-      where: { bus: { company: { id: companyId } } },
-    };
-
-    if (status) {
-      options.where.travel_status = status;
-    }
-
-    const travels = await paginate(
-      this.travelRepository,
-      {
-        ...options,
-        order: { id: 'DESC' },
-        relations: {
-          bus: true,
-          route: { officeOrigin: true, officeDestination: true },
-        },
-      },
-      pagination,
-    );
-    return travels;
-  } */
-
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
   //? ============================================================================================== */
@@ -208,21 +179,6 @@ export class TravelsService {
       return travel;
     });
   }
-  /* async findOne(id: number, companyId: number) {
-    await this.ticketExpirationService.expireTravelIfNeeded(id);
-
-    const travel = await this.travelRepository.findOne({
-      where: { id, bus: { company: { id: companyId } } },
-
-      relations: {
-        bus: true,
-        route: { officeOrigin: true, officeDestination: true },
-        travelSeats: true,
-      },
-    });
-    if (!travel) throw new NotFoundException('Travel not found');
-    return travel;
-  } */
 
   //? ============================================================================================== */
   //?                                        Cancel                                                  */

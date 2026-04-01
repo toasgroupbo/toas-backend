@@ -63,6 +63,9 @@ export class Ticket {
   @Column('json')
   seats: SelectedSeatsDto[];
 
+  @Column('boolean', { default: false })
+  past: boolean;
+
   @Index()
   @Column({ type: 'timestamptz', nullable: true })
   reserve_expiresAt?: Date | null;

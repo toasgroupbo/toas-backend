@@ -73,4 +73,7 @@ export class Travel {
 
   @ManyToOne(() => User, { nullable: true })
   closedBy?: User | null;
+
+  @ManyToOne(() => User, { nullable: true })
+  createdBy?: User | null;
 }

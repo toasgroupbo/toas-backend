@@ -45,8 +45,12 @@ export class TravelsForCashiersController {
   @Auth(ValidPermissions.CREATE)
   //!
   @Post()
-  create(@Body() dto: CreateTravelDto /* @GetOffice() office: Office */) {
-    return this.travelsService.create(dto /* , office */); //! Get Office
+  create(
+    @Body() dto: CreateTravelDto,
+    @GetOffice() office: Office,
+    @GetUser() cashier: User,
+  ) {
+    return this.travelsService.create(dto, office, cashier); //! Get Office
   }
 
   //? ============================================================================================== */

@@ -76,7 +76,7 @@ export class TicketsInAppService {
         );
       }
 
-      return await manager.find(Ticket, {
+      /* return await manager.find(Ticket, {
         where: {
           buyer: { id: customer.id },
         },
@@ -84,6 +84,23 @@ export class TicketsInAppService {
           travel: { route: { officeOrigin: true, officeDestination: true } },
         },
       });
+    }); */
+
+      const tickets = await manager.find(Ticket, {
+        where: {
+          buyer: { id: customer.id },
+        },
+        relations: {
+          travel: { route: { officeOrigin: true, officeDestination: true } },
+        },
+      });
+
+      const now = new Date();
+
+      return tickets.map((ticket) => ({
+        ...ticket,
+        past: ticket.travel.departure_time < now,
+      }));
     });
   }
 
@@ -105,7 +122,18 @@ export class TicketsInAppService {
         manager,
       );
 
-      return await manager.findOne(Ticket, {
+      /* return await manager.findOne(Ticket, {
+        where: { id: ticketId },
+        relations: {
+          travel: {
+            bus: { busType: true },
+            route: { officeDestination: true, officeOrigin: true },
+          },
+          travelSeats: true,
+        },
+      }); */
+
+      const updatedTicket = await manager.findOne(Ticket, {
         where: { id: ticketId },
         relations: {
           travel: {
@@ -115,6 +143,15 @@ export class TicketsInAppService {
           travelSeats: true,
         },
       });
+
+      if (!updatedTicket) throw new NotFoundException('Ticket not Found');
+
+      const now = new Date();
+
+      return {
+        ...updatedTicket,
+        past: updatedTicket.travel.departure_time < now,
+      };
     });
   }
 
