@@ -28,6 +28,9 @@ export class Route {
   @Column({ type: 'int', default: 1 })
   travel_hours: number;
 
+  @Column('boolean', { default: true })
+  enabled: boolean;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })

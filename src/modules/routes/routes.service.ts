@@ -50,7 +50,10 @@ export class RoutesService {
   async findAll(companyId: number) {
     const routes = await this.routeRepository.find({
       order: { id: 'DESC' },
-      where: { officeOrigin: { company: { id: companyId } } },
+      where: {
+        enabled: true,
+        officeOrigin: { company: { id: companyId } },
+      },
       relations: {
         officeOrigin: true,
         officeDestination: true,
@@ -65,7 +68,11 @@ export class RoutesService {
 
   async findOne(id: number, companyId: number) {
     const Route = await this.routeRepository.findOne({
-      where: { id, officeOrigin: { company: { id: companyId } } },
+      where: {
+        id,
+        enabled: true,
+        officeOrigin: { company: { id: companyId } },
+      },
       relations: {
         officeOrigin: true,
         officeDestination: true,
@@ -95,6 +102,23 @@ export class RoutesService {
 
   async remove(id: number, companyId: number) {
     const route = await this.findOne(id, companyId);
+
+    route.enabled = false;
+
+    try {
+      await this.routeRepository.save(route);
+
+      return {
+        message: 'Route disabled successfully',
+        disabled: route,
+      };
+    } catch (error) {
+      handleDBExceptions(error);
+    }
+  }
+
+  /* async remove(id: number, companyId: number) {
+    const route = await this.findOne(id, companyId);
     try {
       await this.routeRepository.softRemove(route);
       return {
@@ -104,5 +128,5 @@ export class RoutesService {
     } catch (error) {
       handleDBExceptions(error);
     }
-  }
+  } */
 }

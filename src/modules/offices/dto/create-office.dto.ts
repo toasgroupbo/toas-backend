@@ -6,6 +6,14 @@ export class CreateOfficeDto {
   @IsString()
   url_gps: string;
 
+  @ApiProperty({ example: 'Nombre de la office' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: 'Direccion' })
+  @IsString()
+  address: string;
+
   //* ============================================================================================== */
   //*                                     Relations                                                  */
   //* ============================================================================================== */

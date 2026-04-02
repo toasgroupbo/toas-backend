@@ -12,9 +12,9 @@ import { SeatStatus } from 'src/common/enums';
 import { PaymentType, TicketStatus, TicketType } from '../enums';
 
 import {
+  AssignBillingDto,
   CreateTicketInAppDto,
   AssignPassengersBatchInAppDto,
-  AssignBillingDto,
 } from '../dto';
 
 import { TicketsService } from '../tickets.service';

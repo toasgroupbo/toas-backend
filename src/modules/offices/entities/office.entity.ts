@@ -21,6 +21,12 @@ export class Office {
   @Column('text', { nullable: true })
   url_gps: string;
 
+  @Column('text', { nullable: true })
+  name: string;
+
+  @Column('text', { nullable: true })
+  address: string;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })
