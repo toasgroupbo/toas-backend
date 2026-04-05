@@ -7,6 +7,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 import { CreateOfficeDto, UpdateOfficeDto } from './dto';
 
 import { Office } from './entities/office.entity';
+import { Route } from '../routes/entities/route.entity';
 import { Travel } from '../travels/entities/travel.entity';
 
 @Injectable()
@@ -41,7 +42,7 @@ export class OfficesService {
 
   async findAll(companyId: number) {
     const offices = await this.officeRepository.find({
-      where: { company: { id: companyId } },
+      where: { company: { id: companyId }, enabled: true },
       relations: { place: true },
     });
     return offices;
@@ -53,7 +54,7 @@ export class OfficesService {
 
   async findOne(id: number, companyId: number) {
     const office = await this.officeRepository.findOne({
-      where: { id, company: { id: companyId } },
+      where: { id, company: { id: companyId }, enabled: true },
       relations: { place: true },
     });
     if (!office) throw new NotFoundException('Office not found');
@@ -80,7 +81,7 @@ export class OfficesService {
 
   async remove(id: number, companyId: number) {
     const office = await this.officeRepository.findOne({
-      where: { id, company: { id: companyId } },
+      where: { id, company: { id: companyId }, enabled: true },
       relations: {
         cashiers: true,
         origenRoutes: true,
@@ -91,43 +92,49 @@ export class OfficesService {
     if (!office) throw new NotFoundException();
 
     await this.dataSource.transaction(async (manager) => {
-      // 1. Obtener IDs de rutas
+      //! 1. Obtener IDs de rutas
+
       const routeIds = [
         ...(office.origenRoutes?.map((r) => r.id) || []),
         ...(office.destinationRoutes?.map((r) => r.id) || []),
       ];
 
-      // 2. Deshabilitar travels de esas rutas
-      if (routeIds.length) {
+      const uniqueRouteIds = [...new Set(routeIds)];
+
+      //! 2. Deshabilitar travels
+
+      if (uniqueRouteIds.length) {
         await manager.update(
           Travel,
           {
-            route: { id: In(routeIds) },
+            route: { id: In(uniqueRouteIds) },
             enabled: true,
           },
           { enabled: false },
         );
       }
 
-      // 3. Eliminar cashiers
+      //! 3. Deshabilitar rutas
+
+      if (uniqueRouteIds.length) {
+        await manager.update(
+          Route,
+          { id: In(uniqueRouteIds) },
+          { enabled: false },
+        );
+      }
+
+      //! 4. Cashiers (decisión de negocio)
+
       if (office.cashiers?.length) {
+        // OPCIÓN A (actual)
         await manager.softRemove(office.cashiers);
       }
 
-      // 4. Eliminar rutas
-      const allRoutes = [
-        ...(office.origenRoutes || []),
-        ...(office.destinationRoutes || []),
-      ];
-
-      if (allRoutes.length) {
-        await manager.softRemove(allRoutes);
-      }
-
-      // 5. Eliminar office
-      await manager.softRemove(office);
+      //* 5. Deshabilitar office
+      await manager.update(Office, { id: office.id }, { enabled: false });
     });
 
-    return { message: 'Office deleted', office };
+    return { message: 'Office disabled', office };
   }
 }

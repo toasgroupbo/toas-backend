@@ -11,7 +11,9 @@ import { StaticRoles } from 'src/auth/enums/roles.enum';
 import { RolesService } from '../roles/roles.service';
 
 import { Company } from './entities/company.entity';
+import { Route } from '../routes/entities/route.entity';
 import { Travel } from '../travels/entities/travel.entity';
+import { Office } from '../offices/entities/office.entity';
 
 @Injectable()
 export class CompanyService {
@@ -112,24 +114,23 @@ export class CompanyService {
           origenRoutes: true,
           destinationRoutes: true,
         },
-        owners: true,
-        buses: { busType: true },
+        buses: true,
       },
     });
 
     if (!company) throw new NotFoundException();
 
     await this.dataSource.transaction(async (manager) => {
-      const routeIds: number[] = [];
+      //! 1. Obtener routeIds
 
-      for (const office of company.offices || []) {
-        routeIds.push(
-          ...(office.origenRoutes?.map((r) => r.id) || []),
-          ...(office.destinationRoutes?.map((r) => r.id) || []),
-        );
-      }
+      const routeIds = company.offices.flatMap((office) => [
+        ...(office.origenRoutes?.map((r) => r.id) || []),
+        ...(office.destinationRoutes?.map((r) => r.id) || []),
+      ]);
 
       const uniqueRouteIds = [...new Set(routeIds)];
+
+      //! 2. Deshabilitar travels
 
       if (uniqueRouteIds.length) {
         await manager.update(
@@ -142,24 +143,33 @@ export class CompanyService {
         );
       }
 
-      for (const office of company.offices || []) {
+      //! 3. Deshabilitar routes
+
+      if (uniqueRouteIds.length) {
+        await manager.update(
+          Route,
+          { id: In(uniqueRouteIds) },
+          { enabled: false },
+        );
+      }
+
+      //! 4. Deshabilitar offices
+
+      const officeIds = company.offices.map((o) => o.id);
+
+      if (officeIds.length) {
+        await manager.update(Office, { id: In(officeIds) }, { enabled: false });
+      }
+
+      //! 5. Eliminar cashiers
+
+      for (const office of company.offices) {
         if (office.cashiers?.length) {
           await manager.softRemove(office.cashiers);
         }
       }
 
-      const allRoutes = company.offices.flatMap((office) => [
-        ...(office.origenRoutes || []),
-        ...(office.destinationRoutes || []),
-      ]);
-
-      if (allRoutes.length) {
-        await manager.softRemove(allRoutes);
-      }
-
-      if (company.offices?.length) {
-        await manager.softRemove(company.offices);
-      }
+      //! 6. Otros (igual que ya tenías)
 
       if (company.bankAccount) {
         await manager.softRemove(company.bankAccount);
@@ -172,6 +182,8 @@ export class CompanyService {
       if (company.buses?.length) {
         await manager.softRemove(company.buses);
       }
+
+      //! 7. Eliminar company
 
       await manager.softRemove(company);
     });

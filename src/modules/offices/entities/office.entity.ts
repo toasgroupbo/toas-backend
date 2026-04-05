@@ -27,6 +27,9 @@ export class Office {
   @Column('text', { nullable: true })
   address: string;
 
+  @Column('boolean', { default: true })
+  enabled: boolean;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })

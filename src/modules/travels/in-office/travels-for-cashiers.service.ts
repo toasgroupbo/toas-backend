@@ -40,6 +40,7 @@ export class TravelsForCashierService {
     const where: any = {
       travel_status: TravelStatus.ACTIVE,
       route: {
+        enabled: true,
         officeOrigin: {
           id: office.id,
         },
@@ -103,6 +104,7 @@ export class TravelsForCashierService {
         where: {
           id: travelId,
           route: { officeOrigin: { id: office.id } },
+          enabled: true,
         },
         relations: {
           bus: true,

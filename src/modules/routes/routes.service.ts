@@ -55,7 +55,7 @@ export class RoutesService {
       order: { id: 'DESC' },
       where: {
         enabled: true,
-        officeOrigin: { company: { id: companyId } },
+        officeOrigin: { company: { id: companyId }, enabled: true },
       },
       relations: {
         officeOrigin: true,
@@ -74,7 +74,7 @@ export class RoutesService {
       where: {
         id,
         enabled: true,
-        officeOrigin: { company: { id: companyId } },
+        officeOrigin: { company: { id: companyId }, enabled: true },
       },
       relations: {
         officeOrigin: true,
@@ -110,23 +110,25 @@ export class RoutesService {
         enabled: true,
         officeOrigin: { company: { id: companyId } },
       },
-      relations: { travel: true },
     });
 
     if (!route) throw new NotFoundException();
 
     await this.dataSource.transaction(async (manager) => {
-      if (route.travel?.length) {
-        await manager.update(
-          Travel,
-          { route: { id: route.id } },
-          { enabled: false },
-        );
-      }
+      //! Deshabilitar travels
+      await manager.update(
+        Travel,
+        {
+          route: { id: route.id },
+          enabled: true,
+        },
+        { enabled: false },
+      );
 
-      await manager.softRemove(route);
+      //! Deshabilitar route
+      await manager.update(Route, { id: route.id }, { enabled: false });
     });
 
-    return { message: 'Route deleted', route };
+    return { message: 'Route disabled successfully' };
   }
 }

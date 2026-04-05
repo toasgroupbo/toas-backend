@@ -19,6 +19,7 @@ export class RoutesForCashierService {
   async findAll(office: Office) {
     return await this.routeRepository.find({
       where: {
+        enabled: true,
         officeOrigin: { id: office.id },
       },
     });
@@ -30,7 +31,7 @@ export class RoutesForCashierService {
 
   async findOne(id: number) {
     const Route = await this.routeRepository.findOne({
-      where: { id },
+      where: { id, enabled: true },
       relations: {
         officeOrigin: true,
         officeDestination: true,

@@ -16,7 +16,7 @@ export class RoutesInAppService {
   //? ============================================================================================== */
 
   async findAll() {
-    return await this.routeRepository.find({});
+    return await this.routeRepository.find({ where: { enabled: true } });
   }
 
   //? ============================================================================================== */
