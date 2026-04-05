@@ -57,13 +57,13 @@ export class Company {
   @JoinColumn()
   admin: User;
 
-  @OneToMany(() => Office, (office) => office.company)
+  @OneToMany(() => Office, (office) => office.company, { cascade: true })
   offices: Office[];
 
-  @OneToMany(() => Bus, (bus) => bus.company)
-  buses: Office[];
+  @OneToMany(() => Bus, (bus) => bus.company, { cascade: true })
+  buses: Bus[];
 
-  @ManyToMany(() => Owner, (owner) => owner.companies, {})
+  @ManyToMany(() => Owner, (owner) => owner.companies, { cascade: true })
   @JoinTable({
     name: 'company_owners',
     joinColumn: {

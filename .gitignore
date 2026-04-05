@@ -7,12 +7,14 @@
 # Envs
 .env
 structure.json
-notas.txt
 
 /static/uploads/*
 !/static/uploads/.gitkeep
 *.yml
 *.pfx
+*.crt
+*.cer
+*.txt
 
 # Logs
 logs

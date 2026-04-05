@@ -39,6 +39,11 @@ interface IEnvironmentVariables {
   BCP_PASSPHRASE: string;
   BCP_SERVER_NAME: string;
 
+  H2H_COMPANYID: string;
+  H2H_USERNAME: string;
+  H2H_PASSWORD: string;
+  H2H_BASEURL: string;
+
   //constants
   RESERVATION_EXPIRE_MINUTES: number;
   RESERVATION_QR_EXPIRE_MINUTES: number;
@@ -96,6 +101,11 @@ export const envs = {
   BCP_URL: envVariables.BCP_URL,
   BCP_PASSPHRASE: envVariables.BCP_PASSPHRASE,
   BCP_SERVER_NAME: envVariables.BCP_SERVER_NAME,
+
+  H2H_COMPANYID: envVariables.H2H_COMPANYID,
+  H2H_USERNAME: envVariables.H2H_USERNAME,
+  H2H_PASSWORD: envVariables.H2H_PASSWORD,
+  H2H_BASEURL: envVariables.H2H_BASEURL,
 
   //constants
   RESERVATION_EXPIRE_MINUTES: envVariables.RESERVATION_EXPIRE_MINUTES,

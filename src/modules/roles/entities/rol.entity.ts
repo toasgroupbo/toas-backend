@@ -33,7 +33,7 @@ export class Rol {
   //*                                        Relations                                               */
   //* ---------------------------------------------------------------------------------------------- */
 
-  @OneToMany(() => User, (user) => user.rol)
+  @OneToMany(() => User, (user) => user.rol, { cascade: true })
   users: User[];
 
   @OneToMany(() => Permission, (permission) => permission.rol, {

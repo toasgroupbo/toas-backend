@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -11,7 +11,7 @@ import { StaticRoles } from 'src/auth/enums/roles.enum';
 import { RolesService } from '../roles/roles.service';
 
 import { Company } from './entities/company.entity';
-import { User } from '../users/entities/user.entity';
+import { Travel } from '../travels/entities/travel.entity';
 
 @Injectable()
 export class CompanyService {
@@ -19,10 +19,9 @@ export class CompanyService {
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
 
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-
     private readonly rolService: RolesService,
+
+    private dataSource: DataSource,
   ) {}
 
   //? ============================================================================================== */
@@ -50,7 +49,7 @@ export class CompanyService {
 
       const newCompany = this.companyRepository.create({
         ...data,
-        admin: { ...manager, rol: rol }, //! se crea el admin de la compania
+        admin: { ...manager, rol: rol },
         bankAccount,
       });
 
@@ -103,28 +102,80 @@ export class CompanyService {
   //? ============================================================================================== */
 
   async remove(id: number) {
-    const company = await this.findOne(id);
+    const company = await this.companyRepository.findOne({
+      where: { id },
+      relations: {
+        bankAccount: true,
+        admin: true,
+        offices: {
+          cashiers: true,
+          origenRoutes: true,
+          destinationRoutes: true,
+        },
+        owners: true,
+        buses: { busType: true },
+      },
+    });
 
-    // --------------------------------------------
-    // 1. SoftDelete de Admin de la company
-    // --------------------------------------------
+    if (!company) throw new NotFoundException();
 
-    await this.userRepository
-      .createQueryBuilder()
-      .softDelete()
-      .where('id = :id', { id: company.admin.id })
-      .execute();
+    await this.dataSource.transaction(async (manager) => {
+      const routeIds: number[] = [];
 
-    // --------------------------------------------
-    // 2. Delete de la company
-    // --------------------------------------------
+      for (const office of company.offices || []) {
+        routeIds.push(
+          ...(office.origenRoutes?.map((r) => r.id) || []),
+          ...(office.destinationRoutes?.map((r) => r.id) || []),
+        );
+      }
 
-    await this.companyRepository
-      .createQueryBuilder()
-      .softDelete()
-      .where('id = :id', { id: company.id })
-      .execute();
+      const uniqueRouteIds = [...new Set(routeIds)];
 
-    return { message: 'Company deleted successfully', deleted: company };
+      if (uniqueRouteIds.length) {
+        await manager.update(
+          Travel,
+          {
+            route: { id: In(uniqueRouteIds) },
+            enabled: true,
+          },
+          { enabled: false },
+        );
+      }
+
+      for (const office of company.offices || []) {
+        if (office.cashiers?.length) {
+          await manager.softRemove(office.cashiers);
+        }
+      }
+
+      const allRoutes = company.offices.flatMap((office) => [
+        ...(office.origenRoutes || []),
+        ...(office.destinationRoutes || []),
+      ]);
+
+      if (allRoutes.length) {
+        await manager.softRemove(allRoutes);
+      }
+
+      if (company.offices?.length) {
+        await manager.softRemove(company.offices);
+      }
+
+      if (company.bankAccount) {
+        await manager.softRemove(company.bankAccount);
+      }
+
+      if (company.admin) {
+        await manager.softRemove(company.admin);
+      }
+
+      if (company.buses?.length) {
+        await manager.softRemove(company.buses);
+      }
+
+      await manager.softRemove(company);
+    });
+
+    return { message: 'Company deleted', company };
   }
 }

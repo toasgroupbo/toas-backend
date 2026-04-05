@@ -4,19 +4,22 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { CreateRouteDto, UpdateRouteDto } from './dto';
 
 import { Route } from './entities/route.entity';
+import { Travel } from '../travels/entities/travel.entity';
 
 @Injectable()
 export class RoutesService {
   constructor(
     @InjectRepository(Route)
     private readonly routeRepository: Repository<Route>,
+
+    private dataSource: DataSource,
   ) {}
 
   //? ============================================================================================== */
@@ -101,32 +104,29 @@ export class RoutesService {
   //? ============================================================================================== */
 
   async remove(id: number, companyId: number) {
-    const route = await this.findOne(id, companyId);
+    const route = await this.routeRepository.findOne({
+      where: {
+        id,
+        enabled: true,
+        officeOrigin: { company: { id: companyId } },
+      },
+      relations: { travel: true },
+    });
 
-    route.enabled = false;
+    if (!route) throw new NotFoundException();
 
-    try {
-      await this.routeRepository.save(route);
+    await this.dataSource.transaction(async (manager) => {
+      if (route.travel?.length) {
+        await manager.update(
+          Travel,
+          { route: { id: route.id } },
+          { enabled: false },
+        );
+      }
 
-      return {
-        message: 'Route disabled successfully',
-        disabled: route,
-      };
-    } catch (error) {
-      handleDBExceptions(error);
-    }
+      await manager.softRemove(route);
+    });
+
+    return { message: 'Route deleted', route };
   }
-
-  /* async remove(id: number, companyId: number) {
-    const route = await this.findOne(id, companyId);
-    try {
-      await this.routeRepository.softRemove(route);
-      return {
-        message: 'Route deleted successfully',
-        deleted: route,
-      };
-    } catch (error) {
-      handleDBExceptions(error);
-    }
-  } */
 }

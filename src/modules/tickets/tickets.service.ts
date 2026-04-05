@@ -24,13 +24,11 @@ import {
   CreateTicketInAppDto,
   CreateTicketInOfficeDto,
 } from './dto';
-
 import { PassengerSeatBatchDto } from './dto/assign-passengers-batch-in-app.dto';
 
 import { BillingsService } from './billings.service';
 import { WalletService } from '../wallet/wallet.service';
 import { PenaltiesService } from '../customers/penalties.service';
-import { CustomersService } from '../customers/customers.service';
 import { PassengersService } from '../customers/passengers.service';
 import { TicketExpirationService } from './ticket-expiration.service';
 
@@ -49,8 +47,6 @@ export class TicketsService {
   constructor(
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
-
-    private readonly customersService: CustomersService,
     private readonly penaltiesService: PenaltiesService,
     private readonly ticketExpirationService: TicketExpirationService,
     private readonly passengersService: PassengersService,
@@ -90,6 +86,7 @@ export class TicketsService {
         manager,
       );
 
+      //! validacion del travel y obtencion
       const travel = await this.findActiveTravel(dto.travelId, manager);
 
       const seats = await this.getAndValidateAvailableSeats(
@@ -204,6 +201,10 @@ export class TicketsService {
 
     if (travel.travel_status !== TravelStatus.ACTIVE) {
       throw new BadRequestException(`Travel ${travelId} is not active`);
+    }
+
+    if (travel.enabled === false) {
+      throw new BadRequestException(`Travel ${travelId} is not enable`);
     }
 
     return travel;
@@ -575,34 +576,6 @@ export class TicketsService {
     }
   }
 
-  /*   async assignPassengerBase(data: {
-    passengers: PassengerSeatBatchDto[];
-    customer?: Customer;
-    ticketId: number;
-  }) {
-    const queryRunner = this.createTransaction();
-
-    try {
-      await this.expireTravelReservations(data.ticketId, queryRunner.manager);
-
-      await this.assignPassengersToSeats(
-        data.passengers,
-        data.ticketId,
-        queryRunner.manager,
-        data.customer,
-      );
-
-      await queryRunner.commitTransaction();
-
-      return this.buildAssignmentResponse(data);
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  } */
-
   //? ============================================================================================== */
 
   private async assignPassengersToSeats(
@@ -688,7 +661,5 @@ export class TicketsService {
 
   private createTransaction(): QueryRunner {
     return this.dataSource.createQueryRunner();
-    /* queryRunner.connect();
-    queryRunner.startTransaction(); */
   }
 }

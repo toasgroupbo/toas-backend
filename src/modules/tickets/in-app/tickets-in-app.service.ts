@@ -32,9 +32,6 @@ export class TicketsInAppService {
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
 
-    @InjectRepository(Travel)
-    private readonly travelRepository: Repository<Travel>,
-
     private readonly ticketExpirationService: TicketExpirationService,
     private readonly ticketsService: TicketsService,
 
@@ -75,16 +72,6 @@ export class TicketsInAppService {
           manager,
         );
       }
-
-      /* return await manager.find(Ticket, {
-        where: {
-          buyer: { id: customer.id },
-        },
-        relations: {
-          travel: { route: { officeOrigin: true, officeDestination: true } },
-        },
-      });
-    }); */
 
       const tickets = await manager.find(Ticket, {
         where: {

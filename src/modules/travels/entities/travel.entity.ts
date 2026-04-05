@@ -44,6 +44,9 @@ export class Travel {
   @Column({ type: 'text', default: TravelType.NORMAL })
   type: TravelType;
 
+  @Column({ default: true })
+  enabled: boolean;
+
   @Column({ type: 'timestamptz', nullable: true })
   closedAt?: Date;
 

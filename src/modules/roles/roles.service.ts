@@ -23,7 +23,7 @@ export class RolesService {
     @InjectRepository(Permission)
     private readonly permissionsRepository: Repository<Permission>,
 
-    private readonly dataSourse: DataSource,
+    private dataSource: DataSource,
   ) {}
 
   //? ============================================================================================== */
@@ -53,6 +53,7 @@ export class RolesService {
 
   async findAll() {
     const roles = await this.rolRepository.find({
+      where: { isStatic: false },
       relations: { permissions: true },
     });
     return roles;
@@ -124,7 +125,7 @@ export class RolesService {
     }
 
     //! inicia la transacción
-    const queryRunner = this.dataSourse.createQueryRunner();
+    const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
@@ -161,14 +162,27 @@ export class RolesService {
   //? ============================================================================================== */
 
   async remove(id: number) {
-    const rol = await this.findOne(id);
+    const rol = await this.rolRepository.findOne({
+      where: { id },
+      relations: {
+        users: true,
+      },
+    });
 
-    //! Validar si el rol es estático
+    if (!rol) throw new NotFoundException();
+
     if (rol.isStatic) {
       throw new ConflictException('The Role is immutable');
     }
 
-    await this.rolRepository.softRemove(rol);
+    await this.dataSource.transaction(async (manager) => {
+      if (rol.users?.length) {
+        await manager.softRemove(rol.users);
+      }
+
+      await manager.softRemove(rol);
+    });
+
     return { deleted: rol, message: 'Rol deleted successfully' };
   }
 }

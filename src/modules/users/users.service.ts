@@ -214,9 +214,9 @@ export class UsersService {
         // 1. No se puede asignar un rol estatico
         // --------------------------------------------
 
-        if (rol.isStatic) {
+        /* if (rol.isStatic) {
           throw new ConflictException('The Rol is Static');
-        }
+        } */ //! revisar
 
         const allowed: StaticRoles[] = [
           StaticRoles.SUPER_ADMIN,

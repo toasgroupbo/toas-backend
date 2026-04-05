@@ -21,10 +21,9 @@ import { TicketsModule } from './modules/tickets/tickets.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 
-import { FilesModule } from './files/files.module';
-import { LoggerModule } from './logger/logger.module';
-import { PaymentsModule } from './modules/payments/payments.module';
 import { MailModule } from './mail/mail.module';
+import { FilesModule } from './files/files.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 
 @Module({
@@ -62,8 +61,6 @@ import { TransactionsModule } from './modules/transactions/transactions.module';
     MailModule,
 
     TransactionsModule,
-
-    LoggerModule,
 
     PaymentsModule,
 

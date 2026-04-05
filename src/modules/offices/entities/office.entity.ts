@@ -45,12 +45,12 @@ export class Office {
   @ManyToOne(() => Place, (place) => place.offices, { eager: true })
   place: Place;
 
-  @OneToMany(() => Route, (route) => route.officeOrigin)
+  @OneToMany(() => Route, (route) => route.officeOrigin, { cascade: true })
   origenRoutes: Route[];
 
-  @OneToMany(() => Route, (route) => route.officeDestination)
+  @OneToMany(() => Route, (route) => route.officeDestination, { cascade: true })
   destinationRoutes: Route[];
 
-  @OneToMany(() => User, (user) => user.office)
+  @OneToMany(() => User, (user) => user.office, { cascade: true })
   cashiers: User[];
 }
