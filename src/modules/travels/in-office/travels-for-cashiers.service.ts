@@ -39,8 +39,8 @@ export class TravelsForCashierService {
 
     const where: any = {
       travel_status: TravelStatus.ACTIVE,
+      enabled: true,
       route: {
-        enabled: true,
         officeOrigin: {
           id: office.id,
         },

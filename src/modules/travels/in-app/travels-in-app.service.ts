@@ -29,6 +29,7 @@ export class TravelsInAppService {
     const { destination_placeId, origin_placeId, departure_time } = filters;
 
     const where: any = {
+      enabled: true,
       route: {
         officeOrigin: { place: { id: origin_placeId } },
         officeDestination: { place: { id: destination_placeId } },
@@ -80,7 +81,7 @@ export class TravelsInAppService {
       );
 
       const travel = await queryRunner.manager.findOne(Travel, {
-        where: { id: travelId },
+        where: { id: travelId, enabled: true },
         relations: {
           bus: { busType: true, company: true },
           route: {
