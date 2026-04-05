@@ -111,10 +111,9 @@ export class CompanyService {
         admin: true,
         offices: {
           cashiers: true,
-          origenRoutes: true,
-          destinationRoutes: true,
         },
-        buses: true,
+        buses: { busType: true },
+        owners: true,
       },
     });
 
@@ -183,7 +182,7 @@ export class CompanyService {
         await manager.softRemove(company.buses);
       }
 
-      //! 7. Eliminar company
+      //! 7. Eliminar company y owners
 
       await manager.softRemove(company);
     });
