@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Comprobante de Viaje</title>
+    <style>
+      /* ------------------------------------------------
+         Puppeteer PDF — print-color-adjust must be exact
+         @page controls page margins when converting
+      ------------------------------------------------ */
+      @page {
+        size: A4;
+        margin: 16mm 14mm;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f0f4f9;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 13px;
+        color: #1a2535;
+      }
+
+      /* ── Card shell ── */
+      .card {
+        width: 740px;
+        margin: 0 auto;
+        background: #ffffff;
+        overflow: hidden;
+        border: 1px solid #d8e2ef;
+      }
+
+      /* ── Header ── */
+      .hdr {
+        background: #1453a2;
+        padding: 0;
+        width: 100%;
+        border-collapse: collapse;
+        display: table;
+      }
+      .hdr-left {
+        display: table-cell;
+        vertical-align: middle;
+        padding: 18px 22px;
+        width: 55%;
+      }
+      .hdr-right {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: right;
+        padding: 18px 22px;
+        width: 45%;
+      }
+      .brand-row {
+        display: table;
+        border-collapse: collapse;
+      }
+      .brand-text {
+        display: table-cell;
+        vertical-align: middle;
+      }
+      .brand-name {
+        font-size: 20px;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: 0.4px;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .brand-sub {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.75);
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        margin: 2px 0 0;
+      }
+      .pc-label {
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.75);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin: 0 0 3px;
+      }
+      .pc-value {
+        font-size: 17px;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: 0.8px;
+        margin: 0 0 3px;
+        white-space: nowrap;
+      }
+      .pc-issued {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+      }
+
+      /* ── Section wrapper ── */
+      .section {
+        padding: 18px 22px;
+      }
+      .section + .section {
+        border-top: 1px solid #e8edf4;
+      }
+      .section-box {
+        border: 1px solid #dce6f0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      /* ── Section title ── */
+      .sec-title {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        color: #5a6a80;
+        margin: 0 0 14px;
+      }
+
+      /* ── Grid rows inside the box ── */
+      .grid-row {
+        display: table;
+        width: 100%;
+        border-collapse: collapse;
+        border-bottom: 1px solid #e8edf4;
+      }
+      .grid-row:last-child {
+        border-bottom: none;
+      }
+      .grid-cell {
+        display: table-cell;
+        padding: 13px 16px;
+        vertical-align: top;
+        border-right: 1px solid #e8edf4;
+      }
+      .grid-cell:last-child {
+        border-right: none;
+      }
+      .cell-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: #8fa3be;
+        margin: 0 0 5px;
+      }
+      .cell-value {
+        font-size: 16px;
+        font-weight: 800;
+        color: #0d1e33;
+        line-height: 1.2;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        margin: 0;
+      }
+      .cell-value-sm {
+        font-size: 14px;
+        font-weight: 800;
+        color: #0d1e33;
+        line-height: 1.2;
+        margin: 0;
+      }
+      .cell-value-meta {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c4a6e;
+        line-height: 1.35;
+        margin: 0;
+      }
+
+      /* ── Seat badge ── */
+      .seat-badge {
+        display: inline-block;
+        background: #1453a2;
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 900;
+        padding: 5px 12px;
+        border-radius: 22px;
+      }
+
+      /* ── Deck label ── */
+      .deck-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #8fa3be;
+        margin: 5px 0 0;
+        letter-spacing: 0.4px;
+      }
+
+      /* ── Bus class color ── */
+      .bus-class-value {
+        font-size: 15px;
+        font-weight: 800;
+        color: #3a7d16;
+        margin: 0;
+      }
+
+      /* ── Operator row with icon ── */
+      .icon-cell-wrap {
+        display: table;
+        border-collapse: collapse;
+      }
+      .icon-cell-wrap .icon-td {
+        display: table-cell;
+        vertical-align: middle;
+        padding-right: 8px;
+      }
+      .icon-cell-wrap .text-td {
+        display: table-cell;
+        vertical-align: middle;
+      }
+
+      /* ── Info box ── */
+      .info-box {
+        background: #f2f7fd;
+        border: 1px solid #ccdff5;
+        border-radius: 8px;
+        padding: 14px 16px 14px 14px;
+      }
+      .info-title-row {
+        display: table;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+      }
+      .info-icon {
+        display: table-cell;
+        vertical-align: middle;
+        padding-right: 7px;
+      }
+      .info-title {
+        display: table-cell;
+        vertical-align: middle;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: #1453a2;
+      }
+      .info-box ul {
+        margin: 0 0 0 18px;
+        padding: 0;
+        color: #2c4468;
+        font-size: 11.5px;
+        line-height: 1.7;
+      }
+      .info-box ul li {
+        margin-bottom: 2px;
+      }
+      .info-box ul li a,
+      .info-box ul li span.hl {
+        color: #1064c8;
+        text-decoration: none;
+      }
+
+      /* ── Footer ── */
+      .footer {
+        border-top: 1px solid #e8edf4;
+        padding: 12px 22px;
+        font-size: 11px;
+        color: #96a8be;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <!-- ── HEADER ── -->
+      <div class="hdr">
+        <div class="hdr-left">
+          <div class="brand-row">
+            <div class="brand-text">
+              <p class="brand-name">BUS EXPRESS</p>
+              <p class="brand-sub">Documento Oficial de Viaje</p>
+            </div>
+          </div>
+        </div>
+        <div class="hdr-right">
+          <p class="pc-value">Ticket: # {{TICKET_ID}}</p>
+          <p class="pc-issued">Emitido el: {{ISSUE_DATE}}</p>
+        </div>
+      </div>
+
+      <!-- ── TRIP DETAILS ── -->
+      <div class="section">
+        <p class="sec-title">Detalles del Viaje</p>
+        <div class="section-box">
+          <!-- Row 1: Origin / Destination / Departure / Arrival / Duration -->
+          <div class="grid-row">
+            <div class="grid-cell" style="width: 22%">
+              <p class="cell-label">Origen</p>
+              <p class="cell-value">{{ORIGIN}}</p>
+            </div>
+            <div class="grid-cell" style="width: 22%">
+              <p class="cell-label">Destino</p>
+              <p class="cell-value">{{DESTINATION}}</p>
+            </div>
+            <div class="grid-cell" style="width: 16%">
+              <p class="cell-label">Salida</p>
+              <p class="cell-value">{{DEPARTURE_TIME}}</p>
+            </div>
+            <div class="grid-cell" style="width: 16%">
+              <p class="cell-label">Llegada</p>
+              <p class="cell-value">{{ARRIVAL_TIME}}</p>
+            </div>
+            <div class="grid-cell" style="width: 24%">
+              <p class="cell-label">Duración</p>
+              <p class="cell-value">{{DURATION}}</p>
+            </div>
+          </div>
+
+          <!-- ╔══════════════════════════════════════════════════════════════╗
+               ║  LOOP START — repeat this .grid-row block for each passenger  ║
+               ║  in the booking (passengers array).                            ║
+               ║  Placeholders per iteration:                                   ║
+               ║    {{PASSENGER_NAME}}  — full name                             ║
+               ║    {{ID_DNI}}          — identity document number              ║
+               ║    {{SEAT}}            — seat number/code                      ║
+               ║    {{DECK}}            — deck/floor number                     ║
+               ╚══════════════════════════════════════════════════════════════╝ -->
+          <!-- Row 2: Passenger / ID / Seat / Deck -->
+          <div class="grid-row">
+            <div class="grid-cell" style="width: 36%">
+              <p class="cell-label">Nombre del Pasajero</p>
+              <p class="cell-value-sm">{{PASSENGER_NAME}}</p>
+            </div>
+            <div class="grid-cell" style="width: 28%">
+              <p class="cell-label">Documento de identidad</p>
+              <p class="cell-value-sm">{{ID_DNI}}</p>
+            </div>
+            <div class="grid-cell" style="width: 18%">
+              <p class="cell-label">Asiento</p>
+              <p class="cell-value-sm">{{SEAT}}</p>
+            </div>
+            <div class="grid-cell" style="width: 18%">
+              <p class="cell-label">Piso</p>
+              <p class="cell-value-sm">{{DECK}}</p>
+            </div>
+          </div>
+          <!-- LOOP END —— /passengers -->
+
+          <!-- Row 3: Operator / Terminal / Bus Class -->
+          <div class="grid-row">
+            <div class="grid-cell" style="width: 30%">
+              <p class="cell-label">Operador</p>
+              <div class="icon-cell-wrap">
+                <div class="icon-td">
+                  <!-- Truck/bus small SVG -->
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#1453a2"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="1" y="6" width="17" height="11" rx="2" />
+                    <path d="M18 9h3l2 3v3h-5V9z" />
+                    <circle cx="5.5" cy="18.5" r="1.5" />
+                    <circle cx="18.5" cy="18.5" r="1.5" />
+                  </svg>
+                </div>
+                <div class="text-td">
+                  <p class="cell-value-meta">{{OPERATOR}}</p>
+                </div>
+              </div>
+            </div>
+            <div class="grid-cell" style="width: 44%">
+              <p class="cell-label">Terminal de Embarque</p>
+              <p class="cell-value-meta">{{TERMINAL_ADDRESS}}</p>
+            </div>
+            <div class="grid-cell" style="width: 26%">
+              <p class="cell-label">Clase de Bus</p>
+              <p class="bus-class-value">{{BUS_CLASS}}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── IMPORTANT INFORMATION ── -->
+      <div class="section">
+        <div class="info-box">
+          <div class="info-title-row">
+            <div class="info-icon">
+              <!-- Info circle SVG -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#1453a2"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="8" stroke-width="3" />
+                <line x1="12" y1="12" x2="12" y2="17" />
+              </svg>
+            </div>
+            <span class="info-title">Información Importante</span>
+          </div>
+          <ul>
+            <li>
+              El pasajero debe presentarse en el mostrador al menos
+              <strong>30 minutos</strong> antes de la hora de salida programada.
+            </li>
+            <li>
+              Se requiere una
+              <span class="hl">Cédula de Identidad (CI/DNI)</span> o Documento
+              de identidad válido para abordar. No se aceptan copias digitales.
+            </li>
+            <li>
+              El boleto es <span class="hl">intransferible</span> y válido
+              únicamente para la fecha y hora indicadas en este documento.
+            </li>
+            <li>
+              Franquicia de equipaje: {{BAGGAGE_ALLOWANCE}}. El exceso de peso
+              puede generar cargos adicionales.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ── DISCLAIMER ── -->
+      <div style="padding: 0 22px 14px">
+        <p
+          style="
+            margin: 0;
+            font-size: 9.5px;
+            color: #b0bcc8;
+            line-height: 1.6;
+            font-style: italic;
+            border-top: 1px dashed #dce6f0;
+            padding-top: 12px;
+          "
+        >
+          La información contenida en este documento es de uso exclusivo del
+          pasajero indicado y puede contener datos privados, confidenciales o
+          privilegiados. Queda estrictamente prohibida cualquier reproducción,
+          divulgación o distribución por parte de personas no autorizadas.
+        </p>
+      </div>
+
+      <!-- ── FOOTER ── -->
+      <div class="footer">
+        &copy; {{YEAR}} Bus Express &nbsp;&middot;&nbsp; Todos los derechos
+        reservados
+      </div>
+    </div>
+  </body>
+</html>

@@ -8,6 +8,8 @@ import { envs } from 'src/config/environments/environments';
 
 import { MailsController } from './mail.controller';
 import { MailService } from './mail.service';
+import { PdfService } from './pdf.service';
+import { TemplateService } from './template.service';
 
 @Global()
 @Module({
@@ -31,13 +33,13 @@ import { MailService } from './mail.service';
         //dir: join(__dirname, 'templates'),
         adapter: new HandlebarsAdapter(),
         options: {
-          strict: true,
+          strict: false,
         },
       },
     }),
   ],
   controllers: [MailsController],
-  providers: [MailService],
+  providers: [MailService, PdfService, TemplateService],
   exports: [MailService],
 })
 export class MailModule {}
