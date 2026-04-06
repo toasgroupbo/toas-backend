@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, DataSource, Repository } from 'typeorm';
+import { Between, DataSource, In, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -38,7 +38,7 @@ export class TravelsForCashierService {
     const { destination_placeId, departure_time } = filters;
 
     const where: any = {
-      travel_status: TravelStatus.ACTIVE,
+      travel_status: In([TravelStatus.ACTIVE, TravelStatus.CLOSED]),
       enabled: true,
       route: {
         officeOrigin: {

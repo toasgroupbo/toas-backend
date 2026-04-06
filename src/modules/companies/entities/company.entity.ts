@@ -57,7 +57,7 @@ export class Company {
   @JoinColumn()
   admin: User;
 
-  @OneToMany(() => Office, (office) => office.company, { cascade: true })
+  @OneToMany(() => Office, (office) => office.company)
   offices: Office[];
 
   @OneToMany(() => Bus, (bus) => bus.company, { cascade: true })
