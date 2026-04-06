@@ -23,9 +23,6 @@ export class TravelsForCashierService {
     @InjectRepository(Travel)
     private readonly travelRepository: Repository<Travel>,
 
-    @InjectRepository(TravelSeat)
-    private readonly travelSeatRepository: Repository<TravelSeat>,
-
     private readonly ticketExpirationService: TicketExpirationService,
     private dataSource: DataSource,
   ) {}
@@ -38,7 +35,8 @@ export class TravelsForCashierService {
     const { destination_placeId, departure_time } = filters;
 
     const where: any = {
-      travel_status: In([TravelStatus.ACTIVE, TravelStatus.CLOSED]),
+      travel_status: TravelStatus.ACTIVE,
+      //travel_status: In([TravelStatus.ACTIVE, TravelStatus.CLOSED]),
       enabled: true,
       route: {
         officeOrigin: {
