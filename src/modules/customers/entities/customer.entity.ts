@@ -53,7 +53,7 @@ export class Customer {
   @Column({ type: 'date', nullable: true })
   birthDate?: Date;
 
-  @Column('json', { nullable: true })
+  @Column('jsonb', { nullable: true })
   billingObject?: any;
 
   @Column('text', { nullable: true })

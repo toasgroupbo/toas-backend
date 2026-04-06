@@ -53,12 +53,29 @@ export class CustomersInAppService {
     const customerEntity = await this.findOne(customer.id);
 
     try {
-      Object.assign(customerEntity, dto);
+      const { billingObject, ...rest } = dto;
+
+      Object.assign(customerEntity, rest);
+
+      if (billingObject) {
+        customerEntity.billingObject = billingObject;
+      }
+
       return await this.customerRepository.save(customerEntity);
     } catch (error) {
       handleDBExceptions(error);
     }
   }
+  /* async update(customer: Customer, dto: UpdateCustomerDto) {
+    const customerEntity = await this.findOne(customer.id);
+
+    try {
+      Object.assign(customerEntity, dto);
+      return await this.customerRepository.save(customerEntity);
+    } catch (error) {
+      handleDBExceptions(error);
+    }
+  } */
 
   //? ============================================================================================== */
   //?                                 Get_Penalities                                                 */
