@@ -35,6 +35,11 @@ export class SeedService implements OnModuleInit {
         isStatic: true,
         permissions: [
           {
+            resourse: ValidResourses.PAYMENTS,
+            permissions: [ValidPermissions.RECHARGE],
+          },
+
+          {
             resourse: ValidResourses.ROL,
             permissions: [
               ValidPermissions.CREATE,

@@ -3,7 +3,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 
 import { Auth, Resource } from 'src/auth/decorators';
-import { ValidResourses } from 'src/common/enums';
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
 import { BasicAuthGuard } from './guards/basic-auth.guard';
 
 import { VerifyQrDto } from './dto/verify-qr.dto';
@@ -13,10 +13,8 @@ import { QrCallbackResponse } from './interfaces/qr-callback-response.interface'
 
 import { PaymentsService } from './payments.service';
 
-import { Customer } from '../customers/entities/customer.entity';
-
 //!
-@Resource(ValidResourses.TICKET_CASHIER)
+@Resource(ValidResourses.PAYMENTS)
 @ApiBearerAuth('access-token')
 //!
 
@@ -41,7 +39,7 @@ export class PaymentsController {
   //? ============================================================================================== */
 
   //!
-  @Auth()
+  @Auth(ValidPermissions.RECHARGE)
   //!
   @Post('recharge/qr')
   createRechargeQr(@Body() dto: GenerateWalletForRechargeDto) {

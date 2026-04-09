@@ -10,4 +10,6 @@ export enum ValidPermissions {
 
   READ_CASHIERS = 'READ_CASHIERS',
   UPDATE_CASHIERS = 'UPDATE_CASHIERS',
+
+  RECHARGE = 'RECHARGE',
 }
