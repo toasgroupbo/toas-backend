@@ -54,22 +54,22 @@ export class BankAccount {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'text', nullable: true }) //!
+  @Column({ type: 'text' })
   bankCode: BankCode;
 
-  @Column('text', { unique: true, nullable: true }) //!
+  @Column('text')
   account: string;
 
-  @Column('text', { nullable: true }) //!
+  @Column('text')
   titularName: string;
 
-  @Column('int', { nullable: true }) //!
+  @Column('int')
   branchOfficeId: BranchOfficeId;
 
-  @Column('text', { nullable: true }) //!
+  @Column('text')
   documentNumber: string;
 
-  @Column('text', { nullable: true }) //!
+  @Column('text')
   documentType: DocumentType;
 
   @Column('text', { default: '' })
