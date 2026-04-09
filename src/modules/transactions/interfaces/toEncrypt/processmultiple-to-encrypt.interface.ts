@@ -1,6 +1,6 @@
-export interface ProcessMultiplePayload {
-  companyId: number;
-  password: string;
+export interface ProcessMultipleToEncrypt {
+  companyId?: number;
+  password?: string;
 
   documentNumber: string;
   documentType: string;

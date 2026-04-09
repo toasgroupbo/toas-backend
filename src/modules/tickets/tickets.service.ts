@@ -120,6 +120,7 @@ export class TicketsService {
         buyer,
         totalTicketAmount,
         manager,
+        paymentType,
       });
 
       const ticket = await this.createTicket(manager, {
@@ -163,6 +164,50 @@ export class TicketsService {
     buyer,
     totalTicketAmount,
     manager,
+    paymentType,
+  }: {
+    type: TicketType;
+    buyer?: Customer;
+    totalTicketAmount: number;
+    manager: EntityManager;
+    paymentType: PaymentType;
+  }) {
+    let walletAmount = 0;
+    let qrAmount = 0;
+
+    // APP (wallet + QR)
+    if (type === TicketType.IN_APP && buyer) {
+      const availableBalance = await this.walletService.getAvailableBalance({
+        customer: buyer,
+        manager,
+      });
+
+      walletAmount = Math.min(availableBalance, totalTicketAmount);
+      qrAmount = totalTicketAmount - walletAmount;
+    }
+
+    // OFICINA + QR
+    else if (type === TicketType.IN_OFFICE && paymentType === PaymentType.QR) {
+      qrAmount = totalTicketAmount;
+    }
+
+    //  OFICINA + CASH (no QR)
+    else if (
+      type === TicketType.IN_OFFICE &&
+      paymentType === PaymentType.CASH
+    ) {
+      walletAmount = 0;
+      qrAmount = 0;
+    }
+
+    return { walletAmount, qrAmount };
+  }
+
+  /* private async resolvePaymentAmounts({
+    type,
+    buyer,
+    totalTicketAmount,
+    manager,
   }: {
     type: TicketType;
     buyer?: Customer;
@@ -183,7 +228,7 @@ export class TicketsService {
     }
 
     return { walletAmount, qrAmount };
-  }
+  } */
   //? ============================================================================================== */
 
   private async findActiveTravel(

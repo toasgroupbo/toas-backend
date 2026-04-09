@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+/* import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
 import { envs } from 'src/config/environments/environments';
@@ -9,7 +9,7 @@ export class HttpService {
 
   constructor() {
     // Crear instancia de Axios
-    /* this.axiosInstance = axios.create({
+    this.axiosInstance = axios.create({
       baseURL: envs.H2H_BASEURL,
       validateStatus: () => true,
       maxBodyLength: Infinity,
@@ -18,15 +18,14 @@ export class HttpService {
         clarifyTimeoutError: true,
       },
       timeout: 60000,
-    } as any); */
+    } as any);
   }
 
-  //? ============================================================================================== */
-  //?                                 ProcessMultiple                                                */
-  //? ============================================================================================== */
+  //? ============================================================================================== ?/
+  //?                                 ProcessMultiple                                                ?/
+  //? ============================================================================================== ?/
 
-  /* async processMultiple(data: {
-    companyId: number;
+  async processMultiple(data: {
     data: string;
     signature: string;
   }): Promise<any> {
@@ -88,14 +87,13 @@ export class HttpService {
         details: error.message,
       };
     }
-  } */
+  }
 
-  //? ============================================================================================== */
-  //?                                 AuthorizedBatch                                                */
-  //? ============================================================================================== */
+  //? ============================================================================================== ?/
+  //?                                 AuthorizedBatch                                                ?/
+  //? ============================================================================================== ?/
 
-  /* async authorizedBatch(data: {
-    companyId: number;
+  async authorizedBatch(data: {
     data: string;
     signature: string;
   }): Promise<any> {
@@ -157,14 +155,13 @@ export class HttpService {
         details: error.message,
       };
     }
-  } */
+  }
 
-  //? ============================================================================================== */
-  //?                                  GetBatchDetail                                                */
-  //? ============================================================================================== */
+  //? ============================================================================================== ?/
+  //?                                  GetBatchDetail                                                ?/
+  //? ============================================================================================== ?/
 
-  /* async getBatchDetail(data: {
-    companyId: number;
+  async getBatchDetail(data: {
     data: string;
     signature: string;
   }): Promise<any> {
@@ -226,5 +223,6 @@ export class HttpService {
         details: error.message,
       };
     }
-  } */
+  }
 }
+ */

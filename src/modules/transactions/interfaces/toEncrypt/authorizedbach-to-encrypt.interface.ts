@@ -1,6 +1,6 @@
-export interface AuthorizedBachPayload {
-  password: string;
-  companyId: number;
+export interface AuthorizedBachToEncrypt {
+  password?: string;
+  companyId?: number;
   TransactionsId: number[];
   UserIp: string;
   documentNumber: string;

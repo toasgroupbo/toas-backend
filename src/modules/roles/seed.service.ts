@@ -223,13 +223,7 @@ export class SeedService implements OnModuleInit {
 
           {
             resourse: ValidResourses.TRAVEL,
-            permissions: [
-              ValidPermissions.READ,
-              //ValidPermissions.UPDATE,
-              //ValidPermissions.DELETE,
-              //ValidPermissions.CLOSE,
-              //ValidPermissions.CANCEL,
-            ],
+            permissions: [ValidPermissions.READ],
           },
 
           {

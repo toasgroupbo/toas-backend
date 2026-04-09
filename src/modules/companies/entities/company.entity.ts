@@ -14,6 +14,7 @@ import {
 import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Owner } from 'src/modules/owners/entities/owner.entity';
+import { Travel } from 'src/modules/travels/entities/travel.entity';
 import { Office } from 'src/modules/offices/entities/office.entity';
 import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
 
@@ -76,4 +77,7 @@ export class Company {
     },
   })
   owners: Owner[];
+
+  @OneToMany(() => Travel, (travel) => travel.company)
+  travels: Travel[];
 }

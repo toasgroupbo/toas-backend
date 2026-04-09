@@ -1,12 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, Min } from 'class-validator';
+import { IsArray, IsNumber, Min, ArrayMinSize } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class CreateWalletRechargeDto {
+export class GenerateWalletForRechargeDto {
   @ApiProperty({
-    description: 'Amount',
-    example: 1,
+    description: 'Customer IDs array',
+    example: [1, 2, 3],
+    type: [Number],
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsNumber({}, { each: true })
+  @Type(() => Number)
+  customerIds: number[];
+
+  @ApiProperty({
+    description: 'Monto Por Customer',
+    example: 50,
   })
   @IsNumber()
   @Min(1)
-  amount: number;
+  amountPerCustomer: number;
 }

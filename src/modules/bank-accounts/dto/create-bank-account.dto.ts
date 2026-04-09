@@ -1,26 +1,56 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
-import { Bank } from '../enums/bank.enum';
+import { BankCode } from '../enums/bank-code.enum';
 
-import { BankAccountType } from '../entities/bank-account.entity';
+import {
+  DocumentType,
+  BranchOfficeId,
+  DocumentExtension,
+} from '../entities/bank-account.entity';
 
 export class CreateBankAccountDto {
+  @ApiProperty({
+    enum: BankCode,
+    example: BankCode.BANCO_DE_CREDITO,
+  })
+  @IsEnum(BankCode)
+  bankCode: BankCode;
+
   @ApiProperty({ example: '1234567890' })
   @IsString()
   account: string;
 
   @ApiProperty({
-    enum: Bank,
-    example: Bank.BCP,
+    enum: BankCode,
+    example: BankCode.BANCO_DE_CREDITO,
   })
-  @IsEnum(Bank)
-  bank: Bank;
+  @IsEnum(BankCode)
+  titularName: string;
 
   @ApiProperty({
-    enum: BankAccountType,
-    example: BankAccountType.CAJA_AHORRO,
+    enum: BranchOfficeId,
+    example: BranchOfficeId.LA_PAZ,
   })
-  @IsEnum(BankAccountType)
-  typeAccount: BankAccountType;
+  @IsEnum(BranchOfficeId)
+  branchOfficeId: BranchOfficeId;
+
+  @ApiProperty({ example: '1234567890' })
+  @IsString()
+  documentNumber: string;
+
+  @ApiProperty({
+    enum: DocumentType,
+    example: DocumentType.CI,
+  })
+  @IsEnum(DocumentType)
+  documentType: DocumentType;
+
+  @ApiPropertyOptional({
+    enum: DocumentExtension,
+    example: DocumentExtension.CH,
+  })
+  @IsEnum(DocumentExtension)
+  @IsOptional()
+  documentExtension?: DocumentExtension;
 }

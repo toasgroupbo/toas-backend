@@ -70,7 +70,6 @@ export class TravelsInAppService {
 
   async findOne(travelId: number) {
     const queryRunner = this.dataSource.createQueryRunner();
-
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
@@ -113,36 +112,4 @@ export class TravelsInAppService {
       await queryRunner.release();
     }
   }
-
-  /* async findOne(travelId: number) {
-    await this.ticketExpirationService.expireTravelIfNeeded(travelId);
-
-    return await this.travelRepository.findOne({
-      where: { id: travelId },
-
-      relations: {
-        bus: { busType: true, company: true },
-        route: {
-          officeOrigin: { place: true },
-          officeDestination: { place: true },
-        },
-        travelSeats: true,
-      },
-
-      select: {
-        travelSeats: {
-          id: true,
-          row: true,
-          column: true,
-          deck: true,
-          price: true,
-          seatNumber: true,
-          type: true,
-          status: true,
-          //createdAt: true,
-          //passenger: false,
-        },
-      },
-    });
-  } */
 }

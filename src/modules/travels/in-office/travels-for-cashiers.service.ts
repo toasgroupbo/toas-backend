@@ -16,6 +16,7 @@ import { Travel } from '../entities/travel.entity';
 import { User } from '../../users/entities/user.entity';
 import { TravelSeat } from '../entities/travel-seat.entity';
 import { Office } from '../../offices/entities/office.entity';
+import { PaymentType } from 'src/modules/tickets/enums';
 
 @Injectable()
 export class TravelsForCashierService {
@@ -35,7 +36,6 @@ export class TravelsForCashierService {
     const { destination_placeId, departure_time } = filters;
 
     const where: any = {
-      //travel_status: TravelStatus.ACTIVE,
       travel_status: In([TravelStatus.ACTIVE, TravelStatus.CLOSED]),
       enabled: true,
       route: {
@@ -168,6 +168,156 @@ export class TravelsForCashierService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    await this.ticketExpirationService.expireTravelIfNeeded(
+      travelId,
+      queryRunner.manager,
+    );
+
+    try {
+      // --------------------------------------------
+      // 1. BLOQUEAR viaje (SIN joins)
+      // --------------------------------------------
+
+      const lockedTravel = await queryRunner.manager
+        .createQueryBuilder(Travel, 'travel')
+        .setLock('pessimistic_write')
+        .where('travel.id = :id', { id: travelId })
+        .andWhere('travel.travel_status = :status', {
+          status: TravelStatus.ACTIVE,
+        })
+        .getOne();
+
+      if (!lockedTravel) {
+        throw new NotFoundException('Active travel not found');
+      }
+
+      // --------------------------------------------
+      // 2. Cargar relaciones (SIN LOCK)
+      // --------------------------------------------
+
+      const travel = await queryRunner.manager.findOne(Travel, {
+        where: { id: lockedTravel.id },
+        relations: {
+          tickets: {
+            travelSeats: true,
+          },
+          travelSeats: true,
+        },
+      });
+
+      if (!travel) {
+        throw new NotFoundException('Travel not found');
+      }
+
+      // --------------------------------------------
+      // 3. CALCULAR MONTOS (CORREGIDO)
+      // --------------------------------------------
+      let total = 0; // Suma de total_price de tickets SOLD
+      let qr_amount = 0; // Suma de total_price de tickets SOLD con QR
+      let total_commission = 0; // Suma de commission de tickets SOLD con QR
+      let cash_amount = 0; // Suma de tickets SOLD con payment_type = CASH
+      let sold_tickets_count = 0; // Contador de tickets vendidos
+
+      for (const ticket of travel.tickets) {
+        // Solo considerar tickets SOLD
+        if (ticket.status === TicketStatus.SOLD) {
+          const price = Number(ticket.total_price);
+          const commission = Number(ticket.commission);
+
+          total += price;
+          sold_tickets_count++;
+
+          // Sumar por método de pago
+          if (ticket.payment_type === PaymentType.CASH) {
+            cash_amount += price;
+            // CASH: no se suma a qr_amount ni a commission
+          } else if (ticket.payment_type === PaymentType.QR) {
+            qr_amount =
+              qr_amount +
+              Number(ticket.qr_amount) +
+              Number(ticket.wallet_amount); // price
+            total_commission += commission;
+          }
+        }
+      }
+
+      // net_to_company = SOLO lo que se pagó con QR menos la comisión
+      const net_to_company = qr_amount - total_commission;
+
+      // --------------------------------------------
+      // 4. GUARDAR MONTOS EN EL TRAVEL
+      // --------------------------------------------
+
+      travel.total = total.toString();
+      travel.qr_amount = qr_amount.toString();
+      travel.cash_amount = cash_amount.toString();
+      travel.total_commission = total_commission.toString();
+      travel.net_to_company = net_to_company.toString();
+      travel.sold_tickets_count = sold_tickets_count;
+
+      // --------------------------------------------
+      // 5. CERRAR VIAJE
+      // --------------------------------------------
+
+      travel.travel_status = TravelStatus.CLOSED;
+      travel.closedAt = new Date();
+      travel.closedBy = cashier;
+
+      const now = new Date();
+
+      // --------------------------------------------
+      // 6. PROCESAR TICKETS (RESERVED)
+      // --------------------------------------------
+
+      for (const ticket of travel.tickets) {
+        if (ticket.status === TicketStatus.RESERVED) {
+          if (ticket.reserve_expiresAt && ticket.reserve_expiresAt < now) {
+            ticket.status = TicketStatus.EXPIRED;
+          } else {
+            ticket.status = TicketStatus.CANCELLED_FOR_CLOSE;
+          }
+          ticket.reserve_expiresAt = null;
+        }
+      }
+
+      // --------------------------------------------
+      // 7. PROCESAR ASIENTOS
+      // --------------------------------------------
+      for (const seat of travel.travelSeats) {
+        if (seat.status !== SeatStatus.SOLD) {
+          seat.status = SeatStatus.UNSOLD;
+          seat.price = '0';
+          seat.ticket = null;
+        }
+      }
+
+      // --------------------------------------------
+      // 8. PERSISTIR CAMBIOS
+      // --------------------------------------------
+
+      await queryRunner.manager.save(travel);
+      await queryRunner.manager.save(travel.tickets);
+      await queryRunner.manager.save(travel.travelSeats);
+
+      await queryRunner.commitTransaction();
+
+      return {
+        message: 'Travel closed successfully',
+        travel,
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      handleDBExceptions(error);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /* async close(travelId: number, cashier: User) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
       // --------------------------------------------
       // 1. BLOQUEAR viaje (SIN joins)
@@ -203,7 +353,47 @@ export class TravelsForCashierService {
       }
 
       // --------------------------------------------
-      // 3. Cerrar viaje
+      // 3. Calcular montos
+      // --------------------------------------------
+      let total = 0; // Suma de total_price de tickets SOLD
+      let total_commission = 0; // Suma de commission de tickets SOLD
+      let cash_amount = 0; // Suma de tickets SOLD con payment_type = CASH
+      let qr_amount = 0; // Suma de tickets SOLD con payment_type = QR
+      let sold_tickets_count = 0; // Contador de tickets vendidos
+
+      for (const ticket of travel.tickets) {
+        // Solo considerar tickets SOLD
+        if (ticket.status === TicketStatus.SOLD) {
+          const price = Number(ticket.total_price);
+          const commission = Number(ticket.commission);
+
+          total += price;
+          total_commission += commission;
+          sold_tickets_count++;
+
+          // Sumar por método de pago
+          if (ticket.payment_type === PaymentType.CASH) {
+            cash_amount += price;
+          } else if (ticket.payment_type === PaymentType.QR) {
+            qr_amount += price;
+          }
+        }
+      }
+
+      const net_to_company = total - total_commission;
+
+      // --------------------------------------------
+      // 4. Guardar montos en el travel
+      // --------------------------------------------
+      travel.total = total.toString();
+      travel.total_commission = total_commission.toString();
+      travel.net_to_company = net_to_company.toString();
+      travel.cash_amount = cash_amount.toString();
+      travel.qr_amount = qr_amount.toString();
+      travel.sold_tickets_count = sold_tickets_count;
+
+      // --------------------------------------------
+      // 5. Cerrar viaje
       // --------------------------------------------
       travel.travel_status = TravelStatus.CLOSED;
       travel.closedAt = new Date();
@@ -212,7 +402,7 @@ export class TravelsForCashierService {
       const now = new Date();
 
       // --------------------------------------------
-      // 4. Procesar tickets
+      // 6. Procesar tickets (RESERVED)
       // --------------------------------------------
       for (const ticket of travel.tickets) {
         if (ticket.status === TicketStatus.RESERVED) {
@@ -226,7 +416,7 @@ export class TravelsForCashierService {
       }
 
       // --------------------------------------------
-      // 5. Procesar asientos
+      // 7. Procesar asientos
       // --------------------------------------------
       for (const seat of travel.travelSeats) {
         if (seat.status !== SeatStatus.SOLD) {
@@ -237,9 +427,8 @@ export class TravelsForCashierService {
       }
 
       // --------------------------------------------
-      // 6. Persistir cambios
+      // 8. Persistir cambios
       // --------------------------------------------
-
       await queryRunner.manager.save(travel);
       await queryRunner.manager.save(travel.tickets);
       await queryRunner.manager.save(travel.travelSeats);
@@ -248,7 +437,7 @@ export class TravelsForCashierService {
 
       return {
         message: 'Travel closed successfully',
-        travel,
+        travel: travel,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -256,5 +445,5 @@ export class TravelsForCashierService {
     } finally {
       await queryRunner.release();
     }
-  }
+  } */
 }

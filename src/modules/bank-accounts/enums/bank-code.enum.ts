@@ -1,0 +1,5 @@
+export enum BankCode {
+  BANCO_CENTRAL_DE_BOLIVIA = '1004',
+  BANCO_DE_CREDITO = '1005',
+  BANCO_UNION = '1014',
+}

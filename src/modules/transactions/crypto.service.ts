@@ -1,29 +1,29 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+/* import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as forge from 'node-forge';
 import * as path from 'path';
 import * as fs from 'fs';
 
 import { envs } from 'src/config/environments/environments';
 
-import { AuthorizedBachPayload } from './interfaces/authorizedbach-encrypt.interface';
-import { GetBatchDetailPayload } from './interfaces/getbatchdetail-encrypt.interface';
-import { ProcessMultiplePayload } from './interfaces/processmultiple-encrypt.interface';
+import { GetBatchDetailEncrypt } from './interfaces/toEncrypt/getbatchdetail-to-encrypt.interface';
+import { AuthorizedBachToEncrypt } from './interfaces/toEncrypt/authorizedbach-to-encrypt.interface';
+import { ProcessMultipleToEncrypt } from './interfaces/toEncrypt/processmultiple-to-encrypt.interface';
 
 @Injectable()
-export class CryptoService /* implements OnModuleInit */ {
-  /* private businessCert: forge.pki.Certificate;
+export class CryptoService implements OnModuleInit {
+  private businessCert: forge.pki.Certificate;
   private encCert: forge.pki.Certificate;
   private signingPrivateKey: forge.pki.PrivateKey;
   private pfxEncBuffer: Buffer;
-  private readonly pfxPassword = 'hp6u8z.e,w2nNGWq';
 
   onModuleInit() {
     this.loadCertificates();
-  } */
-  //? ============================================================================================== */
-  //?                                     EncryptData                                                */
-  //? ============================================================================================== */
-  /* encryptProcessMultiple(payload: ProcessMultiplePayload): {
+  }
+  //? ============================================================================================== ?/
+  //?                                     EncryptData                                                ?/
+  //? ============================================================================================== ?/
+
+  encryptProcessMultiple(payload: ProcessMultipleToEncrypt): {
     data: string;
     signature: string;
   } {
@@ -33,9 +33,11 @@ export class CryptoService /* implements OnModuleInit */ {
     const data = this.encryptPayload(payload);
     const signature = this.signData(data);
     return { data, signature };
-  } */
-  //? ============================================================================================== */
-  /* encryptAuthorizedBatch(payload: AuthorizedBachPayload): {
+  }
+
+  //? ============================================================================================== ?/
+
+  encryptAuthorizedBatch(payload: AuthorizedBachToEncrypt): {
     data: string;
     signature: string;
   } {
@@ -45,9 +47,11 @@ export class CryptoService /* implements OnModuleInit */ {
     const data = this.encryptPayload(payload);
     const signature = this.signData(data);
     return { data, signature };
-  } */
-  //? ============================================================================================== */
-  /* encryptGetBatchDetail(payload: GetBatchDetailPayload): {
+  }
+
+  //? ============================================================================================== ?/
+
+  encryptGetBatchDetail(payload: GetBatchDetailEncrypt): {
     data: string;
     signature: string;
   } {
@@ -57,11 +61,13 @@ export class CryptoService /* implements OnModuleInit */ {
     const data = this.encryptPayload(payload);
     const signature = this.signData(data);
     return { data, signature };
-  } */
-  //? ============================================================================================== */
-  //?                                     DecryptData                                                */
-  //? ============================================================================================== */
-  /* decryptData<T = any>(
+  }
+
+  //? ============================================================================================== ?/
+  //?                                     DecryptData                                                ?/
+  //? ============================================================================================== ?/
+
+  decryptData<T = any>(
     encryptedBase64: string,
     useEncCert: boolean = false,
   ): T {
@@ -85,17 +91,21 @@ export class CryptoService /* implements OnModuleInit */ {
     const result = Buffer.from(decryptedBytes, 'binary').toString('utf8');
 
     return JSON.parse(result);
-  } */
-  //? ============================================================================================== */
-  /* private signData(data: string): string {
+  }
+
+  //? ============================================================================================== ?/
+
+  private signData(data: string): string {
     const md = forge.md.sha256.create();
     md.update(data, 'utf8');
     const signature = (this.signingPrivateKey as any).sign(md);
     return forge.util.encode64(signature);
-  } */
-  //? ============================================================================================== */
+  }
+
+  //? ============================================================================================== ?/
+
   // Cifrar para enviar al BCP (usa BUSINESS)
-  /* private encryptPayload<T = any>(payload: T): string {
+  private encryptPayload<T = any>(payload: T): string {
     const json = JSON.stringify(payload);
     const dataBytes = forge.util.encodeUtf8(json);
     const { key, iv } = this.deriveKeyAndIVFromBusiness();
@@ -107,10 +117,12 @@ export class CryptoService /* implements OnModuleInit */ {
 
     const encrypted = forge.util.encode64(cipher.output.getBytes());
     return encrypted;
-  } */
-  //? ============================================================================================== */
+  }
+
+  //? ============================================================================================== ?/
+
   // Descifrar respuesta del BCP (usa ENC_DESA)
-  /* private decryptResponse<T = any>(encryptedBase64: string): T {
+  private decryptResponse<T = any>(encryptedBase64: string): T {
     const encryptedBytes = forge.util.decode64(encryptedBase64);
     const { key, iv } = this.deriveKeyAndIVFromEncCert(); // ← Cambiado a ENC_DESA
 
@@ -127,9 +139,11 @@ export class CryptoService /* implements OnModuleInit */ {
     const result = Buffer.from(decryptedBytes, 'binary').toString('utf8');
 
     return JSON.parse(result);
-  } */
-  //? ============================================================================================== */
-  /* private loadCertificates() {
+  }
+
+  //? ============================================================================================== ?/
+
+  private loadCertificates() {
     try {
       // 1. Cargar certificado BUSINESS
       const businessCertPath = path.join(
@@ -152,16 +166,18 @@ export class CryptoService /* implements OnModuleInit */ {
       // 3. Extraer clave privada y certificado del PFX
       const { privateKey, certificate } = this.extractFromPfx(
         this.pfxEncBuffer,
-        this.pfxPassword,
+        envs.H2H_PFX_PASSWORD,
       );
       this.signingPrivateKey = privateKey;
       this.encCert = certificate; // ← Guardar certificado para descifrar respuestas
     } catch (error) {
       throw error;
     }
-  } */
-  //? ============================================================================================== */
-  /* private loadCertificate(certPath: string): forge.pki.Certificate {
+  }
+
+  //? ============================================================================================== ?/
+
+  private loadCertificate(certPath: string): forge.pki.Certificate {
     const buffer = fs.readFileSync(certPath);
     const content = buffer.toString('utf8');
 
@@ -171,9 +187,11 @@ export class CryptoService /* implements OnModuleInit */ {
 
     const asn1 = forge.asn1.fromDer(buffer.toString('binary'));
     return forge.pki.certificateFromAsn1(asn1);
-  } */
-  //? ============================================================================================== */
-  /* private extractFromPfx(
+  }
+
+  //? ============================================================================================== ?/
+
+  private extractFromPfx(
     pfxBuffer: Buffer,
     password: string,
   ): { privateKey: forge.pki.PrivateKey; certificate: forge.pki.Certificate } {
@@ -199,19 +217,25 @@ export class CryptoService /* implements OnModuleInit */ {
     }
 
     return { privateKey, certificate };
-  } */
-  //? ============================================================================================== */
+  }
+
+  //? ============================================================================================== ?/
+
   // Derivar clave usando certificado BUSINESS (para enviar datos)
-  /* private deriveKeyAndIVFromBusiness(): { key: string; iv: string } {
+  private deriveKeyAndIVFromBusiness(): { key: string; iv: string } {
     return this.deriveKeyAndIVFromCertificate(this.businessCert);
-  } */
-  //? ============================================================================================== */
+  }
+
+  //? ============================================================================================== ?/
+
   // Derivar clave usando certificado ENC_DESA (para recibir/descifrar respuestas)
-  /* private deriveKeyAndIVFromEncCert(): { key: string; iv: string } {
+  private deriveKeyAndIVFromEncCert(): { key: string; iv: string } {
     return this.deriveKeyAndIVFromCertificate(this.encCert);
-  } */
-  //? ============================================================================================== */
-  /* private deriveKeyAndIVFromCertificate(cert: forge.pki.Certificate): {
+  }
+
+  //? ============================================================================================== ?/
+
+  private deriveKeyAndIVFromCertificate(cert: forge.pki.Certificate): {
     key: string;
     iv: string;
   } {
@@ -229,9 +253,11 @@ export class CryptoService /* implements OnModuleInit */ {
       key: derived.slice(0, 32),
       iv: derived.slice(32, 48),
     };
-  } */
-  //? ============================================================================================== */
-  /* verifySignature(
+  }
+
+  //? ============================================================================================== ?/
+
+  verifySignature(
     data: string,
     signature: string,
     certificate?: forge.pki.Certificate,
@@ -245,5 +271,6 @@ export class CryptoService /* implements OnModuleInit */ {
       md.digest().bytes(),
       decodedSignature,
     );
-  } */
+  }
 }
+ */

@@ -10,6 +10,7 @@ import { PaymentType } from '../tickets/enums/payment-type.enum';
 import { TicketStatus } from '../tickets/enums/ticket-status.enum';
 
 import { GenerateQrDto } from './dto/generate-qr.dto';
+import { GenerateWalletForRechargeDto } from './dto/recharge-qr.dto';
 
 import { QrCallbackResponse } from './interfaces/qr-callback-response.interface';
 import { QrGenerateResponse } from './interfaces/qr-generate-response.interface';
@@ -49,31 +50,36 @@ export class PaymentsService {
 
     try {
       // 1. Validar y bloquear ticket
-      ticket = await queryRunner.manager
+
+      const ticketWithoutRelations = await queryRunner.manager
         .createQueryBuilder(Ticket, 'ticket')
-        .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
-        .innerJoinAndSelect('ticket.buyer', 'buyer')
         .setLock('pessimistic_write')
-        .where('ticket.id = :ticketId', { ticketId: dto.ticketId })
+        .where('ticket.id = :ticketId', { ticketId: Number(dto.ticketId) })
         .andWhere('ticket.status = :status', {
           status: TicketStatus.RESERVED,
         })
         .andWhere('ticket.payment_type = :paymentType', {
           paymentType: PaymentType.QR,
         })
-        //! wallet
-        //.andWhere('ticket.qr_amount > 0')
-        //! wallet
         .andWhere(
           '(ticket.reserve_expiresAt IS NULL OR ticket.reserve_expiresAt > NOW())',
         )
         .getOne();
 
+      if (!ticketWithoutRelations) {
+        throw new BadRequestException('Ticket not available for QR generation');
+      }
+
+      ticket = await queryRunner.manager.findOne(Ticket, {
+        where: { id: ticketWithoutRelations.id },
+        relations: ['travelSeats', 'buyer'],
+      });
+
       if (!ticket) {
         throw new BadRequestException('Ticket not available for QR generation');
       }
 
-      IdCorrelation = `TICKET-${ticket.id}-${randomUUID().slice(0, 8)}`; //`TICKET-${Date.now()}-${ticket.id}-${randomUUID()}`;
+      IdCorrelation = `TICKET-${ticket.id}-${randomUUID().slice(0, 8)}`;
 
       //! wallet
       const walletAmount = Number(ticket.wallet_amount);
@@ -207,52 +213,85 @@ export class PaymentsService {
   //?                          Generate_QR_Recharge                                                  */
   //? ============================================================================================== */
 
-  async generateQrForRecharge(customer: Customer, amount: number) {
-    const IdCorrelation = `RECHARGE-${customer.id}-${randomUUID().slice(0, 8)}`; //`RECHARGE-${Date.now()}-${customer.id}-${randomUUID()}`;
+  async generateQrForRecharge(dto: GenerateWalletForRechargeDto) {
+    const customers: Customer[] = [];
+
+    for (const customerId of dto.customerIds) {
+      const customer = await this.dataSource.manager.findOne(Customer, {
+        where: { id: customerId },
+      });
+
+      if (!customer) {
+        throw new BadRequestException(
+          `Customer with ID ${customerId} not found`,
+        );
+      }
+      customers.push(customer);
+    }
+
+    const totalAmount = dto.amountPerCustomer * dto.customerIds.length;
+    const IdCorrelation = `RECHARGE-${randomUUID().slice(0, 8)}`;
+    //const IdCorrelation = `RECHARGE-${randomUUID()}`;
+
+    // Construir collectors: uno por cada cliente
+    const collectors = [
+      {
+        name: QrPaymentTypeEnum.WALLET_RECHARGE,
+        parameter: 'RechargeType',
+        value: 'MULTIPLE',
+      },
+      // Un collector por cada cliente
+      ...customers.map((customer, index) => ({
+        name: 'CUSTOMER_RECHARGE',
+        parameter: `customer_${customer.id}`,
+        value: JSON.stringify({
+          customerId: customer.id,
+          amount: dto.amountPerCustomer,
+          index: index,
+        }),
+      })),
+    ];
+
     let result: QrGenerateResponse;
 
     try {
       result = await this.httpService.generateQr({
         IdCorrelation,
         expiration: this.formatExpirationForBcp(),
-        amount,
-        gloss: `Recarga de wallet para ${customer.email || customer.name}`,
-        collectors: [
-          {
-            name: QrPaymentTypeEnum.WALLET_RECHARGE,
-            parameter: 'CustomerId',
-            value: customer.id.toString(),
-          },
-        ],
+        amount: 0.01, //! para pruebas // totalAmount,
+        gloss: `Recarga para ${dto.customerIds.length} cliente(s)`,
+        collectors: collectors,
       });
     } catch (error) {
       throw new BadRequestException('QR generation failed. Please try again.');
     }
 
-    // 4. Guardar PaymentQR (con relación a customer)
+    // Guardar PaymentQR con metadata de customers
     await this.dataSource.transaction(async (manager) => {
       const paymentQrRepo = manager.getRepository(PaymentQR);
 
-      const newPaymentQr = paymentQrRepo.create({
+      const paymentQr = paymentQrRepo.create({
         IdCorrelation,
         qrImage: result.data.qrImage,
-        amount: amount.toString(),
+        amount: totalAmount.toString(),
         qrId: result.data.id,
         expirationDate: result.data.expirationDate,
         state: result.state,
         message: result.message,
+
         status: PaymentStatusEnum.PENDING,
         payment_type: QrPaymentTypeEnum.WALLET_RECHARGE,
       });
-
-      return await paymentQrRepo.save(newPaymentQr);
+      await paymentQrRepo.save(paymentQr);
     });
 
     return {
-      message: 'QR generado para recarga de wallet',
+      message: `QR generado para recarga de ${dto.customerIds.length} cliente(s)`,
       qrImage: result.data.qrImage,
       expiresAt: result.data.expirationDate,
-      amount,
+      totalAmount,
+      amountPerCustomer: dto.amountPerCustomer,
+      customerIds: dto.customerIds,
       correlationId: IdCorrelation,
     };
   }
@@ -282,7 +321,6 @@ export class PaymentsService {
         relations: {
           ticket: true,
         },
-        //lock: { mode: 'pessimistic_write' },
       });
 
       if (!paymentQr) {
@@ -326,27 +364,82 @@ export class PaymentsService {
           );
         }
       } else if (rechargeCollector) {
-        // Es una recarga de wallet
-        const customerId = parseInt(rechargeCollector.Value);
+        // Es una recarga de wallet MÚLTIPLE
+        // Buscar TODOS los collectors de tipo CUSTOMER_RECHARGE
+        const customerRechargeCollectors = Collectors?.filter(
+          (c) => c.Name === 'CUSTOMER_RECHARGE',
+        );
 
-        // Buscar el customer usando el ID del collector
-        const customer = await queryRunner.manager.findOne(Customer, {
-          where: { id: customerId },
-        });
+        if (
+          !customerRechargeCollectors ||
+          customerRechargeCollectors.length === 0
+        ) {
+          await queryRunner.rollbackTransaction();
+          return;
+        }
 
-        if (customer) {
-          const transaction = await this.walletService.creditFromRecharge({
-            customer,
-            amount: Number(paymentQr.amount),
-            correlationId: paymentQr.IdCorrelation,
-            paymentData: dto,
-            manager: queryRunner.manager,
-            paymentQr,
+        const results: any[] = [];
+
+        // Procesar cada collector (cada cliente)
+        for (const collector of customerRechargeCollectors) {
+          let customerData;
+          try {
+            customerData = JSON.parse(collector.Value);
+          } catch (error) {
+            results.push({
+              collector: collector.Parameter,
+              success: false,
+              error: 'Invalid collector data format',
+            });
+            continue;
+          }
+
+          const { customerId, amount } = customerData;
+
+          // Buscar el cliente
+          const customer = await queryRunner.manager.findOne(Customer, {
+            where: { id: customerId },
           });
 
-          // Asociar la transacción al PaymentQR
-          paymentQr.walletTransaction = transaction;
-          await queryRunner.manager.save(paymentQr);
+          if (!customer) {
+            results.push({
+              customerId,
+              success: false,
+              error: 'Customer not found',
+            });
+            continue;
+          }
+
+          try {
+            // Crear la transacción de crédito para este cliente
+            const transaction = await this.walletService.creditFromRecharge({
+              customer,
+              amount: amount,
+              correlationId: paymentQr.IdCorrelation, //`${paymentQr.IdCorrelation}-${customerId}`,
+              paymentData: dto,
+              manager: queryRunner.manager,
+              paymentQr: paymentQr,
+            });
+
+            results.push({
+              customerId,
+              success: true,
+              transactionId: transaction.id,
+              amount: amount,
+            });
+          } catch (error) {
+            results.push({
+              customerId,
+              success: false,
+              error: error.message,
+            });
+          }
+        }
+
+        // Opcional: Si algún cliente falló, loguear pero no hacer rollback
+        const failedResults = results.filter((r) => !r.success);
+        if (failedResults.length > 0) {
+          console.error('Failed recharges:', failedResults);
         }
       }
 
@@ -358,52 +451,6 @@ export class PaymentsService {
       await queryRunner.release();
     }
   }
-
-  /*  const { CorrelationId } = dto;
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
-        where: { IdCorrelation: CorrelationId },
-        relations: { ticket: true },
-        lock: { mode: 'pessimistic_write' },
-      });
-
-      if (!paymentQr) {
-        await queryRunner.rollbackTransaction();
-        return;
-      }
-
-      //  Idempotencia básica (evita doble callback)
-      if (paymentQr.status === PaymentStatusEnum.PAID) {
-        await queryRunner.rollbackTransaction();
-        return;
-      }
-
-      // Guardar respuesta del banco
-      paymentQr.data = dto;
-      paymentQr.status = PaymentStatusEnum.PAID;
-
-      await queryRunner.manager.save(paymentQr);
-
-      // Confirmar ticket
-      if (paymentQr.ticket) {
-        await this.ticketsService.confirmWithManager(
-          paymentQr.ticket.id,
-          queryRunner.manager,
-        );
-      }
-
-      await queryRunner.commitTransaction();
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    } */
 
   //* ============================================================================================== */
 

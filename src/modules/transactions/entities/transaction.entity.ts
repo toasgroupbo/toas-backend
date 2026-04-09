@@ -1,17 +1,20 @@
 import {
   Entity,
   Column,
+  OneToMany,
   CreateDateColumn,
-  UpdateDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
+import { Travel } from 'src/modules/travels/entities/travel.entity';
+
 export enum TransactionStatus {
-  CREATED = 'CREATED',
-  PENDING_AUTH = 'PENDING_AUTH',
+  PENDING = 'PENDING',
+  PROCESSED = 'PROCESSED',
   AUTHORIZED = 'AUTHORIZED',
-  REJECTED = 'REJECTED',
   COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  PARTIAL = 'PARTIAL',
 }
 
 @Entity('transactions')
@@ -19,68 +22,66 @@ export class Transaction {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // =========================
-  // BCP DATA
-  // =========================
+  @Column()
+  companyId: number;
 
-  @Column({ type: 'varchar', nullable: true })
-  bcpTransactionId: string; // TransactionId del banco
-
-  @Column({ type: 'varchar', length: 5, nullable: true })
-  bcpCode: string; // Código de respuesta (00, etc.)
-
+  // ID que devuelve el BCP
   @Column({ type: 'text', nullable: true })
-  bcpMessage: string; // Mensaje del banco
-
-  // =========================
-  // BUSINESS DATA
-  // =========================
-
-  @Column({ type: 'decimal', precision: 14, scale: 2 })
-  amount: number;
-
-  @Column({ type: 'varchar', length: 3 })
-  currency: string; // BOL | USD
-
-  @Column({ type: 'varchar', length: 50 })
-  sourceAccount: string;
-
-  @Column({ type: 'text', nullable: true })
-  description: string;
-
-  // =========================
-  // STATUS
-  // =========================
+  transactionId?: string;
 
   @Column({
     type: 'text',
-    default: TransactionStatus.CREATED,
+    enum: TransactionStatus,
+    default: TransactionStatus.PENDING,
   })
   status: TransactionStatus;
 
-  // =========================
-  // PAYLOADS
-  // =========================
+  //* ============================================================================================== */
 
-  @Column({ type: 'json', nullable: true })
-  requestPayload: Record<string, any>;
+  // Lo que enviaste al banco
+  @Column({ type: 'jsonb', nullable: true })
+  requestPayload?: any;
 
-  @Column({ type: 'json', nullable: true })
-  responsePayload: Record<string, any>;
+  // Lo que respondió el banco
+  @Column({ type: 'jsonb', nullable: true })
+  responsePayload?: any;
 
-  // =========================
-  // TIMESTAMPS
-  // =========================
+  //* ============================================================================================== */
 
-  @CreateDateColumn()
+  @Column({ type: 'text', nullable: true })
+  errorMessage?: string;
+
+  //* ============================================================================================== */
+
+  @Column({ type: 'jsonb', nullable: true })
+  travelsSnapshot?: any[];
+
+  //* ============================================================================================== */
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  totalAmount: number;
+
+  @Column({ type: 'int', default: 0 })
+  totalTravels: number;
+
+  @CreateDateColumn({
+    type: 'timestamptz',
+  })
   createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @Column({ type: 'timestamptz', nullable: true })
+  processedAt?: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
-  authorizedAt: Date;
+  @Column({ type: 'timestamptz', nullable: true })
+  authorizedAt?: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
-  completedAt: Date;
+  @Column({ type: 'timestamptz', nullable: true })
+  completedAt?: Date;
+
+  //* ============================================================================================== */
+  //*                                        Relations                                               */
+  //* ============================================================================================== */
+
+  @OneToMany(() => Travel, (travel) => travel.transaction)
+  travels: Travel[];
 }

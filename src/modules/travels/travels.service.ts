@@ -24,9 +24,6 @@ import { Office } from '../offices/entities/office.entity';
 @Injectable()
 export class TravelsService {
   constructor(
-    @InjectRepository(Travel)
-    private readonly travelRepository: Repository<Travel>,
-
     private readonly ticketExpirationService: TicketExpirationService,
     private dataSource: DataSource,
   ) {}
@@ -100,6 +97,7 @@ export class TravelsService {
         bus: bus,
         travelSeats,
         createdBy: cashier,
+        company: office.company, //! relacion entre company y travels
       });
 
       await queryRunner.manager.save(newTravel);
@@ -133,7 +131,7 @@ export class TravelsService {
       }
 
       const options: any = {
-        where: { bus: { company: { id: companyId } } },
+        where: { company: { id: companyId } },
       };
 
       if (status) {
@@ -166,7 +164,7 @@ export class TravelsService {
       await this.ticketExpirationService.expireTravelIfNeeded(id, manager);
 
       const travel = await manager.findOne(Travel, {
-        where: { id, bus: { company: { id: companyId } } },
+        where: { id, company: { id: companyId } },
         relations: {
           bus: true,
           route: { officeOrigin: true, officeDestination: true },
