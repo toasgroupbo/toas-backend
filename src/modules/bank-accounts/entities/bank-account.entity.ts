@@ -54,7 +54,7 @@ export class BankAccount {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'text', enum: BankCode })
+  @Column({ type: 'text', nullable: true }) //!
   bankCode: BankCode;
 
   @Column('text', { unique: true, nullable: true }) //!
