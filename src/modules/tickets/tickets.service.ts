@@ -203,32 +203,6 @@ export class TicketsService {
     return { walletAmount, qrAmount };
   }
 
-  /* private async resolvePaymentAmounts({
-    type,
-    buyer,
-    totalTicketAmount,
-    manager,
-  }: {
-    type: TicketType;
-    buyer?: Customer;
-    totalTicketAmount: number;
-    manager: EntityManager;
-  }) {
-    let walletAmount = 0;
-    let qrAmount = totalTicketAmount;
-
-    if (type === TicketType.IN_APP && buyer) {
-      const availableBalance = await this.walletService.getAvailableBalance({
-        customer: buyer,
-        manager,
-      });
-
-      walletAmount = Math.min(availableBalance, totalTicketAmount);
-      qrAmount = totalTicketAmount - walletAmount;
-    }
-
-    return { walletAmount, qrAmount };
-  } */
   //? ============================================================================================== */
 
   private async findActiveTravel(
