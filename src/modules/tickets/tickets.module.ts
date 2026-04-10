@@ -24,9 +24,9 @@ import { WalletModule } from '../wallet/wallet.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Ticket, Billing]),
-    CustomersModule,
-    forwardRef(() => TravelsModule),
     WalletModule,
+    forwardRef(() => TravelsModule),
+    forwardRef(() => CustomersModule),
   ],
   controllers: [
     TicketsController,
@@ -40,6 +40,6 @@ import { WalletModule } from '../wallet/wallet.module';
     TicketExpirationService,
     BillingsService,
   ],
-  exports: [TicketExpirationService, TicketsService],
+  exports: [TicketExpirationService, TicketsService, TypeOrmModule],
 })
 export class TicketsModule {}

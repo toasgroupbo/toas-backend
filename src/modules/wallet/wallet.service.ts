@@ -2,19 +2,14 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, EntityManager, MoreThan, LessThan } from 'typeorm';
 
-import { TicketExpirationService } from '../tickets/ticket-expiration.service';
-
 import {
-  WalletTransaction,
   TransactionType,
+  WalletTransaction,
 } from './entities/wallet-transactions.entity';
 import { Wallet } from './entities/wallet.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { Customer } from 'src/modules/customers/entities/customer.entity';
-import {
-  PaymentQR,
-  PaymentStatusEnum,
-} from '../payments/entities/payment-qr.entity';
+import { PaymentQR } from '../payments/entities/payment-qr.entity';
 
 @Injectable()
 export class WalletService {
@@ -24,8 +19,6 @@ export class WalletService {
 
     @InjectRepository(WalletTransaction)
     private readonly transactionRepository: Repository<WalletTransaction>,
-
-    //private readonly ticketExpirationService: TicketExpirationService,
   ) {}
 
   //* ============================================================================================== */

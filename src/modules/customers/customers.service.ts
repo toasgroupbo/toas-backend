@@ -7,13 +7,21 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 import { paginate } from 'src/common/pagination/paginate';
 import { CustomerPaginationDto } from './pagination/customer-pagination.dto';
 
+import { WalletService } from '../wallet/wallet.service';
+
 import { Customer } from './entities/customer.entity';
+import { Ticket } from '../tickets/entities/ticket.entity';
 
 @Injectable()
 export class CustomersService {
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+
+    @InjectRepository(Ticket)
+    private readonly ticketRepository: Repository<Ticket>,
+
+    private readonly walletService: WalletService,
   ) {}
 
   //? ============================================================================================== */
@@ -23,17 +31,101 @@ export class CustomersService {
   async findAll(pagination: CustomerPaginationDto) {
     const options: any = {
       where: {},
+      select: {
+        id: true,
+        ci: true,
+        email: true,
+        name: true,
+        is_verified: true,
+        birthDate: true,
+        billingObject: true,
+        createdAt: true,
+      },
+      // ❌ quitamos relations
     };
 
     if ('is_verified' in pagination) {
       options.where.is_verified = pagination.is_verified;
     }
 
-    return paginate(this.customerRepository, options, pagination, [
-      'name',
-      'email',
-    ]);
+    const result = await paginate(
+      this.customerRepository,
+      options,
+      pagination,
+      ['name', 'email'],
+    );
+
+    const dataWithExtras = await Promise.all(
+      result.data.map(async (customer) => {
+        const [balance, ticketsCount] = await Promise.all([
+          this.walletService.getAvailableBalance({ customer }),
+
+          this.ticketRepository.count({
+            where: {
+              buyer: { id: customer.id },
+            },
+          }),
+        ]);
+
+        return {
+          ...customer,
+          ticketsBought: ticketsCount,
+          availableBalance: balance,
+        };
+      }),
+    );
+
+    return {
+      ...result,
+      data: dataWithExtras,
+    };
   }
+
+  /* async findAll(pagination: CustomerPaginationDto) {
+    const options: any = {
+      where: {},
+      select: {
+        id: true,
+        ci: true,
+        email: true,
+        name: true,
+        is_verified: true,
+        birthDate: true,
+        billingObject: true,
+        createdAt: true,
+      },
+      relations: { ticketsBought: true },
+    };
+
+    if ('is_verified' in pagination) {
+      options.where.is_verified = pagination.is_verified;
+    }
+
+    const result = await paginate(
+      this.customerRepository,
+      options,
+      pagination,
+      ['name', 'email'],
+    );
+
+    const dataWithBalance = await Promise.all(
+      result.data.map(async (customer) => {
+        const balance = await this.walletService.getAvailableBalance({
+          customer,
+        });
+
+        return {
+          ...customer,
+          availableBalance: balance,
+        };
+      }),
+    );
+
+    return {
+      ...result,
+      data: dataWithBalance,
+    };
+  } */
 
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
@@ -44,10 +136,36 @@ export class CustomersService {
       ? manager.getRepository(Customer)
       : this.customerRepository;
 
-    const customer = await repository.findOne({ where: { id } });
+    const customer = await repository.findOne({
+      where: { id },
+      relations: { ticketsBought: true },
+    });
+
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    const balance = await this.walletService.getAvailableBalance({
+      customer,
+      manager,
+    });
+
+    return {
+      ...customer,
+      availableBalance: balance,
+    };
+  }
+
+  /* async findOne(id: number, manager?: EntityManager) {
+    const repository = manager
+      ? manager.getRepository(Customer)
+      : this.customerRepository;
+
+    const customer = await repository.findOne({
+      where: { id },
+      relations: { ticketsBought: true },
+    });
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
-  }
+  } */
 
   //? ============================================================================================== */
 

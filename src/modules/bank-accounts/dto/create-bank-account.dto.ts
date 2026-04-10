@@ -23,7 +23,7 @@ export class CreateBankAccountDto {
 
   @ApiProperty({
     enum: BankCode,
-    example: BankCode.BANCO_DE_CREDITO,
+    example: 'Nombre del titular',
   })
   @IsEnum(BankCode)
   titularName: string;

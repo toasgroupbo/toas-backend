@@ -96,13 +96,13 @@ export class TravelsService {
         route: { id: routeId },
         bus: bus,
         travelSeats,
-        createdBy: cashier,
-        company: office.company, //! relacion entre company y travels
+        createdBy: { id: cashier.id },
+        company: office.company,
       });
+      const travelCreated = await queryRunner.manager.save(newTravel);
 
-      await queryRunner.manager.save(newTravel);
       await queryRunner.commitTransaction();
-      return newTravel;
+      return travelCreated;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       handleDBExceptions(error);

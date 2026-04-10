@@ -14,6 +14,7 @@ import { Company } from './entities/company.entity';
 import { Route } from '../routes/entities/route.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Office } from '../offices/entities/office.entity';
+import { TravelStatus } from '../travels/enums';
 
 @Injectable()
 export class CompanyService {
@@ -68,6 +69,18 @@ export class CompanyService {
   async findAll() {
     const companies = await this.companyRepository.find({
       relations: { bankAccount: true, admin: true },
+    });
+    return companies;
+  }
+
+  //? ============================================================================================== */
+  //?                                   Sales_Report                                                 */
+  //? ============================================================================================== */
+
+  async salesReport() {
+    const companies = await this.companyRepository.find({
+      where: { travels: { travel_status: TravelStatus.CLOSED } },
+      relations: { travels: { tickets: true } },
     });
     return companies;
   }
