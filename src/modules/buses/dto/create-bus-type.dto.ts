@@ -8,13 +8,6 @@ import { DeckLayoutDto } from './deck-layout.dto';
 
 export class CreateBusTypeDto {
   @ApiProperty({
-    description: 'Type Bus Name',
-    example: 'Type 1',
-  })
-  @IsString()
-  name: string;
-
-  @ApiProperty({
     description: 'List of decks (floors) for the bus type',
     type: [DeckLayoutDto],
     example: [

@@ -11,8 +11,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-//import { DeckType } from '../enums/deck-type.enum';
-
 import { SeatsDto } from './seats.dto';
 
 export enum DeckType {

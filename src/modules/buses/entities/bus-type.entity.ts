@@ -15,9 +15,6 @@ export class BusType {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('text')
-  name: string;
-
   @Column('json')
   decks: DeckLayoutDto[];
 
