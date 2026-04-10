@@ -52,7 +52,10 @@ export class Travel {
   @Column({ type: 'timestamptz', nullable: true })
   closedAt?: Date;
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({
+    type: 'timestamptz',
+    select: false,
+  })
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })
