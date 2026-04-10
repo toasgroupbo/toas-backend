@@ -9,3 +9,12 @@ export class VerifyQrDto {
   @IsNumber()
   ticketId: number;
 }
+
+export class VerifyQrRechargeDto {
+  @ApiProperty({
+    description: 'Id Correlation',
+    example: 1,
+  })
+  @IsNumber()
+  IdCorrelation: string;
+}

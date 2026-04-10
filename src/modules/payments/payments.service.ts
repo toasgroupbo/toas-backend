@@ -1,5 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { DataSource, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 
 import { envs } from 'src/config/environments/environments';
@@ -26,10 +30,14 @@ import {
 } from './entities/payment-qr.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
 import { Customer } from '../customers/entities/customer.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class PaymentsService {
   constructor(
+    @InjectRepository(PaymentQR)
+    private readonly paymentQrRepository: Repository<PaymentQR>,
+
     private readonly httpService: HttpService,
     private readonly ticketsService: TicketsService,
     private readonly walletService: WalletService,
@@ -302,6 +310,20 @@ export class PaymentsService {
 
   async verifyQr(ticketId: number) {
     return await this.ticketsService.verifyQr(ticketId);
+  }
+
+  async verifyRechargeQr(IdCorrelation: string) {
+    const paymentQr = await this.paymentQrRepository.findOne({
+      where: { IdCorrelation },
+    });
+
+    if (!paymentQr) {
+      throw new NotFoundException(
+        `Payment QR with ID ${IdCorrelation} not found`,
+      );
+    }
+
+    return { status: paymentQr.status };
   }
 
   //? ============================================================================================== */

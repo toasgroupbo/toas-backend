@@ -6,7 +6,7 @@ import { Auth, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 import { BasicAuthGuard } from './guards/basic-auth.guard';
 
-import { VerifyQrDto } from './dto/verify-qr.dto';
+import { VerifyQrDto, VerifyQrRechargeDto } from './dto/verify-qr.dto';
 import { GenerateQrDto } from './dto/generate-qr.dto';
 import { GenerateWalletForRechargeDto } from './dto/recharge-qr.dto';
 import { QrCallbackResponse } from './interfaces/qr-callback-response.interface';
@@ -56,6 +56,14 @@ export class PaymentsController {
   @Post('verify-qr')
   verifyQr(@Body() dto: VerifyQrDto) {
     return this.paymentsService.verifyQr(dto.ticketId);
+  }
+
+  //!
+  @Auth(ValidPermissions.RECHARGE)
+  //!
+  @Post('verify-qr-recharge')
+  verifyRechargeQr(@Body() dto: VerifyQrRechargeDto) {
+    return this.paymentsService.verifyRechargeQr(dto.IdCorrelation);
   }
 
   //? ============================================================================================== */
