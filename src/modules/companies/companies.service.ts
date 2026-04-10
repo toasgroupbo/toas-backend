@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
@@ -103,6 +107,29 @@ export class CompanyService {
   //? ============================================================================================== */
 
   async update(id: number, dto: UpdateCompanyDto) {
+    const company = await this.companyRepository.findOne({
+      where: { id },
+      relations: { bankAccount: true },
+    });
+
+    if (!company) throw new NotFoundException('Company not found');
+
+    try {
+      const { bankAccount, ...rest } = dto;
+
+      Object.assign(company, rest);
+
+      if (bankAccount) {
+        Object.assign(company.bankAccount, bankAccount);
+      }
+
+      return await this.companyRepository.save(company);
+    } catch (error) {
+      handleDBExceptions(error);
+    }
+  }
+
+  /* async update(id: number, dto: UpdateCompanyDto) {
     const company = await this.findOne(id);
     try {
       Object.assign(company, dto);
@@ -110,7 +137,7 @@ export class CompanyService {
     } catch (error) {
       handleDBExceptions(error);
     }
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        Delete                                                  */

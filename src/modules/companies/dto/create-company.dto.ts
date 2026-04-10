@@ -51,14 +51,14 @@ export class CreateCompanyDto {
     type: () => CreateBankAccountDto,
     description: 'bank account of the company',
   })
-  @ValidateNested({ each: true })
+  @ValidateNested()
   @Type(() => CreateBankAccountDto)
   bankAccount: CreateBankAccountDto;
 
   @ApiProperty({
     type: CreateUserDto,
   })
-  @ValidateNested({ each: true })
+  @ValidateNested()
   @Type(() => CreateUserDto)
   manager: CreateUserDto;
 }

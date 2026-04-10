@@ -112,13 +112,31 @@ export class OwnersService {
 
   async update(id: number, dto: UpdateOwnerDto, companyId: number) {
     const owner = await this.findOne(id, companyId);
+
+    try {
+      const { bankAccount, ...rest } = dto;
+
+      Object.assign(owner, rest);
+
+      if (bankAccount) {
+        Object.assign(owner.bankAccount, bankAccount);
+      }
+
+      return await this.ownerRepository.save(owner);
+    } catch (error) {
+      handleDBExceptions(error);
+    }
+  }
+
+  /* async update(id: number, dto: UpdateOwnerDto, companyId: number) {
+    const owner = await this.findOne(id, companyId);
     try {
       Object.assign(owner, dto);
       return await this.ownerRepository.save(owner);
     } catch (error) {
       handleDBExceptions(error);
     }
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        Delete                                                  */
