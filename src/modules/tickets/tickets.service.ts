@@ -40,7 +40,6 @@ import { Setting } from '../settings/entities/setting.entity';
 import { Penalty } from '../customers/entities/penalty.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { TravelSeat } from '../travels/entities/travel-seat.entity';
-import { PaymentStatusEnum } from '../payments/entities/payment-qr.entity';
 
 @Injectable()
 export class TicketsService {
@@ -371,9 +370,6 @@ export class TicketsService {
   //? ============================================================================================== */
 
   async confirmWithManager(ticket: Ticket, manager: EntityManager) {
-    console.log(ticket);
-    //const ticket = await this.findQrTicketForConfirmation(ticketId, manager);
-
     this.applySoldState(ticket);
     await this.reducePenaltyForInAppTicket(ticket, manager);
 
@@ -382,63 +378,11 @@ export class TicketsService {
     return ticket;
   }
 
-  /* async confirmWithManager(ticketId: number, manager: EntityManager) {
-    console.log(ticketId);
-
-    const ticket = await this.findQrTicketForConfirmation(ticketId, manager);
-
-    console.log(ticket);
-
-    this.applySoldState(ticket);
-    await this.reducePenaltyForInAppTicket(ticket, manager);
-
-    await manager.save(Ticket, ticket);
-
-    return ticket;
-  } */
-
   //? ============================================================================================== */
 
-  private async findQrTicketForConfirmation(
-    ticketId: number,
-    manager: EntityManager,
-  ): Promise<Ticket> {
-    const ticket = await manager
-      .createQueryBuilder(Ticket, 'ticket')
-      .setLock('pessimistic_write')
-
-      .leftJoinAndSelect('ticket.travelSeats', 'travelSeats')
-      .leftJoinAndSelect('ticket.paymentQr', 'paymentQr')
-      .leftJoinAndSelect('ticket.buyer', 'buyer')
-
-      .where('ticket.id = :ticketId', { ticketId })
-      .andWhere('ticket.status = :status', {
-        status: TicketStatus.PENDING_PAYMENT,
-      })
-      .andWhere('ticket.payment_type = :payment_type', {
-        payment_type: PaymentType.QR,
-      })
-      .andWhere('ticket.reserve_expiresAt > NOW()')
-      .getOne();
-
-    if (!ticket) {
-      throw new NotFoundException(
-        'Ticket not found, expired, or not in a confirmable state',
-      );
-    }
-
-    return ticket;
-  }
-
-  //? ============================================================================================== */
-
-  private applySoldState(ticket: Ticket): void {
+  private applySoldState(ticket: Ticket) {
     ticket.status = TicketStatus.SOLD;
     ticket.reserve_expiresAt = null;
-
-    /* if (ticket.paymentQr) {
-      ticket.paymentQr.status = PaymentStatusEnum.PAID;
-    } */
 
     for (const seat of ticket.travelSeats) {
       seat.status = SeatStatus.SOLD;
@@ -462,54 +406,6 @@ export class TicketsService {
         penalty.failedCount -= 1;
         await penaltyRepository.save(penalty);
       }
-    }
-  }
-
-  //? ============================================================================================== */
-
-  /* async confirm(ticketId: number) {
-    const queryRunner = this.createTransaction();
-
-    try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      await this.validateTravelForTicket(ticketId, queryRunner.manager);
-      await this.expireTravelReservations(ticketId, queryRunner.manager);
-
-      const ticket = await this.findQrTicketForConfirmation(
-        ticketId,
-        queryRunner.manager,
-      );
-      this.applySoldState(ticket);
-
-      await queryRunner.manager.save(Ticket, ticket);
-      await queryRunner.commitTransaction();
-
-      return {
-        message: 'Ticket payment confirmed successfully',
-        ticket: { id: ticket.id, total_price: ticket.total_price },
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      handleDBExceptions(error);
-    } finally {
-      await queryRunner.release();
-    }
-  }
- */
-  //? ============================================================================================== */
-
-  private async validateTravelForTicket(
-    ticketId: number,
-    manager: EntityManager,
-  ): Promise<void> {
-    const travel = await manager.findOne(Travel, {
-      where: { tickets: { id: ticketId } },
-    });
-
-    if (!travel) {
-      throw new NotFoundException('Travel not found');
     }
   }
 

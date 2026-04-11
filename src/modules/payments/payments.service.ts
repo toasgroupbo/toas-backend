@@ -330,6 +330,132 @@ export class PaymentsService {
   //?                                      CallBack                                                  */
   //? ============================================================================================== */
 
+  /*   async callback(dto: QrCallbackResponse) {
+    const { CorrelationId, Collectors, Status } = dto;
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
+        where: { IdCorrelation: CorrelationId },
+        lock: { mode: 'pessimistic_write' },
+        relations: {
+          ticket: { buyer: true, travelSeats: true },
+        },
+      });
+
+      if (!paymentQr) {
+        await queryRunner.rollbackTransaction();
+        return;
+      }
+
+      if (paymentQr.status === PaymentStatusEnum.PAID) {
+        await queryRunner.commitTransaction();
+        return;
+      }
+
+      const ticketCollector = Collectors?.find(
+        (c) => c.Name === QrPaymentTypeEnum.TICKET,
+      );
+
+      const rechargeCollector = Collectors?.find(
+        (c) => c.Name === QrPaymentTypeEnum.WALLET_RECHARGE,
+      );
+
+      if (ticketCollector && paymentQr.ticket) {
+        await this.ticketsService.confirmWithManager(
+          paymentQr.ticket,
+          queryRunner.manager,
+        );
+      }
+
+      if (rechargeCollector) {
+        const customerRechargeCollectors = Collectors?.filter(
+          (c) => c.Name === 'CUSTOMER_RECHARGE',
+        );
+
+        if (
+          !customerRechargeCollectors ||
+          customerRechargeCollectors.length === 0
+        ) {
+          await queryRunner.rollbackTransaction();
+          return;
+        }
+
+        const results: any[] = [];
+
+        // Procesar cada collector (cada cliente)
+        for (const collector of customerRechargeCollectors) {
+          let customerData;
+          try {
+            customerData = JSON.parse(collector.Value);
+          } catch (error) {
+            results.push({
+              collector: collector.Parameter,
+              success: false,
+              error: 'Invalid collector data format',
+            });
+            continue;
+          }
+
+          const { customerId, amount } = customerData;
+
+          // Buscar el cliente
+          const customer = await queryRunner.manager.findOne(Customer, {
+            where: { id: customerId },
+          });
+
+          if (!customer) {
+            results.push({
+              customerId,
+              success: false,
+              error: 'Customer not found',
+            });
+            continue;
+          }
+
+          try {
+            // Crear la transacción de crédito para este cliente
+            const transaction = await this.walletService.creditFromRecharge({
+              customer,
+              amount: amount,
+              correlationId: paymentQr.IdCorrelation,
+              paymentData: dto,
+              manager: queryRunner.manager,
+              paymentQr: paymentQr,
+            });
+
+            results.push({
+              customerId,
+              success: true,
+              transactionId: transaction.id,
+              amount: amount,
+            });
+          } catch (error) {
+            results.push({
+              customerId,
+              success: false,
+              error: error.message,
+            });
+          }
+        }
+      }
+
+      paymentQr.data = dto;
+      paymentQr.status = PaymentStatusEnum.PAID;
+      await queryRunner.manager.save(paymentQr);
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  } */
+
   async callback(dto: QrCallbackResponse) {
     const { CorrelationId, Collectors } = dto;
 
@@ -338,13 +464,6 @@ export class PaymentsService {
     await queryRunner.startTransaction();
 
     try {
-      /* const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
-        where: { IdCorrelation: CorrelationId },
-        relations: {
-          ticket: true,
-        },
-      }); */
-
       const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
         where: { IdCorrelation: CorrelationId },
         relations: {
@@ -358,13 +477,13 @@ export class PaymentsService {
       }
 
       if (paymentQr.status === PaymentStatusEnum.PAID) {
-        await queryRunner.rollbackTransaction();
+        await queryRunner.commitTransaction();
         return;
       }
 
-      paymentQr.data = dto;
+      /* paymentQr.data = dto;
       paymentQr.status = PaymentStatusEnum.PAID;
-      await queryRunner.manager.save(paymentQr);
+      await queryRunner.manager.save(paymentQr); */
 
       // ============================================================
       // IDENTIFICAR EL TIPO POR EL COLLECTOR
@@ -378,29 +497,12 @@ export class PaymentsService {
       );
 
       if (ticketCollector) {
-        // Es un pago de ticket
-        //const ticketId = parseInt(ticketCollector.Value);
-
-        // Buscar el ticket (usando el ID del collector)
-        /* const ticket = await queryRunner.manager.findOne(Ticket, {
-          where: { id: ticketId },
-        }); */
-
-        /* if (ticket) {
-          await this.ticketsService.confirmWithManager(
-            ticket.id,
-            queryRunner.manager,
-          );
-        } */
-
         if (paymentQr.ticket) {
           await this.ticketsService.confirmWithManager(
             paymentQr.ticket,
             queryRunner.manager,
           );
         }
-
-        //console.log(ticket);
       } else if (rechargeCollector) {
         // Es una recarga de wallet MÚLTIPLE
         // Buscar TODOS los collectors de tipo CUSTOMER_RECHARGE
@@ -408,19 +510,12 @@ export class PaymentsService {
           (c) => c.Name === 'CUSTOMER_RECHARGE',
         );
 
-        /* if (
+        if (
           !customerRechargeCollectors ||
           customerRechargeCollectors.length === 0
         ) {
           await queryRunner.rollbackTransaction();
           return;
-        } */
-
-        if (
-          !customerRechargeCollectors ||
-          customerRechargeCollectors.length === 0
-        ) {
-          console.warn('No recharge collectors found');
         }
 
         const results: any[] = [];
@@ -487,6 +582,10 @@ export class PaymentsService {
           console.error('Failed recharges:', failedResults);
         }
       }
+
+      paymentQr.data = dto;
+      paymentQr.status = PaymentStatusEnum.PAID;
+      await queryRunner.manager.save(paymentQr);
 
       await queryRunner.commitTransaction();
     } catch (error) {
