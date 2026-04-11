@@ -72,6 +72,8 @@ export class TravelsController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({
     name: 'startDate',
     required: false,

@@ -1,8 +1,9 @@
 import {
   Injectable,
-  BadRequestException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 
@@ -30,7 +31,6 @@ import {
 } from './entities/payment-qr.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
 import { Customer } from '../customers/entities/customer.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class PaymentsService {

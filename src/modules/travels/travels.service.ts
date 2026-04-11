@@ -3,14 +3,8 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import {
-  Between,
-  DataSource,
-  LessThan,
-  LessThanOrEqual,
-  MoreThan,
-  MoreThanOrEqual,
-} from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Between, DataSource, LessThan, MoreThan, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -19,6 +13,7 @@ import { TravelStatus } from './enums';
 import { CreateTravelDto } from './dto';
 import { paginate } from 'src/common/pagination/paginate';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
+import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
 import { TicketExpirationService } from '../tickets/ticket-expiration.service';
 
@@ -26,11 +21,13 @@ import { Travel } from './entities/travel.entity';
 import { Bus } from '../buses/entities/bus.entity';
 import { User } from '../users/entities/user.entity';
 import { Office } from '../offices/entities/office.entity';
-import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
 @Injectable()
 export class TravelsService {
   constructor(
+    @InjectRepository(Travel)
+    private readonly travelRepository: Repository<Travel>,
+
     private readonly ticketExpirationService: TicketExpirationService,
     private dataSource: DataSource,
   ) {}
@@ -223,55 +220,41 @@ export class TravelsService {
     companyId: number,
     pagination: ReportPaginationDto,
   ) {
-    return await this.dataSource.transaction(async (manager) => {
-      const { startDate, endDate } = pagination;
+    const { startDate, endDate } = pagination;
 
-      const where: any = {
-        company: { id: companyId },
-        travel_status: TravelStatus.CLOSED,
-      };
+    const where: any = {
+      company: { id: companyId },
+      travel_status: TravelStatus.CLOSED,
+    };
 
-      // --------------------------------
-      // FILTROS DE FECHA (USANDO closedAt)
-      // --------------------------------
+    // --------------------------------
+    // FILTROS DE FECHA (closedAt)
+    // --------------------------------
 
-      if (startDate && !endDate) {
-        const start = new Date(`${startDate}T00:00:00-04:00`);
-        const end = new Date(`${startDate}T23:59:59.999-04:00`);
-        where.closedAt = Between(start, end);
-      }
+    if (startDate && !endDate) {
+      const start = new Date(`${startDate}T00:00:00-04:00`);
+      const end = new Date(`${startDate}T23:59:59.999-04:00`);
+      where.closedAt = Between(start, end);
+    }
 
-      if (startDate && endDate) {
-        const from = new Date(`${startDate}T00:00:00-04:00`);
-        const to = new Date(`${endDate}T23:59:59.999-04:00`);
-        where.closedAt = Between(from, to);
-      }
+    if (startDate && endDate) {
+      const from = new Date(`${startDate}T00:00:00-04:00`);
+      const to = new Date(`${endDate}T23:59:59.999-04:00`);
+      where.closedAt = Between(from, to);
+    }
 
-      const travels = await manager.find(Travel, {
-        where,
+    const travels = await paginate(
+      this.travelRepository,
+      {
+        ...where,
+        order: { id: 'DESC' },
         relations: {
           closedBy: true,
         },
-        order: {
-          closedAt: 'DESC',
-        },
-      });
+      },
+      pagination,
+    );
 
-      return travels;
-    });
+    return travels;
   }
-
-  /* async closedTrips(companyId: number) {
-    return await this.dataSource.transaction(async (manager) => {
-      const travel = await manager.find(Travel, {
-        where: {
-          company: { id: companyId },
-          travel_status: TravelStatus.CLOSED,
-        },
-        relations: { closedBy: true },
-      });
-
-      return travel;
-    });
-  } */
 }
