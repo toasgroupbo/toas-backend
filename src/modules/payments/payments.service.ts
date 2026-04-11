@@ -345,7 +345,7 @@ export class PaymentsService {
         },
       });
 
-      console.log({ paymentQr });
+      //console.log({ paymentQr });
 
       if (!paymentQr) {
         await queryRunner.rollbackTransaction();
@@ -381,7 +381,7 @@ export class PaymentsService {
           where: { id: ticketId },
         });
 
-        console.log({ ticket });
+        //console.log({ ticket });
 
         if (ticket) {
           await this.ticketsService.confirmWithManager(
@@ -389,6 +389,7 @@ export class PaymentsService {
             queryRunner.manager,
           );
         }
+        console.log(ticket);
       } else if (rechargeCollector) {
         // Es una recarga de wallet MÚLTIPLE
         // Buscar TODOS los collectors de tipo CUSTOMER_RECHARGE
