@@ -345,6 +345,8 @@ export class PaymentsService {
         },
       });
 
+      console.log({ paymentQr });
+
       if (!paymentQr) {
         await queryRunner.rollbackTransaction();
         return;
@@ -379,6 +381,8 @@ export class PaymentsService {
           where: { id: ticketId },
         });
 
+        console.log({ ticket });
+
         if (ticket) {
           await this.ticketsService.confirmWithManager(
             ticket.id,
@@ -392,12 +396,19 @@ export class PaymentsService {
           (c) => c.Name === 'CUSTOMER_RECHARGE',
         );
 
-        if (
+        /* if (
           !customerRechargeCollectors ||
           customerRechargeCollectors.length === 0
         ) {
           await queryRunner.rollbackTransaction();
           return;
+        } */
+
+        if (
+          !customerRechargeCollectors ||
+          customerRechargeCollectors.length === 0
+        ) {
+          console.warn('No recharge collectors found');
         }
 
         const results: any[] = [];
