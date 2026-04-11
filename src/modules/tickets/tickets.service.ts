@@ -373,6 +373,8 @@ export class TicketsService {
   async confirmWithManager(ticketId: number, manager: EntityManager) {
     const ticket = await this.findQrTicketForConfirmation(ticketId, manager);
 
+    console.log(ticket);
+
     this.applySoldState(ticket);
     await this.reducePenaltyForInAppTicket(ticket, manager);
 

@@ -389,7 +389,7 @@ export class PaymentsService {
             queryRunner.manager,
           );
         }
-        console.log(ticket);
+        //console.log(ticket);
       } else if (rechargeCollector) {
         // Es una recarga de wallet MÚLTIPLE
         // Buscar TODOS los collectors de tipo CUSTOMER_RECHARGE
