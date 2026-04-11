@@ -338,14 +338,19 @@ export class PaymentsService {
     await queryRunner.startTransaction();
 
     try {
-      const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
+      /* const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
         where: { IdCorrelation: CorrelationId },
         relations: {
           ticket: true,
         },
-      });
+      }); */
 
-      //console.log({ paymentQr });
+      const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
+        where: { IdCorrelation: CorrelationId },
+        relations: {
+          ticket: { buyer: true, travelSeats: true },
+        },
+      });
 
       if (!paymentQr) {
         await queryRunner.rollbackTransaction();
@@ -374,21 +379,27 @@ export class PaymentsService {
 
       if (ticketCollector) {
         // Es un pago de ticket
-        const ticketId = parseInt(ticketCollector.Value);
+        //const ticketId = parseInt(ticketCollector.Value);
 
         // Buscar el ticket (usando el ID del collector)
-        const ticket = await queryRunner.manager.findOne(Ticket, {
+        /* const ticket = await queryRunner.manager.findOne(Ticket, {
           where: { id: ticketId },
-        });
+        }); */
 
-        //console.log({ ticket });
-
-        if (ticket) {
+        /* if (ticket) {
           await this.ticketsService.confirmWithManager(
             ticket.id,
             queryRunner.manager,
           );
+        } */
+
+        if (paymentQr.ticket) {
+          await this.ticketsService.confirmWithManager(
+            paymentQr.ticket,
+            queryRunner.manager,
+          );
         }
+
         //console.log(ticket);
       } else if (rechargeCollector) {
         // Es una recarga de wallet MÚLTIPLE
@@ -449,7 +460,7 @@ export class PaymentsService {
             const transaction = await this.walletService.creditFromRecharge({
               customer,
               amount: amount,
-              correlationId: paymentQr.IdCorrelation, //`${paymentQr.IdCorrelation}-${customerId}`,
+              correlationId: paymentQr.IdCorrelation,
               paymentData: dto,
               manager: queryRunner.manager,
               paymentQr: paymentQr,

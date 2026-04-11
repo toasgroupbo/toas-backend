@@ -370,7 +370,19 @@ export class TicketsService {
   //?                              Confirm_Ticket_QR                                                 */
   //? ============================================================================================== */
 
-  async confirmWithManager(ticketId: number, manager: EntityManager) {
+  async confirmWithManager(ticket: Ticket, manager: EntityManager) {
+    console.log(ticket);
+    //const ticket = await this.findQrTicketForConfirmation(ticketId, manager);
+
+    this.applySoldState(ticket);
+    await this.reducePenaltyForInAppTicket(ticket, manager);
+
+    await manager.save(Ticket, ticket);
+
+    return ticket;
+  }
+
+  /* async confirmWithManager(ticketId: number, manager: EntityManager) {
     console.log(ticketId);
 
     const ticket = await this.findQrTicketForConfirmation(ticketId, manager);
@@ -383,7 +395,7 @@ export class TicketsService {
     await manager.save(Ticket, ticket);
 
     return ticket;
-  }
+  } */
 
   //? ============================================================================================== */
 
@@ -424,9 +436,9 @@ export class TicketsService {
     ticket.status = TicketStatus.SOLD;
     ticket.reserve_expiresAt = null;
 
-    if (ticket.paymentQr) {
+    /* if (ticket.paymentQr) {
       ticket.paymentQr.status = PaymentStatusEnum.PAID;
-    }
+    } */
 
     for (const seat of ticket.travelSeats) {
       seat.status = SeatStatus.SOLD;
@@ -455,7 +467,7 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  async confirm(ticketId: number) {
+  /* async confirm(ticketId: number) {
     const queryRunner = this.createTransaction();
 
     try {
@@ -485,7 +497,7 @@ export class TicketsService {
       await queryRunner.release();
     }
   }
-
+ */
   //? ============================================================================================== */
 
   private async validateTravelForTicket(
