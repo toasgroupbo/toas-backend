@@ -11,9 +11,9 @@ export enum ValidResoursesForAdmins {
   OFFICE = 'OFFICE',
   ROUTE = 'ROUTE',
   TRAVEL = 'TRAVEL',
-  //TICKET = 'TICKET',
 
   FILE = 'FILE',
+  PAYMENTS = 'PAYMENTS',
 }
 
 export enum ValidResourses {
