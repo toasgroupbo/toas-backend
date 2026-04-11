@@ -371,6 +371,8 @@ export class TicketsService {
   //? ============================================================================================== */
 
   async confirmWithManager(ticketId: number, manager: EntityManager) {
+    console.log(ticketId);
+
     const ticket = await this.findQrTicketForConfirmation(ticketId, manager);
 
     console.log(ticket);
@@ -392,9 +394,9 @@ export class TicketsService {
     const ticket = await manager
       .createQueryBuilder(Ticket, 'ticket')
       .setLock('pessimistic_write')
-      .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
-      .innerJoinAndSelect('ticket.paymentQr', 'paymentQr')
 
+      .leftJoinAndSelect('ticket.travelSeats', 'travelSeats')
+      .leftJoinAndSelect('ticket.paymentQr', 'paymentQr')
       .leftJoinAndSelect('ticket.buyer', 'buyer')
 
       .where('ticket.id = :ticketId', { ticketId })
