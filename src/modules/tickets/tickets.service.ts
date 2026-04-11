@@ -394,7 +394,9 @@ export class TicketsService {
       .setLock('pessimistic_write')
       .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
       .innerJoinAndSelect('ticket.paymentQr', 'paymentQr')
-      .innerJoinAndSelect('ticket.buyer', 'buyer')
+
+      .leftJoinAndSelect('ticket.buyer', 'buyer')
+
       .where('ticket.id = :ticketId', { ticketId })
       .andWhere('ticket.status = :status', {
         status: TicketStatus.PENDING_PAYMENT,
