@@ -246,7 +246,9 @@ export class TravelsService {
     const travels = await paginate(
       this.travelRepository,
       {
-        ...where,
+        where: {
+          ...where,
+        },
         order: { id: 'DESC' },
         relations: {
           closedBy: true,
