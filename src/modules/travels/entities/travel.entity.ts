@@ -79,13 +79,22 @@ export class Travel {
   net_to_company: string; //! total_revenue - total_commission
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  cash_amount: string; //! Suma de tickets pagados en CASH
+  cash_amount: string; //! Suma de monto pagados en CASH
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  qr_amount: string; //! Suma de tickets pagados con QR (app)
+  qr_amount: string; //! Suma de monto pagados con QR
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  app_amount: string; //! Suma de monto pagado desde la app
 
   @Column({ type: 'int', default: 0 })
-  sold_tickets_count: number; //! Cantidad de tickets vendidos
+  tickets_app_count: number; //! Cantidad de tickets vendidos en app
+
+  @Column({ type: 'int', default: 0 })
+  tickets_office_count: number; //! Cantidad de tickets vendidos en office
+
+  @Column({ type: 'int', default: 0 })
+  tickets_count: number; //! Cantidad de tickets vendidos Total
 
   //* ============================================================================================== */
   //*                                        Relations                                               */

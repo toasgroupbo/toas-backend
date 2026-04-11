@@ -41,7 +41,6 @@ export class CustomersService {
         billingObject: true,
         createdAt: true,
       },
-      // ❌ quitamos relations
     };
 
     if ('is_verified' in pagination) {
@@ -80,52 +79,6 @@ export class CustomersService {
       data: dataWithExtras,
     };
   }
-
-  /* async findAll(pagination: CustomerPaginationDto) {
-    const options: any = {
-      where: {},
-      select: {
-        id: true,
-        ci: true,
-        email: true,
-        name: true,
-        is_verified: true,
-        birthDate: true,
-        billingObject: true,
-        createdAt: true,
-      },
-      relations: { ticketsBought: true },
-    };
-
-    if ('is_verified' in pagination) {
-      options.where.is_verified = pagination.is_verified;
-    }
-
-    const result = await paginate(
-      this.customerRepository,
-      options,
-      pagination,
-      ['name', 'email'],
-    );
-
-    const dataWithBalance = await Promise.all(
-      result.data.map(async (customer) => {
-        const balance = await this.walletService.getAvailableBalance({
-          customer,
-        });
-
-        return {
-          ...customer,
-          availableBalance: balance,
-        };
-      }),
-    );
-
-    return {
-      ...result,
-      data: dataWithBalance,
-    };
-  } */
 
   //? ============================================================================================== */
   //?                                        FindOne                                                 */

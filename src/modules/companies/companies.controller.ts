@@ -7,13 +7,15 @@ import {
   Delete,
   Controller,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { Auth, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { CreateCompanyDto, UpdateCompanyDto } from './dto';
+import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
 import { CompanyService } from './companies.service';
 
@@ -52,15 +54,25 @@ export class CompanyController {
   }
 
   //? ============================================================================================== */
-  //?                                        FindAll                                                 */
+  //?                                        Report                                                  */
   //? ============================================================================================== */
 
   //!
   @Auth(ValidPermissions.READ)
   //!
-  @Get('sales-report')
-  salesReport() {
-    return this.companyService.salesReport();
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+  })
+  @Get('sales/report')
+  salesReport(@Query() pagination: ReportPaginationDto) {
+    return this.companyService.salesReport(pagination);
   }
 
   //? ============================================================================================== */

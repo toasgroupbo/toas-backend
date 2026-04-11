@@ -3,8 +3,14 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, LessThan, MoreThan, Repository } from 'typeorm';
+import {
+  Between,
+  DataSource,
+  LessThan,
+  LessThanOrEqual,
+  MoreThan,
+  MoreThanOrEqual,
+} from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -20,6 +26,7 @@ import { Travel } from './entities/travel.entity';
 import { Bus } from '../buses/entities/bus.entity';
 import { User } from '../users/entities/user.entity';
 import { Office } from '../offices/entities/office.entity';
+import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
 @Injectable()
 export class TravelsService {
@@ -209,29 +216,62 @@ export class TravelsService {
   }
 
   //? ============================================================================================== */
-  //?                                        Delete                                                  */
+  //?                                  Closed_Trips                                                  */
   //? ============================================================================================== */
 
-  /* async remove(id: number, office: Office) {
-    const travel = await this.findOne(id, office.company.id);
+  async closedTravelsReport(
+    companyId: number,
+    pagination: ReportPaginationDto,
+  ) {
+    return await this.dataSource.transaction(async (manager) => {
+      const { startDate, endDate } = pagination;
 
-    try {
-      const hasSoldOrReserved = travel.travelSeats.some(
-        (s) => s.status === SeatStatus.SOLD || s.status === SeatStatus.RESERVED,
-      );
-      if (hasSoldOrReserved) {
-        throw new ConflictException(
-          'Cannot cancel travel because some seats are sold or reserved',
-        );
+      const where: any = {
+        company: { id: companyId },
+        travel_status: TravelStatus.CLOSED,
+      };
+
+      // --------------------------------
+      // FILTROS DE FECHA (USANDO closedAt)
+      // --------------------------------
+
+      if (startDate && !endDate) {
+        const start = new Date(`${startDate}T00:00:00-04:00`);
+        const end = new Date(`${startDate}T23:59:59.999-04:00`);
+        where.closedAt = Between(start, end);
       }
 
-      await this.travelRepository.softRemove(travel);
-      return {
-        message: 'Travel deleted successfully',
-        deleted: travel,
-      };
-    } catch (error) {
-      handleDBExceptions(error);
-    }
+      if (startDate && endDate) {
+        const from = new Date(`${startDate}T00:00:00-04:00`);
+        const to = new Date(`${endDate}T23:59:59.999-04:00`);
+        where.closedAt = Between(from, to);
+      }
+
+      const travels = await manager.find(Travel, {
+        where,
+        relations: {
+          closedBy: true,
+        },
+        order: {
+          closedAt: 'DESC',
+        },
+      });
+
+      return travels;
+    });
+  }
+
+  /* async closedTrips(companyId: number) {
+    return await this.dataSource.transaction(async (manager) => {
+      const travel = await manager.find(Travel, {
+        where: {
+          company: { id: companyId },
+          travel_status: TravelStatus.CLOSED,
+        },
+        relations: { closedBy: true },
+      });
+
+      return travel;
+    });
   } */
 }

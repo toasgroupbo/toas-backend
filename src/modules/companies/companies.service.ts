@@ -9,7 +9,9 @@ import { DataSource, In, Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { CreateCompanyDto, UpdateCompanyDto } from './dto';
+import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
+import { TravelStatus } from '../travels/enums';
 import { StaticRoles } from 'src/auth/enums/roles.enum';
 
 import { RolesService } from '../roles/roles.service';
@@ -18,7 +20,6 @@ import { Company } from './entities/company.entity';
 import { Route } from '../routes/entities/route.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Office } from '../offices/entities/office.entity';
-import { TravelStatus } from '../travels/enums';
 
 @Injectable()
 export class CompanyService {
@@ -81,14 +82,148 @@ export class CompanyService {
   //?                                   Sales_Report                                                 */
   //? ============================================================================================== */
 
-  async salesReport() {
-    const companies = await this.companyRepository.find({
-      where: { travels: { travel_status: TravelStatus.CLOSED } },
-      relations: { travels: { tickets: true } },
-    });
-    return companies;
+  async salesReport(pagination: ReportPaginationDto) {
+    let { startDate, endDate } = pagination;
+
+    let start: Date;
+    let end: Date;
+
+    // --------------------------------
+    // NORMALIZAR FECHAS
+    // --------------------------------
+
+    if (startDate && endDate) {
+      // rango completo
+      start = new Date(`${startDate}T00:00:00-04:00`);
+      end = new Date(`${endDate}T23:59:59.999-04:00`);
+    } else if (startDate && !endDate) {
+      // solo un día
+      start = new Date(`${startDate}T00:00:00-04:00`);
+      end = new Date(`${startDate}T23:59:59.999-04:00`);
+    } else if (!startDate && endDate) {
+      // hasta cierta fecha
+      start = new Date('1970-01-01T00:00:00-04:00'); // inicio "seguro"
+      end = new Date(`${endDate}T23:59:59.999-04:00`);
+    } else {
+      // default: hoy
+      const now = new Date();
+
+      start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+
+      end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+    }
+
+    // --------------------------------
+    // QUERY
+    // --------------------------------
+
+    const result = await this.companyRepository
+      .createQueryBuilder('company')
+
+      // join filtrado (más eficiente)
+      .leftJoin(
+        'company.travels',
+        'travel',
+        `
+      travel.travel_status = :status
+      AND travel.closedAt BETWEEN :start AND :end
+    `,
+        {
+          status: TravelStatus.CLOSED,
+          start,
+          end,
+        },
+      )
+
+      // --------------------------------
+      // SELECT
+      // --------------------------------
+      .select('company.id', 'companyId')
+      .addSelect('company.name', 'companyName')
+
+      .addSelect('COALESCE(SUM(travel.total), 0)', 'total')
+      .addSelect('COALESCE(SUM(travel.total_commission), 0)', 'totalCommission')
+      .addSelect('COALESCE(SUM(travel.net_to_company), 0)', 'netToCompany')
+
+      .addSelect(
+        'COALESCE(SUM(travel.tickets_office_count), 0)',
+        'ticketsOfficeCount',
+      )
+      .addSelect('COALESCE(SUM(travel.cash_amount), 0)', 'cashAmount')
+      .addSelect('COALESCE(SUM(travel.qr_amount), 0)', 'qrAmount')
+
+      .addSelect(
+        'COALESCE(SUM(travel.tickets_app_count), 0)',
+        'ticketsAppCount',
+      )
+      .addSelect('COALESCE(SUM(travel.app_amount), 0)', 'appAmount')
+
+      .addSelect('COALESCE(SUM(travel.tickets_count), 0)', 'ticketsCount')
+
+      // --------------------------------
+      // GROUP BY
+      // --------------------------------
+      .groupBy('company.id')
+      .addGroupBy('company.name')
+
+      // opcional: ordenar por más ventas
+      .orderBy('total', 'DESC')
+
+      .getRawMany();
+
+    return result;
   }
 
+  /*   async salesReport(pagination: CompanyPaginationDto) {
+    let { startDate, endDate } = pagination;
+
+    if (!startDate || !endDate) {
+      const now = new Date();
+
+      const startOfDay = new Date(now);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(now);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      startDate = startOfDay;
+      endDate = endOfDay;
+    }
+
+    const result = await this.companyRepository
+      .createQueryBuilder('company')
+      .leftJoin('company.travels', 'travel')
+      .where('travel.travel_status = :status', {
+        status: TravelStatus.CLOSED,
+      })
+      .andWhere('travel.closedAt BETWEEN :start AND :end', {
+        start: startDate,
+        end: endDate,
+      })
+      .select('company.id', 'companyId')
+      .addSelect('company.name', 'companyName')
+
+      .addSelect('SUM(travel.total)', 'total')
+      .addSelect('SUM(travel.total_commission)', 'totalCommission')
+      .addSelect('SUM(travel.net_to_company)', 'netToCompany')
+
+      .addSelect('SUM(travel.tickets_office_count)', 'ticketsOfficeCount')
+      .addSelect('SUM(travel.cash_amount)', 'cashAmount')
+      .addSelect('SUM(travel.qr_amount)', 'qrAmount')
+
+      .addSelect('SUM(travel.tickets_app_count)', 'ticketsAppCount')
+      .addSelect('SUM(travel.app_amount)', 'appAmount')
+
+      .addSelect('SUM(travel.tickets_count)', 'ticketsCount')
+
+      .groupBy('company.id')
+      .addGroupBy('company.name')
+      .getRawMany();
+
+    return result;
+  } */
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
   //? ============================================================================================== */

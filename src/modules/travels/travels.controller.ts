@@ -16,6 +16,7 @@ import { TravelStatus } from './enums/travel-status.enum';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 
 import { TravelsService } from './travels.service';
+import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
 //!
 @Resource(ValidResourses.TRAVEL)
@@ -26,18 +27,6 @@ import { TravelsService } from './travels.service';
 @Controller('travels')
 export class TravelsController {
   constructor(private readonly travelsService: TravelsService) {}
-
-  //? ============================================================================================== */
-  //?                                        Create                                                  */
-  //? ============================================================================================== */
-
-  /* //!
-  @Auth(ValidPermissions.CREATE)
-  //!
-  @Post()
-  create(@Body() dto: CreateTravelDto) {
-    return this.travelsService.create(dto);
-  } */
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */
@@ -77,34 +66,28 @@ export class TravelsController {
   }
 
   //? ============================================================================================== */
-  //?                                        Cancel                                                  */
+  //?                                        Report                                                  */
   //? ============================================================================================== */
 
-  /*   //!
-  @Auth(ValidPermissions.CANCEL)
   //!
+  @Auth(ValidPermissions.READ)
+  //!
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+  })
   @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
-  @Post('cancel/:id')
-  cancel(
-    @Param('id', ParseIntPipe) id: number,
+  @Get('cLosed-travels/report')
+  closedTravelsReport(
+    @Query() pagination: ReportPaginationDto,
     @GetCompany() companyId: number,
   ) {
-    return this.travelsService.cancel(id, companyId);
-  } */
-
-  //? ============================================================================================== */
-  //?                                        Delete                                                  */
-  //? ============================================================================================== */
-
-  /* //!
-  @Auth(ValidPermissions.DELETE)
-  //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
-  @Delete(':id')
-  remove(
-    @Param('id', ParseIntPipe) id: number,
-    @GetCompany() companyId: number,
-  ) {
-    return this.travelsService.remove(id, companyId);
-  } */
+    return this.travelsService.closedTravelsReport(companyId, pagination);
+  }
 }
