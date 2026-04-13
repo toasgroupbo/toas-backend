@@ -43,7 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     if (type === LoginType.customer) {
-      const customer = await this.customerService.findOne(id);
+      const customer = await this.customerService.findOneForLogin(id);
       if (!customer)
         throw new UnauthorizedException('Token inválido (customer)');
       if (customer.sessionToken !== token) {

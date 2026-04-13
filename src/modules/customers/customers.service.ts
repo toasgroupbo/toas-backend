@@ -104,21 +104,21 @@ export class CustomersService {
     return {
       ...customer,
       availableBalance: balance,
-    } as Customer;
+    };
   }
 
-  /* async findOne(id: number, manager?: EntityManager) {
+  async findOneForLogin(id: number, manager?: EntityManager) {
     const repository = manager
       ? manager.getRepository(Customer)
       : this.customerRepository;
 
     const customer = await repository.findOne({
       where: { id },
-      relations: { ticketsBought: true },
+      //relations: { ticketsBought: true },
     });
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
-  } */
+  }
 
   //? ============================================================================================== */
 
