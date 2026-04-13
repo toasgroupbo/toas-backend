@@ -9,8 +9,8 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { Customer } from 'src/modules/customers/entities/customer.entity';
 import { WalletTransaction } from './wallet-transactions.entity';
+import { Customer } from 'src/modules/customers/entities/customer.entity';
 
 @Entity('wallets')
 export class Wallet {

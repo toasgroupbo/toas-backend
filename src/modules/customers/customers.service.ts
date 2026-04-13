@@ -104,7 +104,7 @@ export class CustomersService {
     return {
       ...customer,
       availableBalance: balance,
-    };
+    } as Customer;
   }
 
   /* async findOne(id: number, manager?: EntityManager) {

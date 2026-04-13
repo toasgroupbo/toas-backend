@@ -37,6 +37,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           'Session expired. You are logged in on another device.',
         );
       }
+      (req as any).userType = type;
 
       return user;
     }
@@ -50,6 +51,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           'Session expired. You are logged in on another device.',
         );
       }
+
+      (req as any).userType = type;
 
       return customer;
     }

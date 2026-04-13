@@ -3,7 +3,7 @@ export enum ValidResoursesForAdmins {
   COMPANY = 'COMPANY',
   CUSTOMER = 'CUSTOMER',
 
-  //! permisos de una company
+  //! permisos de company
   CASHIER = 'CASHIER',
   OWNER = 'OWNER',
   BUS = 'BUS',
