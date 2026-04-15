@@ -413,7 +413,7 @@ export class TicketsService {
     await manager.save(Ticket, ticket);
 
     if (ticket.type === TicketType.IN_APP && ticket.buyer) {
-      this.sendPaymentConfirmationEmail(ticket).catch((error) => {
+      this.sendPaymentConfirmationEmail(ticket.id).catch((error) => {
         console.error(`Error sending email for ticket ${ticket.id}:`, error);
       });
     }
@@ -467,8 +467,28 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  private async sendPaymentConfirmationEmail(ticket: Ticket) {
+  private async sendPaymentConfirmationEmail(ticketId: number) {
     try {
+      const ticket = await this.ticketRepository.findOne({
+        where: { id: ticketId },
+        relations: {
+          travel: {
+            route: {
+              officeOrigin: true,
+              officeDestination: true,
+            },
+            bus: { busType: true },
+          },
+          travelSeats: true,
+          buyer: true,
+          billing: true,
+        },
+      });
+
+      if (!ticket) {
+        throw new NotFoundException(`Ticket ${ticketId} not found`);
+      }
+
       const travel = ticket.travel;
       const route = travel.route;
       const buyer = ticket.buyer!;
