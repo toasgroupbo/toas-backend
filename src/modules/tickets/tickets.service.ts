@@ -26,6 +26,7 @@ import {
 } from './dto';
 import { PassengerSeatBatchDto } from './dto/assign-passengers-batch-in-app.dto';
 
+import { MailService } from 'src/mail/mail.service';
 import { BillingsService } from './billings.service';
 import { WalletService } from '../wallet/wallet.service';
 import { PenaltiesService } from '../customers/penalties.service';
@@ -46,12 +47,17 @@ export class TicketsService {
   constructor(
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
+
+    @InjectRepository(Penalty)
+    private readonly penalityRepository: Repository<Penalty>,
+
     private readonly penaltiesService: PenaltiesService,
     private readonly ticketExpirationService: TicketExpirationService,
     private readonly passengersService: PassengersService,
     private readonly walletService: WalletService,
     private readonly billingService: BillingsService,
 
+    private readonly mailService: MailService,
     private dataSource: DataSource,
   ) {}
 
@@ -127,7 +133,13 @@ export class TicketsService {
         travel,
         buyer: type === TicketType.IN_APP ? buyer : null,
         soldBy: type === TicketType.IN_OFFICE ? user : null,
-        seats: this.prepareSeatsArray(seatsWithPrices),
+
+        seats: seats.map((seat) => ({
+          id: seat.id,
+          seatNumber: seat.seatNumber,
+          price: seat.price,
+        })),
+
         travelSeats: seatsWithPrices,
         reserve_expiresAt: this.getReservationExpiry(),
         payment_type: paymentType,
@@ -143,7 +155,7 @@ export class TicketsService {
 
       //! Penalty
       if (type === TicketType.IN_APP && buyer) {
-        await this.registerPenaltyIfNeeded(buyer, user, manager);
+        await this.registerPenalty(buyer, user, manager);
       }
 
       await queryRunner.commitTransaction();
@@ -248,7 +260,7 @@ export class TicketsService {
       })
       .getMany();
 
-    const validSeats = this.filterEmptySeats(seats);
+    const validSeats = seats.filter((seat) => seat.seatNumber !== '0');
 
     if (validSeats.length !== seatIds.length) {
       const foundIds = validSeats.map((s) => s.id.toString());
@@ -259,12 +271,6 @@ export class TicketsService {
     }
 
     return seats;
-  }
-
-  //? ============================================================================================== */
-
-  private filterEmptySeats(seats: TravelSeat[]): TravelSeat[] {
-    return seats.filter((seat) => seat.seatNumber !== '0');
   }
 
   //? ============================================================================================== */
@@ -295,16 +301,6 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  private prepareSeatsArray(seats: TravelSeat[]): SelectedSeatsDto[] {
-    return seats.map((seat) => ({
-      id: seat.id,
-      seatNumber: seat.seatNumber,
-      price: seat.price,
-    }));
-  }
-
-  //? ============================================================================================== */
-
   private async calculateCommission(
     type: TicketType,
     manager: EntityManager,
@@ -328,7 +324,7 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  private async registerPenaltyIfNeeded(
+  private async registerPenalty(
     buyer: Customer | undefined,
     user: User | undefined,
     manager: EntityManager,
@@ -369,11 +365,58 @@ export class TicketsService {
   //?                              Confirm_Ticket_QR                                                 */
   //? ============================================================================================== */
 
+  /* async confirmTicketQR(ticketId: number): Promise<Ticket> {
+    try {
+      const ticket = await this.ticketRepository.findOne({
+        where: { id: ticketId },
+        relations: {
+          travel: {
+            route: {
+              officeOrigin: true,
+              officeDestination: true,
+            },
+            bus: { busType: true },
+          },
+          travelSeats: true,
+          buyer: true,
+          billing: true,
+        },
+      });
+
+      if (!ticket) {
+        throw new NotFoundException(`Ticket ${ticketId} not found`);
+      }
+
+      // 2. Aplicar estado SOLD
+      this.applySoldState(ticket);
+      await this.reducePenalty(ticket);
+
+      // 3. Guardar cambios
+      await this.ticketRepository.save(ticket);
+
+      if (ticket.type === TicketType.IN_APP && ticket.buyer) {
+        this.sendPaymentConfirmationEmail(ticket).catch((error) => {
+          console.error(`Error sending email for ticket ${ticket.id}:`, error);
+        });
+      }
+
+      return ticket;
+    } catch (error) {
+      throw error;
+    }
+  }
+ */
   async confirmWithManager(ticket: Ticket, manager: EntityManager) {
     this.applySoldState(ticket);
-    await this.reducePenaltyForInAppTicket(ticket, manager);
+    await this.reducePenalty(ticket, manager);
 
     await manager.save(Ticket, ticket);
+
+    if (ticket.type === TicketType.IN_APP && ticket.buyer) {
+      this.sendPaymentConfirmationEmail(ticket).catch((error) => {
+        console.error(`Error sending email for ticket ${ticket.id}:`, error);
+      });
+    }
 
     return ticket;
   }
@@ -391,7 +434,20 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  private async reducePenaltyForInAppTicket(
+  /* private async reducePenalty(ticket: Ticket): Promise<void> {
+    if (ticket.type === TicketType.IN_APP && ticket.buyer) {
+      const penalty = await this.penalityRepository.findOne({
+        where: { customer: { id: ticket.buyer.id } },
+      });
+
+      if (penalty && penalty.failedCount > 0) {
+        penalty.failedCount -= 1;
+        await this.penalityRepository.save(penalty);
+      }
+    }
+  }
+ */
+  private async reducePenalty(
     ticket: Ticket,
     manager: EntityManager,
   ): Promise<void> {
@@ -411,20 +467,43 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  private async expireTravelReservations(
-    ticketId: number,
-    manager: EntityManager,
-  ): Promise<void> {
-    const travel = await manager.findOne(Travel, {
-      where: { tickets: { id: ticketId } },
-      select: { id: true },
-    });
+  private async sendPaymentConfirmationEmail(ticket: Ticket) {
+    try {
+      const travel = ticket.travel;
+      const route = travel.route;
+      const buyer = ticket.buyer!;
 
-    if (travel) {
-      await this.ticketExpirationService.expireTravelIfNeeded(
-        travel.id,
-        manager,
-      );
+      const mailDto = {
+        to: buyer.email,
+        ticketNumber: `TK-${ticket.id.toString().padStart(6, '0')}`,
+        ticketDate: new Date(ticket.createdAt).toLocaleDateString('es-BO'),
+        totalPrice: Number(ticket.total_price),
+
+        customerName: buyer.name || 'Cliente',
+        customerEmail: buyer.email,
+        customerPhone: buyer.phone || 'No registrado',
+
+        origin: route.officeOrigin?.name,
+        destination: route.officeDestination?.name,
+        departureDate: this.formatDateTime(travel.departure_time),
+        arrivalDate: this.formatDateTime(travel.arrival_time),
+        duration: this.calculateDuration(
+          travel.departure_time,
+          travel.arrival_time,
+        ),
+        terminalAddress: route.officeOrigin?.address || 'Terminal Central',
+
+        passengers: ticket.travelSeats.map((seat) => ({
+          name: seat.passenger?.name || 'pasajero',
+          ci: seat.passenger?.ci || 'No registrado',
+          seat: seat.seatNumber,
+          deck: seat.deck?.toString() || '1',
+        })),
+      };
+
+      await this.mailService.sendMail(mailDto);
+    } catch (error) {
+      console.log(error);
     }
   }
 
@@ -594,5 +673,45 @@ export class TicketsService {
 
   private createTransaction(): QueryRunner {
     return this.dataSource.createQueryRunner();
+  }
+
+  //? ============================================================================================== */
+
+  private formatDateTime(date: Date): string {
+    if (!date) return 'No especificada';
+    return new Date(date).toLocaleString('es-BO', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  }
+
+  private calculateDuration(departure: Date, arrival: Date): string {
+    if (!departure || !arrival) return 'No especificada';
+    const diffMs = new Date(arrival).getTime() - new Date(departure).getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % 3600000) / 60000);
+    return `${diffHours}h ${diffMinutes}min`;
+  }
+
+  //? ============================================================================================== */
+
+  private async expireTravelReservations(
+    ticketId: number,
+    manager: EntityManager,
+  ): Promise<void> {
+    const travel = await manager.findOne(Travel, {
+      where: { tickets: { id: ticketId } },
+      select: { id: true },
+    });
+
+    if (travel) {
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travel.id,
+        manager,
+      );
+    }
   }
 }

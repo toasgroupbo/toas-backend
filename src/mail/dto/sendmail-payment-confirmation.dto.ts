@@ -1,19 +1,3 @@
-/* export class SendMailPaymentConfirmationDto {
-  to: any;
-
-  orderNumber: any;
-  orderDate: any;
-  totalPrice: any;
-
-  customerName: any;
-  customerEmail: any;
-  customerPhone: any;
-
-  shippingAddress: any;
-  shippingCity: any;
-  shippingCountry: any;
-} */
-
 export class SendMailPaymentConfirmationDto {
   to: string;
 
@@ -37,7 +21,7 @@ export class SendMailPaymentConfirmationDto {
 
 class PassengerDto {
   name: string;
-  idDni: string;
+  ci: string;
   seat: string;
   deck: string;
 }

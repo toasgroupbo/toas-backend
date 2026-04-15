@@ -41,6 +41,7 @@ export class PaymentsService {
     private readonly httpService: HttpService,
     private readonly ticketsService: TicketsService,
     private readonly walletService: WalletService,
+
     private dataSource: DataSource,
   ) {}
 
@@ -80,7 +81,7 @@ export class PaymentsService {
 
       ticket = await queryRunner.manager.findOne(Ticket, {
         where: { id: ticketWithoutRelations.id },
-        relations: ['travelSeats', 'buyer'],
+        relations: { travelSeats: true, buyer: true },
       });
 
       if (!ticket) {
@@ -90,34 +91,28 @@ export class PaymentsService {
       IdCorrelation = `TICKET-${ticket.id}-${randomUUID().slice(0, 8)}`;
 
       //! wallet
-      const walletAmount = Number(ticket.wallet_amount);
 
       if (
-        walletAmount > 0 &&
+        Number(ticket.wallet_amount) > 0 &&
         ticket.type == TicketType.IN_APP &&
         ticket.buyer
       ) {
         await this.walletService.consumeForTicket({
           customer: ticket.buyer,
           ticket,
-          amount: walletAmount,
+          amount: Number(ticket.wallet_amount),
           manager: queryRunner.manager,
         });
       }
 
-      const qrAmount = Number(ticket.qr_amount);
+      if (Number(ticket.qr_amount) === 0) {
+        await this.ticketsService.confirmWithManager(
+          ticket,
+          queryRunner.manager,
+        );
 
-      if (qrAmount === 0) {
-        await queryRunner.manager.update(Ticket, ticket.id, {
-          status: TicketStatus.SOLD,
-          reserve_expiresAt: null,
-        });
-
-        for (const seat of ticket.travelSeats) {
-          seat.status = SeatStatus.SOLD;
-          await queryRunner.manager.save(seat);
-        }
         await queryRunner.commitTransaction();
+
         return {
           message: 'Ticket paid fully with wallet',
           status: TicketStatus.SOLD,
@@ -142,7 +137,6 @@ export class PaymentsService {
 
     let result: QrGenerateResponse;
     const amount = Number(ticket.qr_amount);
-    //const amount = Number(ticket.total_price) + Number(ticket.commission);
 
     try {
       result = await this.httpService.generateQr({
@@ -159,8 +153,6 @@ export class PaymentsService {
         ],
       });
     } catch (error) {
-      //await this.walletService.restoreCreditsFromExpiredTicket(ticket);
-
       if (ticket.buyer) {
         await this.dataSource.transaction(async (manager) => {
           await this.walletService.restoreCreditsFromExpiredTicket(
@@ -239,7 +231,6 @@ export class PaymentsService {
 
     const totalAmount = dto.amountPerCustomer * dto.customerIds.length;
     const IdCorrelation = `RECHARGE-${randomUUID().slice(0, 8)}`;
-    //const IdCorrelation = `RECHARGE-${randomUUID()}`;
 
     // Construir collectors: uno por cada cliente
     const collectors = [
@@ -330,132 +321,6 @@ export class PaymentsService {
   //?                                      CallBack                                                  */
   //? ============================================================================================== */
 
-  /*   async callback(dto: QrCallbackResponse) {
-    const { CorrelationId, Collectors, Status } = dto;
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const paymentQr = await queryRunner.manager.findOne(PaymentQR, {
-        where: { IdCorrelation: CorrelationId },
-        lock: { mode: 'pessimistic_write' },
-        relations: {
-          ticket: { buyer: true, travelSeats: true },
-        },
-      });
-
-      if (!paymentQr) {
-        await queryRunner.rollbackTransaction();
-        return;
-      }
-
-      if (paymentQr.status === PaymentStatusEnum.PAID) {
-        await queryRunner.commitTransaction();
-        return;
-      }
-
-      const ticketCollector = Collectors?.find(
-        (c) => c.Name === QrPaymentTypeEnum.TICKET,
-      );
-
-      const rechargeCollector = Collectors?.find(
-        (c) => c.Name === QrPaymentTypeEnum.WALLET_RECHARGE,
-      );
-
-      if (ticketCollector && paymentQr.ticket) {
-        await this.ticketsService.confirmWithManager(
-          paymentQr.ticket,
-          queryRunner.manager,
-        );
-      }
-
-      if (rechargeCollector) {
-        const customerRechargeCollectors = Collectors?.filter(
-          (c) => c.Name === 'CUSTOMER_RECHARGE',
-        );
-
-        if (
-          !customerRechargeCollectors ||
-          customerRechargeCollectors.length === 0
-        ) {
-          await queryRunner.rollbackTransaction();
-          return;
-        }
-
-        const results: any[] = [];
-
-        // Procesar cada collector (cada cliente)
-        for (const collector of customerRechargeCollectors) {
-          let customerData;
-          try {
-            customerData = JSON.parse(collector.Value);
-          } catch (error) {
-            results.push({
-              collector: collector.Parameter,
-              success: false,
-              error: 'Invalid collector data format',
-            });
-            continue;
-          }
-
-          const { customerId, amount } = customerData;
-
-          // Buscar el cliente
-          const customer = await queryRunner.manager.findOne(Customer, {
-            where: { id: customerId },
-          });
-
-          if (!customer) {
-            results.push({
-              customerId,
-              success: false,
-              error: 'Customer not found',
-            });
-            continue;
-          }
-
-          try {
-            // Crear la transacción de crédito para este cliente
-            const transaction = await this.walletService.creditFromRecharge({
-              customer,
-              amount: amount,
-              correlationId: paymentQr.IdCorrelation,
-              paymentData: dto,
-              manager: queryRunner.manager,
-              paymentQr: paymentQr,
-            });
-
-            results.push({
-              customerId,
-              success: true,
-              transactionId: transaction.id,
-              amount: amount,
-            });
-          } catch (error) {
-            results.push({
-              customerId,
-              success: false,
-              error: error.message,
-            });
-          }
-        }
-      }
-
-      paymentQr.data = dto;
-      paymentQr.status = PaymentStatusEnum.PAID;
-      await queryRunner.manager.save(paymentQr);
-
-      await queryRunner.commitTransaction();
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  } */
-
   async callback(dto: QrCallbackResponse) {
     const { CorrelationId, Collectors } = dto;
 
@@ -481,10 +346,6 @@ export class PaymentsService {
         return;
       }
 
-      /* paymentQr.data = dto;
-      paymentQr.status = PaymentStatusEnum.PAID;
-      await queryRunner.manager.save(paymentQr); */
-
       // ============================================================
       // IDENTIFICAR EL TIPO POR EL COLLECTOR
       // ============================================================
@@ -504,7 +365,6 @@ export class PaymentsService {
           );
         }
       } else if (rechargeCollector) {
-        // Es una recarga de wallet MÚLTIPLE
         // Buscar TODOS los collectors de tipo CUSTOMER_RECHARGE
         const customerRechargeCollectors = Collectors?.filter(
           (c) => c.Name === 'CUSTOMER_RECHARGE',
@@ -577,17 +437,25 @@ export class PaymentsService {
         }
 
         // Opcional: Si algún cliente falló, loguear pero no hacer rollback
-        const failedResults = results.filter((r) => !r.success);
+        /* const failedResults = results.filter((r) => !r.success);
         if (failedResults.length > 0) {
           console.error('Failed recharges:', failedResults);
-        }
+        } */
       }
 
       paymentQr.data = dto;
       paymentQr.status = PaymentStatusEnum.PAID;
       await queryRunner.manager.save(paymentQr);
-
       await queryRunner.commitTransaction();
+
+      /* if (ticketCollector) {
+        if (paymentQr.ticket) {
+          await this.ticketsService.confirmWithManager(
+            paymentQr.ticket,
+            queryRunner.manager,
+          );
+        }
+      } */
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -611,4 +479,36 @@ export class PaymentsService {
     const minutes = envs.RESERVATION_QR_EXPIRE_MINUTES - TWO_MINUTES;
     return `00/00:${minutes}`;
   }
+
+  //* ============================================================================================== */
+
+  /*   private async sendPaymentConfirmationEmail(ticket: Ticket) {
+    const dto: SendMailPaymentConfirmationDto = {
+      to: ticket.buyer!.email,
+
+      ticketNumber: `TK-${ticket.id}`,
+      ticketDate: new Date().toISOString(),
+      totalPrice: Number(ticket.total_price),
+
+      customerName: ticket.buyer!.name,
+      customerEmail: ticket.buyer!.email,
+      customerPhone: ticket.buyer!.phone!,
+
+      origin: ticket.origin.name,
+      destination: ticket.destination.name,
+      departureDate: ticket.departure_time.toISOString(),
+      arrivalDate: ticket.arrival_time.toISOString(),
+      duration: '6h',
+      terminalAddress: ticket.terminal?.address || '',
+
+      passengers: ticket.travelSeats.map((seat) => ({
+        name: seat.passengerName,
+        idDncii: seat.passengerDocument,
+        seat: seat.number,
+        deck: seat.deck,
+      })),
+    };
+
+    await this.mailService.sendMail(dto);
+  } */
 }

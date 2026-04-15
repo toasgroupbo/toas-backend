@@ -3,7 +3,7 @@ import { MailService } from './mail.service';
 
 @Controller('mails')
 export class MailsController {
-  constructor(private readonly mailsService: MailService) {}
+  /*   constructor(private readonly mailsService: MailService) {}
   @Post()
   sendEmail() {
     const dto = {
@@ -40,5 +40,5 @@ export class MailsController {
     };
 
     return this.mailsService.sendMail(dto);
-  }
+  } */
 }

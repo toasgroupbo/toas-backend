@@ -1,17 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 
-import { envs } from 'src/config/environments/environments';
-
 import { SendMailPaymentConfirmationDto } from './dto/sendmail-payment-confirmation.dto';
+
 import { PdfService } from './pdf.service';
 import { TemplateService } from './template.service';
 
 @Injectable()
 export class MailService {
   constructor(
-    private readonly mailerService: MailerService,
     private readonly pdfService: PdfService,
+    private readonly mailerService: MailerService,
     private readonly templateService: TemplateService,
   ) {}
 
@@ -54,11 +53,11 @@ export class MailService {
     return this.mailerService.sendMail({
       to,
       subject: 'Confirmación de Pago',
-      cc: envs.MAIL_FROM,
+      //cc: envs.MAIL_FROM,
       template: 'paid-order',
       context,
 
-      //! AQUÍ agregas el PDF
+      //! se agrega el PDF como adjunto
       attachments: [
         {
           filename: `ticket-${dto.ticketNumber}.pdf`,

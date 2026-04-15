@@ -19,12 +19,14 @@ import { TicketExpirationService } from './ticket-expiration.service';
 import { BillingsService } from './billings.service';
 import { Billing } from './entities/billing.entity';
 
+import { MailModule } from 'src/mail/mail.module';
 import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Ticket, Billing]),
     WalletModule,
+    MailModule,
     forwardRef(() => TravelsModule),
     forwardRef(() => CustomersModule),
   ],

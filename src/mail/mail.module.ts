@@ -7,8 +7,9 @@ import { join } from 'path';
 import { envs } from 'src/config/environments/environments';
 
 import { MailsController } from './mail.controller';
-import { MailService } from './mail.service';
+
 import { PdfService } from './pdf.service';
+import { MailService } from './mail.service';
 import { TemplateService } from './template.service';
 
 @Global()
@@ -18,7 +19,7 @@ import { TemplateService } from './template.service';
       transport: {
         host: envs.MAIL_HOST,
         port: Number(envs.MAIL_PORT),
-        secure: false,
+        secure: true,
         auth: {
           user: envs.MAIL_USER,
           pass: envs.MAIL_PASS,
@@ -30,7 +31,6 @@ import { TemplateService } from './template.service';
       preview: false,
       template: {
         dir: join(process.cwd(), 'dist/mail/templates'),
-        //dir: join(__dirname, 'templates'),
         adapter: new HandlebarsAdapter(),
         options: {
           strict: false,
