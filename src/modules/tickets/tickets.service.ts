@@ -20,9 +20,9 @@ import { PaymentType, TicketStatus, TicketType } from './enums';
 import { TravelStatus } from '../travels/enums/travel-status.enum';
 
 import {
-  SelectedSeatsDto,
   CreateTicketInAppDto,
   CreateTicketInOfficeDto,
+  BillingDto,
 } from './dto';
 import { PassengerSeatBatchDto } from './dto/assign-passengers-batch-in-app.dto';
 
@@ -47,9 +47,6 @@ export class TicketsService {
   constructor(
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
-
-    @InjectRepository(Penalty)
-    private readonly penalityRepository: Repository<Penalty>,
 
     private readonly penaltiesService: PenaltiesService,
     private readonly ticketExpirationService: TicketExpirationService,
@@ -115,6 +112,7 @@ export class TicketsService {
           dto.seatSelections,
           travel,
           manager,
+          billing || undefined, //! por defecto
         );
 
       const commission = await this.calculateCommission(type, manager);
@@ -260,7 +258,7 @@ export class TicketsService {
       })
       .getMany();
 
-    const validSeats = seats.filter((seat) => seat.seatNumber !== '0');
+    const validSeats = seats.filter((seat) => seat.seatNumber !== '');
 
     if (validSeats.length !== seatIds.length) {
       const foundIds = validSeats.map((s) => s.id.toString());
@@ -280,6 +278,7 @@ export class TicketsService {
     seatSelections: { seatId: string; price?: string }[],
     travel: Travel,
     manager: EntityManager,
+    billing?: BillingDto,
   ): Promise<{ seatsWithPrices: TravelSeat[]; totalPrice: number }> {
     let totalPrice = 0;
 
@@ -292,6 +291,10 @@ export class TicketsService {
       seat.price = finalPrice.toFixed(2);
       seat.status = SeatStatus.RESERVED;
       totalPrice += finalPrice;
+
+      if (billing) {
+        seat.passenger = { ci: billing.ci, name: billing.nombre };
+      }
     }
 
     await manager.save(seats);
