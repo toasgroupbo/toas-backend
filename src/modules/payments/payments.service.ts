@@ -447,15 +447,6 @@ export class PaymentsService {
       paymentQr.status = PaymentStatusEnum.PAID;
       await queryRunner.manager.save(paymentQr);
       await queryRunner.commitTransaction();
-
-      /* if (ticketCollector) {
-        if (paymentQr.ticket) {
-          await this.ticketsService.confirmWithManager(
-            paymentQr.ticket,
-            queryRunner.manager,
-          );
-        }
-      } */
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -479,36 +470,4 @@ export class PaymentsService {
     const minutes = envs.RESERVATION_QR_EXPIRE_MINUTES - TWO_MINUTES;
     return `00/00:${minutes}`;
   }
-
-  //* ============================================================================================== */
-
-  /*   private async sendPaymentConfirmationEmail(ticket: Ticket) {
-    const dto: SendMailPaymentConfirmationDto = {
-      to: ticket.buyer!.email,
-
-      ticketNumber: `TK-${ticket.id}`,
-      ticketDate: new Date().toISOString(),
-      totalPrice: Number(ticket.total_price),
-
-      customerName: ticket.buyer!.name,
-      customerEmail: ticket.buyer!.email,
-      customerPhone: ticket.buyer!.phone!,
-
-      origin: ticket.origin.name,
-      destination: ticket.destination.name,
-      departureDate: ticket.departure_time.toISOString(),
-      arrivalDate: ticket.arrival_time.toISOString(),
-      duration: '6h',
-      terminalAddress: ticket.terminal?.address || '',
-
-      passengers: ticket.travelSeats.map((seat) => ({
-        name: seat.passengerName,
-        idDncii: seat.passengerDocument,
-        seat: seat.number,
-        deck: seat.deck,
-      })),
-    };
-
-    await this.mailService.sendMail(dto);
-  } */
 }

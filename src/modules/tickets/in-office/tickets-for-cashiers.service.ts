@@ -101,7 +101,7 @@ export class TicketsForCashierService {
         );
       }
 
-      this.changeTicketState(ticket, TicketStatus.CANCELLED);
+      this.changeTicketState(ticket, TicketStatus.CANCELLED, cashier);
 
       await queryRunner.manager.save(Ticket, ticket);
       await queryRunner.commitTransaction();
@@ -135,7 +135,12 @@ export class TicketsForCashierService {
           travel: { id: travelId },
           soldBy: { id: cashier.id },
         },
-        relations: { travelSeats: true, buyer: true },
+        relations: {
+          travelSeats: true,
+          buyer: true,
+          canceledBy: true,
+          soldBy: true,
+        },
       });
 
       return tickets;
@@ -249,7 +254,11 @@ export class TicketsForCashierService {
 
   //? ============================================================================================== */
 
-  private changeTicketState(ticket: Ticket, newStatus: TicketStatus): void {
+  private changeTicketState(
+    ticket: Ticket,
+    newStatus: TicketStatus,
+    cashier?: User,
+  ): void {
     const currentStatus = ticket.status;
 
     ticket.status = newStatus;
@@ -260,7 +269,7 @@ export class TicketsForCashierService {
         break;
 
       case TicketStatus.CANCELLED:
-        this.applyCancelledState(ticket, currentStatus);
+        this.applyCancelledState(ticket, currentStatus, cashier);
         break;
     }
   }
@@ -280,8 +289,11 @@ export class TicketsForCashierService {
   private applyCancelledState(
     ticket: Ticket,
     previousStatus: TicketStatus,
+    cashier?: User,
   ): void {
     ticket.reserve_expiresAt = null;
+    ticket.cancelledAt = new Date();
+    ticket.canceledBy = cashier || null;
 
     if (
       previousStatus === TicketStatus.RESERVED ||

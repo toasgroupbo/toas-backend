@@ -72,6 +72,12 @@ export class Ticket {
 
   @CreateDateColumn({
     type: 'timestamptz',
+    nullable: true,
+  })
+  cancelledAt?: Date | null;
+
+  @CreateDateColumn({
+    type: 'timestamptz',
   })
   createdAt: Date;
 
@@ -95,6 +101,12 @@ export class Ticket {
     nullable: true, //! permitir null si la venta fue online
   })
   soldBy?: User | null;
+
+  @ManyToOne(() => User, (user) => user.ticketsSold, {
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
+  canceledBy?: User | null;
 
   @ManyToOne(() => Customer, (customer) => customer.ticketsBought, {
     nullable: true, //! permitir null si la venta fue en oficina

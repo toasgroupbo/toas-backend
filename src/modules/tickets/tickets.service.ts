@@ -368,47 +368,6 @@ export class TicketsService {
   //?                              Confirm_Ticket_QR                                                 */
   //? ============================================================================================== */
 
-  /* async confirmTicketQR(ticketId: number): Promise<Ticket> {
-    try {
-      const ticket = await this.ticketRepository.findOne({
-        where: { id: ticketId },
-        relations: {
-          travel: {
-            route: {
-              officeOrigin: true,
-              officeDestination: true,
-            },
-            bus: { busType: true },
-          },
-          travelSeats: true,
-          buyer: true,
-          billing: true,
-        },
-      });
-
-      if (!ticket) {
-        throw new NotFoundException(`Ticket ${ticketId} not found`);
-      }
-
-      // 2. Aplicar estado SOLD
-      this.applySoldState(ticket);
-      await this.reducePenalty(ticket);
-
-      // 3. Guardar cambios
-      await this.ticketRepository.save(ticket);
-
-      if (ticket.type === TicketType.IN_APP && ticket.buyer) {
-        this.sendPaymentConfirmationEmail(ticket).catch((error) => {
-          console.error(`Error sending email for ticket ${ticket.id}:`, error);
-        });
-      }
-
-      return ticket;
-    } catch (error) {
-      throw error;
-    }
-  }
- */
   async confirmWithManager(ticket: Ticket, manager: EntityManager) {
     this.applySoldState(ticket);
     await this.reducePenalty(ticket, manager);
@@ -437,19 +396,6 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  /* private async reducePenalty(ticket: Ticket): Promise<void> {
-    if (ticket.type === TicketType.IN_APP && ticket.buyer) {
-      const penalty = await this.penalityRepository.findOne({
-        where: { customer: { id: ticket.buyer.id } },
-      });
-
-      if (penalty && penalty.failedCount > 0) {
-        penalty.failedCount -= 1;
-        await this.penalityRepository.save(penalty);
-      }
-    }
-  }
- */
   private async reducePenalty(
     ticket: Ticket,
     manager: EntityManager,
@@ -624,7 +570,6 @@ export class TicketsService {
         item.seatId,
         ticketId,
         manager,
-        //customer?.id,
       );
 
       const passenger = await this.passengersService.createBase(
@@ -651,14 +596,12 @@ export class TicketsService {
     seatId: number,
     ticketId: number,
     manager: EntityManager,
-    //customerId?: number,
   ): Promise<TravelSeat> {
     const seat = await manager
       .createQueryBuilder(TravelSeat, 'seat')
       .leftJoinAndSelect('seat.ticket', 'ticket')
       .where('seat.id = :seatId', { seatId })
       .andWhere('ticket.id = :ticketId', { ticketId })
-      //.andWhere('ticket.buyerId = :customerId', { customerId })
       .andWhere('ticket.status = :status', {
         status: TicketStatus.RESERVED,
       })
@@ -684,7 +627,6 @@ export class TicketsService {
       ticketId: data.ticketId,
       assignedSeats: data.passengers.map((p) => ({
         seatId: p.seatId,
-        //name: p.passenger.name,
         ci: p.passenger.ci,
       })),
     };
