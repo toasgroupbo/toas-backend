@@ -108,14 +108,15 @@ export class TravelsInAppService {
     const travels = await this.travelRepository.find({
       where,
       relations: {
-        bus: { busType: true, company: true },
+        company: true,
+        bus: { busType: true },
         route: {
           officeOrigin: { place: true },
           officeDestination: { place: true },
         },
       },
       order: {
-        departure_time: 'ASC', // 🔥 importante para UX
+        departure_time: 'ASC',
       },
     });
 
