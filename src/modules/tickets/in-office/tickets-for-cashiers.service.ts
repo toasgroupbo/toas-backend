@@ -197,6 +197,7 @@ export class TicketsForCashierService {
           soldBy: { id: cashier.id },
         },
         relations: {
+          billing: true,
           travelSeats: true,
           buyer: true,
           canceledBy: true,
