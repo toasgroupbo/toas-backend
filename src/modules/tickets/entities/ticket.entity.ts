@@ -100,7 +100,7 @@ export class Ticket {
     onDelete: 'SET NULL',
     nullable: true, //! permitir null si la venta fue online
   })
-  soldBy?: User | null;
+  soldBy?: User;
 
   @ManyToOne(() => User, (user) => user.ticketsSold, {
     onDelete: 'SET NULL',
@@ -111,7 +111,7 @@ export class Ticket {
   @ManyToOne(() => Customer, (customer) => customer.ticketsBought, {
     nullable: true, //! permitir null si la venta fue en oficina
   })
-  buyer?: Customer | null;
+  buyer?: Customer;
 
   @OneToOne(() => PaymentQR, (paymentQr) => paymentQr.ticket, {
     cascade: true,

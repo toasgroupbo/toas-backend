@@ -5,11 +5,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
-  DataSource,
-  EntityManager,
   Not,
-  QueryRunner,
+  DataSource,
   Repository,
+  QueryRunner,
+  EntityManager,
 } from 'typeorm';
 
 import { envs } from 'src/config/environments/environments';
@@ -27,7 +27,6 @@ import {
 import { PassengerSeatBatchDto } from './dto/assign-passengers-batch-in-app.dto';
 
 import { MailService } from 'src/mail/mail.service';
-import { BillingsService } from './billings.service';
 import { WalletService } from '../wallet/wallet.service';
 import { PenaltiesService } from '../customers/penalties.service';
 import { PassengersService } from '../customers/passengers.service';
@@ -52,7 +51,6 @@ export class TicketsService {
     private readonly ticketExpirationService: TicketExpirationService,
     private readonly passengersService: PassengersService,
     private readonly walletService: WalletService,
-    private readonly billingService: BillingsService,
 
     private readonly mailService: MailService,
     private dataSource: DataSource,
@@ -63,6 +61,94 @@ export class TicketsService {
   //? ============================================================================================== */
 
   async createTicketBase({
+    dto,
+    buyer,
+    user,
+    travel,
+    type,
+    paymentType,
+    billing,
+    manager,
+  }: {
+    dto: CreateTicketInAppDto | CreateTicketInOfficeDto;
+    buyer?: Customer;
+    user?: User;
+    travel: Travel;
+    type: TicketType;
+    paymentType: PaymentType;
+    billing?: Billing;
+    manager: EntityManager;
+  }) {
+    try {
+      //! expira el asientos del travel
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travel.id,
+        manager,
+      );
+
+      //! obtiene los asientos validos o genera error
+      const seats = await this.getAndValidateAvailableSeats(
+        travel.id,
+        dto.seatSelections,
+        manager,
+      );
+
+      //! se calculan los precios
+      const { seatsWithPrices, totalPrice } =
+        await this.calculateAndUpdateSeatPrices(
+          seats,
+          dto.seatSelections,
+          travel,
+          manager,
+          billing,
+        );
+
+      const commission = await this.calculateCommission(type, manager);
+      const totalTicketAmount = totalPrice + commission;
+
+      //! se calcula los montos totales de qr y wallet
+      const { walletAmount, qrAmount } = await this.resolvePaymentAmounts({
+        type,
+        buyer,
+        totalTicketAmount,
+        manager,
+        paymentType,
+      });
+
+      //! se crea el ticket
+
+      const ticket = manager.create(Ticket, {
+        type,
+        travel,
+        buyer: buyer,
+        soldBy: user,
+
+        seats: seats.map((seat) => ({
+          id: seat.id,
+          seatNumber: seat.seatNumber,
+          price: seat.price,
+        })),
+
+        travelSeats: seatsWithPrices,
+        reserve_expiresAt: this.getReservationExpiry(),
+        payment_type: paymentType,
+        commission: commission.toString(),
+
+        total_price: totalPrice.toFixed(2),
+        wallet_amount: walletAmount.toFixed(2),
+        qr_amount: qrAmount.toFixed(2),
+        status: TicketStatus.RESERVED,
+
+        billing: billing,
+      });
+
+      return manager.save(ticket);
+    } catch (error) {
+      handleDBExceptions(error);
+    }
+  }
+
+  /*  async createTicketBase({
     dto,
     buyer,
     user,
@@ -164,7 +250,7 @@ export class TicketsService {
     } finally {
       await queryRunner.release();
     }
-  }
+  } */
 
   //? ============================================================================================== */
 
@@ -214,7 +300,7 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  private async findActiveTravel(
+  /* private async findActiveTravel(
     travelId: number,
     manager: EntityManager,
   ): Promise<Travel> {
@@ -236,7 +322,7 @@ export class TicketsService {
     }
 
     return travel;
-  }
+  } */
 
   //? ============================================================================================== */
 
@@ -317,17 +403,17 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  private async createTicket(
+  /* private async createTicket(
     manager: EntityManager,
     ticketData: Partial<Ticket>,
   ): Promise<Ticket> {
     const ticket = manager.create(Ticket, ticketData);
     return manager.save(ticket);
   }
-
+ */
   //? ============================================================================================== */
 
-  private async registerPenalty(
+  /* private async registerPenalty(
     buyer: Customer | undefined,
     user: User | undefined,
     manager: EntityManager,
@@ -335,7 +421,7 @@ export class TicketsService {
     if (buyer && !user) {
       await this.penaltiesService.registerFailure(buyer, manager);
     }
-  }
+  } */
 
   //? ============================================================================================== */
 
@@ -512,8 +598,14 @@ export class TicketsService {
         where: {
           travel: {
             id: travelId,
-            bus: { owner: { companies: { id: companyId } } },
+            company: { id: companyId },
           },
+        },
+        relations: {
+          travelSeats: true,
+          buyer: true,
+          canceledBy: true,
+          soldBy: true,
         },
       });
     });
@@ -528,12 +620,11 @@ export class TicketsService {
     ticketId: number;
     customer?: Customer;
   }) {
-    const queryRunner = this.createTransaction();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
       await this.expireTravelReservations(data.ticketId, queryRunner.manager);
 
       await this.assignPassengersToSeats(
@@ -634,12 +725,6 @@ export class TicketsService {
 
   //? ============================================================================================== */
   //?                                      Functions                                                 */
-  //? ============================================================================================== */
-
-  private createTransaction(): QueryRunner {
-    return this.dataSource.createQueryRunner();
-  }
-
   //? ============================================================================================== */
 
   private formatDateTime(date: Date): string {

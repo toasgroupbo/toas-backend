@@ -1,10 +1,10 @@
 import {
-  Controller,
   Get,
   Param,
-  ParseIntPipe,
   Query,
   UseGuards,
+  Controller,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -52,6 +52,34 @@ export class TravelsInAppController {
   @Get('all')
   finAll(@Query() filters: TravelInAppFilterDto) {
     return this.travelsInAppService.findAll(filters);
+  }
+
+  //? ============================================================================================== */
+  //?                                       FindAll                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @ApiQuery({
+    name: 'departure_time',
+    required: false,
+    type: Date,
+  })
+  @ApiQuery({
+    name: 'origin_placeId',
+    required: true,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'destination_placeId',
+    required: true,
+    type: Number,
+  })
+  @Get('search-next-week')
+  searchNextWeek(@Query() filters: TravelInAppFilterDto) {
+    return this.travelsInAppService.findNextWeek(filters);
   }
 
   //? ============================================================================================== */

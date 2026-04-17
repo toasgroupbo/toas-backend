@@ -30,15 +30,4 @@ export class TicketsController {
   ) {
     return this.ticketsService.findAll(companyId, travelId);
   }
-
-  //? ============================================================================================== */
-  //?                                     Confirm_QR                                                 */
-  //? ============================================================================================== */
-
-  //! solo para pruebas
-  /* @Post('confirm-qr')
-  @ApiQuery({ name: 'ticketId', required: true, type: Number })
-  confirmQR(@Query() query: any) {
-    return this.ticketsService.confirm(query.ticketId);
-  } */
 }

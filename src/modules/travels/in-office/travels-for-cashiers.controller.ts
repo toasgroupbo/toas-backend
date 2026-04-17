@@ -126,17 +126,4 @@ export class TravelsForCashiersController {
   cancel(@Param('id', ParseIntPipe) id: number, @GetOffice() office: Office) {
     return this.travelsService.cancel(id, office); //! Get Office
   }
-
-  //? ============================================================================================== */
-  //?                                        Delete                                                  */
-  //? ============================================================================================== */
-
-  /* //!
-  @Auth(ValidPermissions.DELETE)
-  //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number, @GetOffice() office: Office) {
-    return this.travelsService.remove(id, office); //! Get Office
-  } */
 }

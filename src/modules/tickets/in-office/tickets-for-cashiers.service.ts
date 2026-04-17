@@ -3,12 +3,12 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, QueryRunner, Repository } from 'typeorm';
+import { DataSource, EntityManager, QueryRunner } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { SeatStatus } from 'src/common/enums';
+import { TravelStatus } from 'src/modules/travels/enums';
 import { PaymentType, TicketStatus, TicketType } from '../enums';
 
 import {
@@ -17,23 +17,22 @@ import {
 } from '../dto';
 
 import { TicketsService } from '../tickets.service';
+import { BillingsService } from '../billings.service';
 import { TicketExpirationService } from '../ticket-expiration.service';
 
 import { Ticket } from '../entities/ticket.entity';
 import { User } from '../../users/entities/user.entity';
 import { Travel } from '../../travels/entities/travel.entity';
-import { Customer } from '../../customers/entities/customer.entity';
 
 @Injectable()
 export class TicketsForCashierService {
   constructor(
-    @InjectRepository(Ticket)
-    private readonly ticketRepository: Repository<Ticket>,
-    @InjectRepository(Customer)
-    private readonly customerRepository: Repository<Customer>,
+    private readonly ticketExpirationService: TicketExpirationService,
 
     private readonly ticketsService: TicketsService,
-    private readonly ticketExpirationService: TicketExpirationService,
+
+    private readonly billingService: BillingsService,
+
     private dataSource: DataSource,
   ) {}
 
@@ -42,12 +41,70 @@ export class TicketsForCashierService {
   //? ============================================================================================== */
 
   async create(dto: CreateTicketInOfficeDto, cashier: User) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const travel = await this.findActiveTravel(
+        dto.travelId,
+        queryRunner.manager,
+      );
+
+      const billing = await this.billingService.createOrUpdateBilling(
+        dto.billing,
+        queryRunner.manager,
+      );
+
+      const ticket = await this.ticketsService.createTicketBase({
+        dto,
+        user: cashier,
+        type: TicketType.IN_OFFICE,
+        paymentType: dto.payment_type,
+        travel,
+        billing, //! se manda el billing
+        manager: queryRunner.manager,
+      });
+
+      await queryRunner.commitTransaction();
+      return ticket;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /* async create(dto: CreateTicketInOfficeDto, cashier: User) {
     return this.ticketsService.createTicketBase({
       dto,
       user: cashier,
       type: TicketType.IN_OFFICE,
       paymentType: dto.payment_type,
     });
+  } */
+
+  //? ============================================================================================== */
+
+  private async findActiveTravel(
+    travelId: number,
+    manager: EntityManager,
+  ): Promise<Travel> {
+    const travel = await manager.findOne(Travel, {
+      where: { id: travelId },
+      relations: { bus: true },
+    });
+    if (!travel) {
+      throw new NotFoundException(`Travel with ID ${travelId} not found`);
+    }
+    if (travel.travel_status !== TravelStatus.ACTIVE) {
+      throw new BadRequestException(`Travel ${travelId} is not active`);
+    }
+    if (travel.enabled === false) {
+      throw new BadRequestException(`Travel ${travelId} is not enable`);
+    }
+    return travel;
   }
 
   //? ============================================================================================== */
@@ -55,7 +112,9 @@ export class TicketsForCashierService {
   //? ============================================================================================== */
 
   async confirm(ticketId: number, cashier: User) {
-    const queryRunner = this.createTransaction();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
       const ticket = await this.findConfirmableTicket(
@@ -86,7 +145,9 @@ export class TicketsForCashierService {
   //? ============================================================================================== */
 
   async cancel(ticketId: number, cashier: User) {
-    const queryRunner = this.createTransaction();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
       const ticket = await this.findCancelableTicket(
@@ -162,15 +223,6 @@ export class TicketsForCashierService {
   //?                                      Functions                                                 */
   //? ============================================================================================== */
 
-  private createTransaction(): QueryRunner {
-    const queryRunner = this.dataSource.createQueryRunner();
-    queryRunner.connect();
-    queryRunner.startTransaction();
-    return queryRunner;
-  }
-
-  //? ============================================================================================== */
-
   private async findConfirmableTicket(
     ticketId: number,
     cashier: User,
@@ -205,7 +257,6 @@ export class TicketsForCashierService {
         'Ticket not found, expired, or not in a confirmable state',
       );
     }
-
     return ticket;
   }
 

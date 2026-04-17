@@ -4,11 +4,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, QueryRunner, Repository } from 'typeorm';
+import { DataSource, EntityManager, QueryRunner, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { SeatStatus } from 'src/common/enums';
+import { TravelStatus } from 'src/modules/travels/enums';
 import { PaymentType, TicketStatus, TicketType } from '../enums';
 
 import {
@@ -21,6 +22,7 @@ import { TicketsService } from '../tickets.service';
 import { BillingsService } from '../billings.service';
 import { WalletService } from 'src/modules/wallet/wallet.service';
 import { TicketExpirationService } from '../ticket-expiration.service';
+import { PenaltiesService } from 'src/modules/customers/penalties.service';
 
 import { Ticket } from '../entities/ticket.entity';
 import { Travel } from '../../travels/entities/travel.entity';
@@ -33,11 +35,14 @@ export class TicketsInAppService {
     private readonly ticketRepository: Repository<Ticket>,
 
     private readonly ticketExpirationService: TicketExpirationService,
+
     private readonly ticketsService: TicketsService,
 
     private readonly walletService: WalletService,
 
     private readonly billingsService: BillingsService,
+
+    private readonly penaltiesService: PenaltiesService,
 
     private dataSource: DataSource,
   ) {}
@@ -47,12 +52,80 @@ export class TicketsInAppService {
   //? ============================================================================================== */
 
   async create(dto: CreateTicketInAppDto, buyer: Customer) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const travel = await this.findActiveTravel(
+        dto.travelId,
+        queryRunner.manager,
+      );
+
+      const ticket = await this.ticketsService.createTicketBase({
+        dto,
+        buyer,
+        type: TicketType.IN_APP,
+        paymentType: PaymentType.QR,
+        travel,
+        manager: queryRunner.manager,
+      });
+
+      //! Penalty
+      await this.registerPenalty(buyer, queryRunner.manager);
+
+      await queryRunner.commitTransaction();
+      return ticket;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /* async create(dto: CreateTicketInAppDto, buyer: Customer) {
+    const queryRunner = this.createTransaction();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     return this.ticketsService.createTicketBase({
       dto,
       buyer,
       type: TicketType.IN_APP,
       paymentType: PaymentType.QR,
     });
+  } */
+
+  //? ============================================================================================== */
+
+  private async findActiveTravel(
+    travelId: number,
+    manager: EntityManager,
+  ): Promise<Travel> {
+    const travel = await manager.findOne(Travel, {
+      where: { id: travelId },
+      relations: { bus: true },
+    });
+    if (!travel) {
+      throw new NotFoundException(`Travel with ID ${travelId} not found`);
+    }
+    if (travel.travel_status !== TravelStatus.ACTIVE) {
+      throw new BadRequestException(`Travel ${travelId} is not active`);
+    }
+    if (travel.enabled === false) {
+      throw new BadRequestException(`Travel ${travelId} is not enable`);
+    }
+    return travel;
+  }
+
+  //? ============================================================================================== */
+
+  private async registerPenalty(
+    buyer: Customer,
+    manager: EntityManager,
+  ): Promise<void> {
+    await this.penaltiesService.registerFailure(buyer, manager);
   }
 
   //? ============================================================================================== */
@@ -147,12 +220,11 @@ export class TicketsInAppService {
   //? ============================================================================================== */
 
   async cancel(ticketId: number, customer: Customer) {
-    const queryRunner = this.createTransaction();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
       const ticket = await this.findCancelableTicket(
         ticketId,
         customer,
@@ -221,12 +293,11 @@ export class TicketsInAppService {
   //? ============================================================================================== */
 
   async assignBilling(ticketId: number, dto: AssignBillingDto) {
-    const queryRunner = this.createTransaction();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
       const manager = queryRunner.manager;
 
       const ticket = await manager.findOne(Ticket, {
@@ -292,12 +363,6 @@ export class TicketsInAppService {
 
   //? ============================================================================================== */
   //?                                      Functions                                                 */
-  //? ============================================================================================== */
-
-  private createTransaction(): QueryRunner {
-    return this.dataSource.createQueryRunner();
-  }
-
   //? ============================================================================================== */
 
   private async findCancelableTicket(

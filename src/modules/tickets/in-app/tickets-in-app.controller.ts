@@ -12,8 +12,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import {
   AssignBillingDto,
-  AssignPassengersBatchInAppDto,
   CreateTicketInAppDto,
+  AssignPassengersBatchInAppDto,
 } from '../dto';
 
 import { ValidResourses } from 'src/common/enums';
@@ -24,9 +24,9 @@ import { IsVerifyGuard } from '../guards/is-verify.guard';
 import { IsPenaltyGuard } from '../guards/is-penalty.guard';
 import { NoActiveReservationGuard } from '../guards/no-active-reservation.guard';
 
-import { Customer } from '../../customers/entities/customer.entity';
-
 import { TicketsInAppService } from './tickets-in-app.service';
+
+import { Customer } from '../../customers/entities/customer.entity';
 
 //!
 @Resource(ValidResourses.TICKET_APP)
