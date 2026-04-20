@@ -123,7 +123,21 @@ export class TravelsForCashierService {
       }),
     );
 
-    return { data: travelsWithSeats, meta: travels.meta };
+    const allTravels = await this.travelRepository.find({
+      where,
+      select: { cash_amount: true, qr_amount: true, app_amount: true },
+    });
+
+    const totals = allTravels.reduce(
+      (acc, t) => {
+        acc.office += Number(t.cash_amount) + Number(t.qr_amount);
+        acc.app += Number(t.app_amount);
+        return acc;
+      },
+      { office: 0, app: 0 },
+    );
+
+    return { data: travelsWithSeats, meta: travels.meta, amounts: totals };
   }
 
   //? ============================================================================================== */
@@ -211,7 +225,21 @@ export class TravelsForCashierService {
       }),
     );
 
-    return { data: travelsWithSeats, meta: travels.meta };
+    const allTravels = await this.travelRepository.find({
+      where,
+      select: { cash_amount: true, qr_amount: true, app_amount: true },
+    });
+
+    const totals = allTravels.reduce(
+      (acc, t) => {
+        acc.office += Number(t.cash_amount) + Number(t.qr_amount);
+        acc.app += Number(t.app_amount);
+        return acc;
+      },
+      { office: 0, app: 0 },
+    );
+
+    return { data: travelsWithSeats, meta: travels.meta, amounts: totals };
   }
 
   //? ============================================================================================== */

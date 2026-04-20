@@ -194,7 +194,23 @@ export class TravelsService {
         pagination,
       );
 
-      return travels;
+      const allTravels = await this.travelRepository.find({
+        ...options,
+        select: { cash_amount: true, qr_amount: true, app_amount: true },
+      });
+
+      const totals = allTravels.reduce(
+        (acc, t) => {
+          acc.office += Number(t.cash_amount) + Number(t.qr_amount);
+          acc.app += Number(t.app_amount);
+          return acc;
+        },
+        { office: 0, app: 0 },
+      );
+
+      return { data: travels.data, meta: travels.meta, amounts: totals };
+
+      //return travels;
     });
   }
 
