@@ -54,24 +54,6 @@ export class PassengersService {
         return passenger;
       }
 
-      /* if (!customer) {
-        if (!passenger) {
-          passenger = repository.create({
-            fullName: dto.fullName,
-            ci: dto.ci,
-          });
-
-          await repository.save(passenger);
-        } else {
-          if (passenger.fullName !== dto.fullName) {
-            passenger.fullName = dto.fullName;
-            await repository.save(passenger);
-          }
-        }
-
-        return passenger;
-      } */
-
       //  =========================
       //  APP (con customer)
       //  =========================

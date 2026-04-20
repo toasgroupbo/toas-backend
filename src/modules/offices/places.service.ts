@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { CreatePlaceDto } from './dto';
+import { UpdatePlaceDto } from './dto/update-place.dto';
 
 import { Place } from './entities/place.entity';
 
@@ -52,17 +53,14 @@ export class PlacesService {
   }
 
   //? ============================================================================================== */
-  //?                                        Delete                                                  */
+  //?                                         Update                                                 */
   //? ============================================================================================== */
 
-  async remove(id: number) {
+  async update(id: number, dto: UpdatePlaceDto) {
     const place = await this.findOne(id);
     try {
-      await this.PlaceRepository.softRemove(place);
-      return {
-        message: 'Place deleted successfully',
-        deleted: place,
-      };
+      Object.assign(place, dto);
+      return await this.PlaceRepository.save(place);
     } catch (error) {
       handleDBExceptions(error);
     }

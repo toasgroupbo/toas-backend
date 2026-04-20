@@ -29,7 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
 
     if (type === LoginType.user) {
-      const user = await this.userService.findOne(id);
+      const user = await this.userService.findOneForLogin(id);
       if (!user) throw new UnauthorizedException('Token inválido (user)');
 
       if (user.sessionToken !== token) {
@@ -37,9 +37,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           'Session expired. You are logged in on another device.',
         );
       }
+
+      const { sessionToken, ...safeUser } = user;
+
       (req as any).userType = type;
 
-      return user;
+      return safeUser;
     }
 
     if (type === LoginType.customer) {
@@ -52,29 +55,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         );
       }
 
+      const { sessionToken, ...safeCustomer } = customer;
+
       (req as any).userType = type;
 
-      return customer;
+      return safeCustomer;
     }
 
     throw new UnauthorizedException('Unrecognized type');
   }
-  /* async validate(jwtPayload: IJwtPayload) {
-    const { id, type } = jwtPayload;
-
-    if (type === LoginType.user) {
-      const user = await this.userService.findOne(id);
-      if (!user) throw new UnauthorizedException('Token inválido (user)');
-      return user; //! se introduce el user en la req
-    }
-
-    if (type === LoginType.customer) {
-      const customer = await this.customerService.findOne(id);
-      if (!customer)
-        throw new UnauthorizedException('Token inválido (customer)');
-      return customer; //! se introduce el customer en la req
-    }
-
-    throw new UnauthorizedException('Unrecognized type');
-  } */
 }

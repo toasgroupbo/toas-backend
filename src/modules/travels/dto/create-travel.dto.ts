@@ -54,6 +54,13 @@ export class CreateTravelDto {
   type?: TravelType;
 
   @ApiProperty({
+    description: 'Carril',
+    example: 7,
+  })
+  @IsNumber()
+  lane: number;
+
+  @ApiProperty({
     example: '2025-10-02T15:00:00Z',
     type: String,
     format: 'date-time',

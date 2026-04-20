@@ -121,7 +121,13 @@ export class TravelsService {
 
   async findAll(pagination: TravelPaginationDto, companyId: number) {
     return await this.dataSource.transaction(async (manager) => {
-      const { status } = pagination;
+      const {
+        status,
+        endDate,
+        startDate,
+        origin_placeId,
+        destination_placeId,
+      } = pagination;
 
       const travelsToExpire = await manager.find(Travel, {
         select: { id: true },
@@ -138,8 +144,41 @@ export class TravelsService {
         where: { company: { id: companyId } },
       };
 
+      //! status
       if (status) {
         options.where.travel_status = status;
+      }
+
+      //! Origen
+      if (origin_placeId) {
+        options.where.route.officeOrigin = {
+          place: {
+            id: origin_placeId,
+          },
+        };
+      }
+
+      //! Destino
+      if (destination_placeId) {
+        options.where.route.officeDestination = {
+          place: {
+            id: destination_placeId,
+          },
+        };
+      }
+
+      //! Por dia
+      if (startDate && !endDate) {
+        const start = new Date(`${startDate}T00:00:00-04:00`);
+        const end = new Date(`${startDate}T23:59:59.999-04:00`);
+        options.where.departure_time = Between(start, end);
+      }
+
+      //! Entre dos fechas
+      if (startDate && endDate) {
+        const from = new Date(`${startDate}T00:00:00-04:00`);
+        const to = new Date(`${endDate}T23:59:59.999-04:00`);
+        options.where.departure_time = Between(from, to);
       }
 
       const travels = await paginate(
@@ -170,6 +209,7 @@ export class TravelsService {
       const travel = await manager.findOne(Travel, {
         where: { id, company: { id: companyId } },
         relations: {
+          company: true,
           bus: true,
           route: { officeOrigin: true, officeDestination: true },
           travelSeats: true,

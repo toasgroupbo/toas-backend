@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 
 import { Bus } from 'src/modules/buses/entities/bus.entity';
+import { User } from 'src/modules/users/entities/user.entity';
 import { Company } from 'src/modules/companies/entities/company.entity';
 import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
 
@@ -49,4 +50,7 @@ export class Owner {
 
   @ManyToMany(() => Company, (company) => company.owners)
   companies: Company[];
+
+  @OneToMany(() => User, (user) => user.owner)
+  users: User[];
 }

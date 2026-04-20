@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsString, ValidateNested } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MaxLength,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
 
 import { CreateBankAccountDto } from 'src/modules/bank-accounts/dto/create-bank-account.dto';
 
@@ -30,4 +36,21 @@ export class CreateOwnerDto {
   @ValidateNested({ each: true })
   @Type(() => CreateBankAccountDto)
   bankAccount: CreateBankAccountDto;
+
+  //! cashier
+
+  @ApiProperty({
+    example: 'owner@gmail.com',
+  })
+  @IsString()
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({
+    example: '123456',
+  })
+  @IsString()
+  @MinLength(6)
+  @MaxLength(50)
+  password: string;
 }

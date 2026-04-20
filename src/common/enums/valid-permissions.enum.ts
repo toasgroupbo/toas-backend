@@ -11,5 +11,7 @@ export enum ValidPermissions {
   READ_CASHIERS = 'READ_CASHIERS',
   UPDATE_CASHIERS = 'UPDATE_CASHIERS',
 
+  READ_OWNER = 'READ_OWNER',
+
   RECHARGE = 'RECHARGE',
 }

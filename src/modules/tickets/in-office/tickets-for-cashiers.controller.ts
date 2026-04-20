@@ -5,16 +5,20 @@ import {
   Param,
   Controller,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { Auth, GetUser, Resource } from '../../../auth/decorators';
+
+import { TicketStatus } from '../enums';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import {
   CreateTicketInOfficeDto,
   AssignPassengersBatchInOfficeDto,
 } from '../dto';
+import { TicketForCashierFilterDto } from '../pagination/ticket-for-cashier-pagination.dto';
 
 import { BillingsService } from '../billings.service';
 import { TicketsForCashierService } from './tickets-for-cashiers.service';
@@ -95,12 +99,18 @@ export class TicketsForCashiersController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: [TicketStatus.SOLD, TicketStatus.CANCELLED],
+  })
   @Get(':travelId')
   findAll(
+    @Query() filters: TicketForCashierFilterDto,
     @Param('travelId', ParseIntPipe) travelId: number,
     @GetUser() cashier: User,
   ) {
-    return this.ticketsForCashierService.findAll(travelId, cashier);
+    return this.ticketsForCashierService.findAll(travelId, cashier, filters);
   }
 
   //? ============================================================================================== */

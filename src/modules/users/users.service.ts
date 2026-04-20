@@ -71,13 +71,12 @@ export class UsersService {
 
   //? ============================================================================================== */
 
-  async createCashier(dto: CreateUserCashierDto) {
+  async createCashier(dto: CreateUserCashierDto, companyId: number) {
     const { officeId, cashierRol: rolId, ...data } = dto;
     //! busqueda del rol de Cashier
 
     const allowedCashierRoles = [
       StaticRoles.CASHIER,
-      StaticRoles.CASHIER_TRIPS,
       StaticRoles.CASHIER_SELLER,
     ];
 
@@ -92,6 +91,7 @@ export class UsersService {
         ...data,
         rol,
         office: { id: officeId },
+        company: { id: companyId },
       });
       return await this.userRepository.save(newCashier);
     } catch (error) {
@@ -116,13 +116,9 @@ export class UsersService {
   async findAllCashiers(companyId: number) {
     const cashiers = await this.userRepository.find({
       where: {
-        office: { company: { id: companyId } },
+        company: { id: companyId },
         rol: {
-          name: In[
-            (StaticRoles.CASHIER,
-            StaticRoles.CASHIER_SELLER,
-            StaticRoles.CASHIER_TRIPS)
-          ],
+          name: In[(StaticRoles.CASHIER, StaticRoles.CASHIER_SELLER)],
         },
       },
       relations: { rol: true, office: true, company: true },
@@ -145,9 +141,20 @@ export class UsersService {
 
   //? ============================================================================================== */
 
+  async findOneForLogin(id: number) {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: { rol: true, office: { company: true }, company: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  //? ============================================================================================== */
+
   async findOneCashier(id: number, companyId: number) {
     const cashier = await this.userRepository.findOne({
-      where: { id, office: { company: { id: companyId } } },
+      where: { id, company: { id: companyId } },
       relations: { rol: true, office: true, company: true },
     });
     if (!cashier) throw new NotFoundException('Cashier not found');
@@ -214,15 +221,11 @@ export class UsersService {
         // 1. No se puede asignar un rol estatico
         // --------------------------------------------
 
-        /* if (rol.isStatic) {
-          throw new ConflictException('The Rol is Static');
-        } */ //! revisar
-
         const allowed: StaticRoles[] = [
           StaticRoles.SUPER_ADMIN,
           StaticRoles.COMPANY_ADMIN,
           StaticRoles.CASHIER,
-          StaticRoles.CASHIER_TRIPS,
+          StaticRoles.CASHIER_OWNER,
           StaticRoles.CASHIER_SELLER,
         ];
 
@@ -249,7 +252,6 @@ export class UsersService {
     try {
       const allowedCashierRoles = [
         StaticRoles.CASHIER,
-        StaticRoles.CASHIER_TRIPS,
         StaticRoles.CASHIER_SELLER,
       ];
 

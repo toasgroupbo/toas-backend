@@ -49,6 +49,9 @@ export class Travel {
   @Column({ default: true })
   enabled: boolean;
 
+  @Column({ type: 'int', nullable: true })
+  lane: number;
+
   @Column({ type: 'timestamptz', nullable: true })
   closedAt?: Date;
 
@@ -95,6 +98,14 @@ export class Travel {
 
   @Column({ type: 'int', default: 0 })
   tickets_count: number; //! Cantidad de tickets vendidos Total
+
+  //! staff
+
+  @Column('jsonb', { nullable: true })
+  drivers?: Array<{ name: string; ci: string; phone?: string }>;
+
+  @Column('jsonb', { nullable: true })
+  assistants?: Array<{ name: string; ci: string; phone?: string }>;
 
   //* ============================================================================================== */
   //*                                        Relations                                               */

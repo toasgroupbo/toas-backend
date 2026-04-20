@@ -4,19 +4,28 @@ import {
   Body,
   Query,
   Param,
-  Delete,
   Controller,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { Auth, GetOffice, GetUser, Resource } from 'src/auth/decorators';
+import {
+  Auth,
+  GetUser,
+  Resource,
+  GetOffice,
+  GetCompany,
+} from 'src/auth/decorators';
+
+import { TravelStatus } from '../enums';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { TravelForCashierFilterDto } from '../pagination';
 
 import { CreateTravelDto } from '../dto';
+import { AssignStaffDto } from '../dto/assing-staff.dto';
 
+import { StaffService } from '../staff.service';
 import { TravelsService } from '../travels.service';
 import { TravelsForCashierService } from './travels-for-cashiers.service';
 
@@ -33,6 +42,8 @@ import { Office } from '../../offices/entities/office.entity';
 export class TravelsForCashiersController {
   constructor(
     private readonly travelsForCashierService: TravelsForCashierService,
+
+    private readonly staffService: StaffService,
 
     private readonly travelsService: TravelsService,
   ) {}
@@ -61,14 +72,29 @@ export class TravelsForCashiersController {
   @Auth(ValidPermissions.READ)
   //!
   @ApiQuery({
+    name: 'origin_placeId',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
     name: 'destination_placeId',
     required: false,
     type: Number,
   })
   @ApiQuery({
-    name: 'departure_time',
+    name: 'startDate',
     required: false,
-    type: Date,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: [TravelStatus.ACTIVE, TravelStatus.CLOSED],
   })
   @Get('all')
   findAll(
@@ -76,6 +102,50 @@ export class TravelsForCashiersController {
     @GetOffice() office: Office,
   ) {
     return this.travelsForCashierService.findAll(filters, office); //! Get Office
+  }
+
+  //? ============================================================================================== */
+  //?                               FindAllForOwners                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.READ_OWNER)
+  //!
+  @ApiQuery({
+    name: 'origin_placeId',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'destination_placeId',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: [TravelStatus.ACTIVE, TravelStatus.CLOSED],
+  })
+  @Get('owner/all')
+  findAllForOwners(
+    @Query() filters: TravelForCashierFilterDto,
+
+    @GetUser() cashierOwner: User,
+  ) {
+    return this.travelsForCashierService.findAllForOwners(
+      filters,
+      cashierOwner,
+    );
   }
 
   //? ============================================================================================== */
@@ -121,9 +191,32 @@ export class TravelsForCashiersController {
   //!
   @Auth(ValidPermissions.CANCEL)
   //!
-  //@ApiQuery({ name: 'companyId', required: false, type: Number })
   @Post('cancel/:id')
   cancel(@Param('id', ParseIntPipe) id: number, @GetOffice() office: Office) {
     return this.travelsService.cancel(id, office); //! Get Office
+  }
+
+  //? ============================================================================================== */
+  //?                                 FindOne_Staff                                                  */
+  //? ============================================================================================== */
+
+  @Auth(ValidPermissions.READ)
+  @Get('staff/:ci')
+  findOneStaff(@Param('ci') ci: string, @GetCompany() companyId: number) {
+    return this.staffService.findOne(ci, companyId);
+  }
+
+  //? ============================================================================================== */
+  //?                                  Assign_Staff                                                  */
+  //? ============================================================================================== */
+
+  @Auth(ValidPermissions.UPDATE)
+  @Post('assign-staff/:travelId')
+  assignStaff(
+    @Param('travelId', ParseIntPipe) travelId: number,
+    @Body() dto: AssignStaffDto,
+    @GetOffice() office: Office,
+  ) {
+    return this.travelsForCashierService.assignStaff(travelId, dto, office);
   }
 }

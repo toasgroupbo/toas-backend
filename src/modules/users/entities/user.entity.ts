@@ -12,6 +12,7 @@ import {
 import * as bcrypt from 'bcrypt';
 
 import { Rol } from '../../roles/entities/rol.entity';
+import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { Office } from 'src/modules/offices/entities/office.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { Company } from 'src/modules/companies/entities/company.entity';
@@ -58,13 +59,20 @@ export class User {
   })
   rol: Rol;
 
-  //! si es CompanyAdmin
-  @OneToOne(() => Company, (company) => company.admin, { nullable: true })
+  //! solo para cajeros, dueños y admins de companies
+  @ManyToOne(() => Company, (company) => company.users, {
+    //cascade: true,
+    nullable: true,
+  })
   company?: Company;
 
   //! si es cajero
   @ManyToOne(() => Office, (office) => office.cashiers, { nullable: true })
   office?: Office;
+
+  //! si es owner
+  @ManyToOne(() => Owner, (owner) => owner.users, { nullable: true })
+  owner?: Owner;
 
   @OneToMany(() => Ticket, (ticket) => ticket.soldBy)
   ticketsSold: Ticket[];

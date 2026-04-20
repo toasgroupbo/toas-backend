@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { IsNull, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 import { OAuth2Client } from 'google-auth-library';
 
@@ -14,12 +14,8 @@ import { IJwtPayload } from './interfaces/jwt-payload.interface';
 import { LoginCustomerDto, LoginUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
 
-import { CreateCustomerDto } from 'src/modules/customers/dto';
-
 import { AuthProviders } from './enums';
 import { LoginType } from '../common/enums/login-type.enum';
-
-import { IGooglePayload } from './interfaces';
 
 import { UsersService } from '../modules/users/users.service';
 

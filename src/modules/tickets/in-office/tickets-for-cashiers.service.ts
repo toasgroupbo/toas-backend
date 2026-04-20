@@ -15,6 +15,7 @@ import {
   CreateTicketInOfficeDto,
   AssignPassengersBatchInOfficeDto,
 } from '../dto';
+import { TicketForCashierFilterDto } from '../pagination/ticket-for-cashier-pagination.dto';
 
 import { TicketsService } from '../tickets.service';
 import { BillingsService } from '../billings.service';
@@ -183,20 +184,33 @@ export class TicketsForCashierService {
   //?                                        FindAll                                                 */
   //? ============================================================================================== */
 
-  async findAll(travelId: number, cashier: User) {
+  async findAll(
+    travelId: number,
+    cashier: User,
+    filters: TicketForCashierFilterDto,
+  ) {
     return await this.dataSource.transaction(async (manager) => {
       await this.ticketExpirationService.expireTravelIfNeeded(
         travelId,
         manager,
       );
 
+      const { status } = filters;
+
+      const where: any = {};
+
+      //! status
+      if (status) where.status = status;
+
       const tickets = await manager.find(Ticket, {
         order: { id: 'DESC' },
         where: {
+          ...where,
           travel: { id: travelId },
           soldBy: { id: cashier.id },
         },
         relations: {
+          travel: { company: true },
           billing: true,
           travelSeats: true,
           buyer: true,

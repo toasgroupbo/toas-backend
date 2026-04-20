@@ -6,6 +6,7 @@ import {
   Delete,
   Controller,
   ParseIntPipe,
+  Patch,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
@@ -15,6 +16,7 @@ import { ValidPermissions, ValidResourses } from 'src/common/enums';
 import { CreatePlaceDto } from './dto';
 
 import { PlacesService } from './places.service';
+import { UpdatePlaceDto } from './dto/update-place.dto';
 
 //!
 @Resource(ValidResourses.PLACE)
@@ -63,14 +65,14 @@ export class PlaceController {
   }
 
   //? ============================================================================================== */
-  //?                                        Delete                                                  */
+  //?                                         Update                                                 */
   //? ============================================================================================== */
 
   //!
-  @Auth(ValidPermissions.DELETE)
+  @Auth(ValidPermissions.UPDATE)
   //!
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.placesService.remove(id);
+  @Patch(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePlaceDto) {
+    return this.placesService.update(id, dto);
   }
 }

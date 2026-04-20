@@ -1,22 +1,32 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, In, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { TravelForCashierFilterDto } from '../pagination';
+import { paginate } from 'src/common/pagination/paginate';
 
 import { TravelStatus } from '../enums';
 import { SeatStatus } from 'src/common/enums';
+import { PaymentType, TicketType } from 'src/modules/tickets/enums';
 import { TicketStatus } from '../../tickets/enums/ticket-status.enum';
 
+import { AssignStaffDto } from '../dto/assing-staff.dto';
+
+import { StaffService } from '../staff.service';
 import { TicketExpirationService } from '../../tickets/ticket-expiration.service';
 
 import { Travel } from '../entities/travel.entity';
 import { User } from '../../users/entities/user.entity';
+import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { TravelSeat } from '../entities/travel-seat.entity';
 import { Office } from '../../offices/entities/office.entity';
-import { PaymentType, TicketType } from 'src/modules/tickets/enums';
+import { Owner } from 'src/modules/owners/entities/owner.entity';
 
 @Injectable()
 export class TravelsForCashierService {
@@ -24,7 +34,13 @@ export class TravelsForCashierService {
     @InjectRepository(Travel)
     private readonly travelRepository: Repository<Travel>,
 
+    @InjectRepository(Owner)
+    private readonly ownerRepository: Repository<Owner>,
+
     private readonly ticketExpirationService: TicketExpirationService,
+
+    private readonly staffService: StaffService,
+
     private dataSource: DataSource,
   ) {}
 
@@ -33,7 +49,8 @@ export class TravelsForCashierService {
   //? ============================================================================================== */
 
   async findAll(filters: TravelForCashierFilterDto, office: Office) {
-    const { destination_placeId, departure_time } = filters;
+    const { destination_placeId, origin_placeId, startDate, endDate, status } =
+      filters;
 
     const where: any = {
       travel_status: In([TravelStatus.ACTIVE, TravelStatus.CLOSED]),
@@ -45,6 +62,19 @@ export class TravelsForCashierService {
       },
     };
 
+    //! status
+    if (status) where.travel_status = status;
+
+    //! Origen
+    if (origin_placeId) {
+      where.route.officeOrigin = {
+        place: {
+          id: origin_placeId,
+        },
+      };
+    }
+
+    //! Destino
     if (destination_placeId) {
       where.route.officeDestination = {
         place: {
@@ -53,29 +83,38 @@ export class TravelsForCashierService {
       };
     }
 
-    if (departure_time) {
-      const start = new Date(`${departure_time}T00:00:00-04:00`);
-      const end = new Date(`${departure_time}T23:59:59.999-04:00`);
-
+    //! Por dia
+    if (startDate && !endDate) {
+      const start = new Date(`${startDate}T00:00:00-04:00`);
+      const end = new Date(`${startDate}T23:59:59.999-04:00`);
       where.departure_time = Between(start, end);
     }
 
-    const travels = await this.travelRepository.find({
-      where,
-      order: {
-        departure_time: 'ASC',
-      },
-      relations: {
-        bus: true,
-        route: {
-          officeOrigin: { place: true },
-          officeDestination: { place: true },
+    //! Entre dos fechas
+    if (startDate && endDate) {
+      const from = new Date(`${startDate}T00:00:00-04:00`);
+      const to = new Date(`${endDate}T23:59:59.999-04:00`);
+      where.departure_time = Between(from, to);
+    }
+
+    const travels = await paginate(
+      this.travelRepository,
+      {
+        where,
+        order: { id: 'DESC' },
+        relations: {
+          bus: true,
+          route: {
+            officeOrigin: { place: true },
+            officeDestination: { place: true },
+          },
         },
       },
-    });
+      filters,
+    );
 
     const travelsWithSeats = await Promise.all(
-      travels.map(async (travel) => {
+      travels.data.map(async (travel) => {
         const seatsAvailable = await this.getSeatsAvailableCount(travel.id);
         return {
           ...travel,
@@ -84,7 +123,95 @@ export class TravelsForCashierService {
       }),
     );
 
-    return travelsWithSeats;
+    return { data: travelsWithSeats, meta: travels.meta };
+  }
+
+  //? ============================================================================================== */
+  //?                               FindAllForOwners                                                 */
+  //? ============================================================================================== */
+
+  async findAllForOwners(filters: TravelForCashierFilterDto, cashier: User) {
+    const { destination_placeId, origin_placeId, startDate, endDate, status } =
+      filters;
+
+    const owner = await this.ownerRepository.findOne({
+      where: { users: { id: cashier.id } },
+    });
+
+    if (!owner) throw new NotFoundException('Owner not found');
+
+    const options: any = {
+      where: {},
+    };
+
+    const where: any = {
+      travel_status: In([TravelStatus.ACTIVE, TravelStatus.CLOSED]),
+      enabled: true,
+      bus: { owner: { id: owner.id } },
+    };
+
+    //! status
+    if (status) where.travel_status = status;
+
+    //! Origen
+    if (origin_placeId) {
+      where.route.officeOrigin = {
+        place: {
+          id: origin_placeId,
+        },
+      };
+    }
+
+    //! Destino
+    if (destination_placeId) {
+      where.route.officeDestination = {
+        place: {
+          id: destination_placeId,
+        },
+      };
+    }
+
+    //! Por dia
+    if (startDate && !endDate) {
+      const start = new Date(`${startDate}T00:00:00-04:00`);
+      const end = new Date(`${startDate}T23:59:59.999-04:00`);
+      where.departure_time = Between(start, end);
+    }
+
+    //! Entre dos fechas
+    if (startDate && endDate) {
+      const from = new Date(`${startDate}T00:00:00-04:00`);
+      const to = new Date(`${endDate}T23:59:59.999-04:00`);
+      where.departure_time = Between(from, to);
+    }
+
+    const travels = await paginate(
+      this.travelRepository,
+      {
+        where,
+        order: { id: 'DESC' },
+        relations: {
+          bus: true,
+          route: {
+            officeOrigin: { place: true },
+            officeDestination: { place: true },
+          },
+        },
+      },
+      filters,
+    );
+
+    const travelsWithSeats = await Promise.all(
+      travels.data.map(async (travel) => {
+        const seatsAvailable = await this.getSeatsAvailableCount(travel.id);
+        return {
+          ...travel,
+          seatsAvailable,
+        };
+      }),
+    );
+
+    return { data: travelsWithSeats, meta: travels.meta };
   }
 
   //? ============================================================================================== */
@@ -160,6 +287,89 @@ export class TravelsForCashierService {
   }
 
   //? ============================================================================================== */
+  //?                                   AssignStaff                                                  */
+  //? ============================================================================================== */
+
+  async assignStaff(travelId: number, dto: AssignStaffDto, office: Office) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const manager = queryRunner.manager;
+
+      // 1. Verificar que el travel existe y está activo
+      const travel = await manager.findOne(Travel, {
+        where: {
+          id: travelId,
+          route: { officeOrigin: { id: office.id } },
+          travel_status: TravelStatus.ACTIVE,
+        },
+      });
+
+      if (!travel) {
+        throw new NotFoundException('Active travel not found');
+      }
+
+      // 2. Procesar drivers (mínimo 1)
+      if (!dto.drivers || dto.drivers.length === 0) {
+        throw new BadRequestException('At least one driver is required');
+      }
+
+      const driversSnapshot: any[] = [];
+
+      for (const driverDto of dto.drivers) {
+        const staff = await this.staffService.createOrFind(
+          driverDto,
+          office.company,
+          manager,
+        );
+        driversSnapshot.push({
+          name: staff.name,
+          ci: staff.ci,
+          phone: staff.phone,
+        });
+      }
+
+      // 3. Procesar assistants (opcional)
+      const assistantsSnapshot: any[] = [];
+      if (dto.assistants && dto.assistants.length > 0) {
+        for (const assistantDto of dto.assistants) {
+          const staff = await this.staffService.createOrFind(
+            assistantDto,
+            office.company,
+            manager,
+          );
+          assistantsSnapshot.push({
+            name: staff.name,
+            ci: staff.ci,
+            phone: staff.phone,
+          });
+        }
+      }
+
+      // 4. Guardar snapshots en el travel
+      travel.drivers = driversSnapshot;
+      travel.assistants = assistantsSnapshot;
+
+      await manager.save(travel);
+      await queryRunner.commitTransaction();
+
+      return {
+        message: 'Staff assigned successfully',
+        travelId: travel.id,
+        drivers: driversSnapshot,
+        assistants: assistantsSnapshot,
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  //? ============================================================================================== */
   //?                                        Closed                                                  */
   //? ============================================================================================== */
 
@@ -207,6 +417,13 @@ export class TravelsForCashierService {
 
       if (!travel) {
         throw new NotFoundException('Travel not found');
+      }
+
+      //! verificar que tenga choferes asignados antes de cerrar
+      if (!travel.drivers || travel.drivers.length === 0) {
+        throw new BadRequestException(
+          'Cannot close travel: No drivers assigned. Please assign at least one driver before closing.',
+        );
       }
 
       // --------------------------------------------

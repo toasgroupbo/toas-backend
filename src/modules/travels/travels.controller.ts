@@ -37,6 +37,26 @@ export class TravelsController {
   //!
   @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @ApiQuery({
+    name: 'origin_placeId',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'destination_placeId',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
     name: 'status',
     required: false,
     enum: TravelStatus,

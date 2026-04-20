@@ -1,13 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
+
+import { StaticRoles } from 'src/auth/enums';
 
 import { CreateOwnerDto, UpdateOwnerDto } from './dto';
 
 import { Owner } from './entities/owner.entity';
 import { Bus } from '../buses/entities/bus.entity';
+import { Rol } from '../roles/entities/rol.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class OwnersService {
@@ -17,6 +26,8 @@ export class OwnersService {
 
     @InjectRepository(Bus)
     private readonly busRepository: Repository<Bus>,
+
+    private dataSource: DataSource,
   ) {}
 
   //? ============================================================================================== */
@@ -24,8 +35,129 @@ export class OwnersService {
   //? ============================================================================================== */
 
   async create(dto: CreateOwnerDto, companyId: number) {
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const { bankAccount, ci, ...data } = dto;
+      const { bankAccount, ci, email, password, ...data } = dto;
+
+      // --------------------------------------------
+      // 1. Buscar owner existente
+      // --------------------------------------------
+
+      let owner = await queryRunner.manager.findOne(Owner, {
+        where: { ci },
+        relations: {
+          companies: true,
+          users: {
+            company: true,
+          },
+        },
+      });
+
+      const role = await queryRunner.manager.findOne(Rol, {
+        where: { name: StaticRoles.CASHIER_OWNER },
+      });
+
+      if (!role) {
+        throw new NotFoundException('Role not found');
+      }
+
+      // --------------------------------------------
+      // 2. Crear owner si no existe
+      // --------------------------------------------
+
+      if (!owner) {
+        owner = queryRunner.manager.create(Owner, {
+          ...data,
+          ci,
+          bankAccount,
+          companies: [{ id: companyId }],
+        });
+
+        await queryRunner.manager.save(owner);
+      } else {
+        // --------------------------------------------
+        // 3. Si existe → agregar company si falta
+        // --------------------------------------------
+
+        const companyAlreadyAdded = owner.companies.some(
+          (c) => c.id === companyId,
+        );
+
+        if (!companyAlreadyAdded) {
+          owner.companies.push({ id: companyId } as any);
+        }
+
+        Object.assign(owner, data);
+
+        await queryRunner.manager.save(owner);
+      }
+
+      // --------------------------------------------
+      // 4. Verificar si ya tiene user en esta empresa
+      // --------------------------------------------
+
+      const existingUserForCompany = owner.users?.find(
+        (user) => user.company!.id === companyId,
+      );
+
+      if (existingUserForCompany) {
+        await queryRunner.commitTransaction();
+        return owner;
+      }
+
+      // --------------------------------------------
+      // 5. Validar email SOLO en esta empresa
+      // --------------------------------------------
+
+      const emailExists = await queryRunner.manager.findOne(User, {
+        where: {
+          email,
+          company: { id: companyId },
+        },
+      });
+
+      if (emailExists) {
+        throw new ConflictException('Email already in use for this company');
+      }
+
+      // --------------------------------------------
+      // 6. Crear user para esta empresa
+      // --------------------------------------------
+
+      const user = queryRunner.manager.create(User, {
+        email,
+        password: password,
+        fullName: data.name,
+        ci,
+        phone: data.phone,
+        rol: role,
+        owner,
+        company: { id: companyId },
+      });
+
+      await queryRunner.manager.save(user);
+
+      // --------------------------------------------
+      // 7. Commit
+      // --------------------------------------------
+
+      await queryRunner.commitTransaction();
+      return owner;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      handleDBExceptions(error);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /*   async create(dto: CreateOwnerDto, companyId: number) {
+    try {
+        const { bankAccount, ci, createUser, email, password, ...data } = dto;
 
       // --------------------------------------------
       // 1. Buscar si existe un owner con el mismo CI
@@ -73,7 +205,7 @@ export class OwnersService {
     } catch (error) {
       handleDBExceptions(error);
     }
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        FindAll                                                 */
@@ -127,16 +259,6 @@ export class OwnersService {
       handleDBExceptions(error);
     }
   }
-
-  /* async update(id: number, dto: UpdateOwnerDto, companyId: number) {
-    const owner = await this.findOne(id, companyId);
-    try {
-      Object.assign(owner, dto);
-      return await this.ownerRepository.save(owner);
-    } catch (error) {
-      handleDBExceptions(error);
-    }
-  } */
 
   //? ============================================================================================== */
   //?                                        Delete                                                  */

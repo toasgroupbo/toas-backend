@@ -4,10 +4,10 @@ import {
   Body,
   Patch,
   Param,
+  Query,
   Delete,
   Controller,
   ParseIntPipe,
-  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 

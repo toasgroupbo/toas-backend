@@ -6,18 +6,13 @@ import {
   Param,
   Controller,
   ParseIntPipe,
-  Patch,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { Auth, GetCompany, Resource } from '../../auth/decorators';
 import { ValidResourses, ValidPermissions } from '../../common/enums';
 
-import {
-  CreateUserCashierDto,
-  UpdateUserDto,
-  UpdateUserOfficeDto,
-} from './dto';
+import { CreateUserCashierDto, UpdateUserOfficeDto } from './dto';
 
 import { UsersService } from './users.service';
 
@@ -38,9 +33,13 @@ export class CashiersController {
   //!
   @Auth(ValidPermissions.CREATE)
   //!
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Post()
-  createCashier(@Body() dto: CreateUserCashierDto) {
-    return this.usersService.createCashier(dto);
+  createCashier(
+    @Body() dto: CreateUserCashierDto,
+    @GetCompany() companyId: number,
+  ) {
+    return this.usersService.createCashier(dto, companyId);
   }
 
   //? ============================================================================================== */

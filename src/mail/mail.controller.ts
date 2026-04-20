@@ -3,11 +3,11 @@ import { MailService } from './mail.service';
 
 @Controller('mails')
 export class MailsController {
-  /*   constructor(private readonly mailsService: MailService) {}
-  @Post()
+  constructor(private readonly mailsService: MailService) {}
+  /*  @Post()
   sendEmail() {
     const dto = {
-      to: 'luisdiegoborja8@gmail.com',
+      to: 'main.hostinger.2025@gmail.com',
       ticketNumber: 'TK-001',
       ticketDate: '2026-04-06',
       totalPrice: 120,
@@ -26,13 +26,13 @@ export class MailsController {
       passengers: [
         {
           name: 'Juan Perez',
-          idDni: '12345678',
+          ci: '12345678',
           seat: '12A',
           deck: '1',
         },
         {
           name: 'Maria Lopez',
-          idDni: '87654321',
+          ci: '87654321',
           seat: '12B',
           deck: '1',
         },

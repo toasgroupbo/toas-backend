@@ -40,10 +40,6 @@ export class CompanyService {
     try {
       const { bankAccount, manager, ...data } = dto;
 
-      // --------------------------------------------
-      // 1. Busqueda del rol de COMPANY_ADMIN
-      // --------------------------------------------
-
       const rol = await this.rolService.findOneByName(
         StaticRoles.COMPANY_ADMIN,
       );
@@ -51,13 +47,9 @@ export class CompanyService {
         throw new NotFoundException('Role COMPANY_ADMIN not found');
       }
 
-      // --------------------------------------------
-      // 2. Creacion de la compania
-      // --------------------------------------------
-
       const newCompany = this.companyRepository.create({
         ...data,
-        admin: { ...manager, rol: rol },
+        users: [{ ...manager, rol: { id: rol.id } }],
         bankAccount,
       });
 
@@ -73,7 +65,8 @@ export class CompanyService {
 
   async findAll() {
     const companies = await this.companyRepository.find({
-      relations: { bankAccount: true, admin: true },
+      where: { users: { rol: { name: StaticRoles.COMPANY_ADMIN } } },
+      relations: { bankAccount: true, users: true },
     });
     return companies;
   }
@@ -176,62 +169,14 @@ export class CompanyService {
     return result;
   }
 
-  /*   async salesReport(pagination: CompanyPaginationDto) {
-    let { startDate, endDate } = pagination;
-
-    if (!startDate || !endDate) {
-      const now = new Date();
-
-      const startOfDay = new Date(now);
-      startOfDay.setHours(0, 0, 0, 0);
-
-      const endOfDay = new Date(now);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      startDate = startOfDay;
-      endDate = endOfDay;
-    }
-
-    const result = await this.companyRepository
-      .createQueryBuilder('company')
-      .leftJoin('company.travels', 'travel')
-      .where('travel.travel_status = :status', {
-        status: TravelStatus.CLOSED,
-      })
-      .andWhere('travel.closedAt BETWEEN :start AND :end', {
-        start: startDate,
-        end: endDate,
-      })
-      .select('company.id', 'companyId')
-      .addSelect('company.name', 'companyName')
-
-      .addSelect('SUM(travel.total)', 'total')
-      .addSelect('SUM(travel.total_commission)', 'totalCommission')
-      .addSelect('SUM(travel.net_to_company)', 'netToCompany')
-
-      .addSelect('SUM(travel.tickets_office_count)', 'ticketsOfficeCount')
-      .addSelect('SUM(travel.cash_amount)', 'cashAmount')
-      .addSelect('SUM(travel.qr_amount)', 'qrAmount')
-
-      .addSelect('SUM(travel.tickets_app_count)', 'ticketsAppCount')
-      .addSelect('SUM(travel.app_amount)', 'appAmount')
-
-      .addSelect('SUM(travel.tickets_count)', 'ticketsCount')
-
-      .groupBy('company.id')
-      .addGroupBy('company.name')
-      .getRawMany();
-
-    return result;
-  } */
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
   //? ============================================================================================== */
 
   async findOne(id: number) {
     const company = await this.companyRepository.findOne({
-      where: { id },
-      relations: { bankAccount: true, admin: true },
+      where: { id, users: { rol: { name: StaticRoles.COMPANY_ADMIN } } },
+      relations: { bankAccount: true, users: true },
     });
     if (!company) throw new NotFoundException('Company not found');
     return company;
@@ -264,16 +209,6 @@ export class CompanyService {
     }
   }
 
-  /* async update(id: number, dto: UpdateCompanyDto) {
-    const company = await this.findOne(id);
-    try {
-      Object.assign(company, dto);
-      return await this.companyRepository.save(company);
-    } catch (error) {
-      handleDBExceptions(error);
-    }
-  } */
-
   //? ============================================================================================== */
   //?                                        Delete                                                  */
   //? ============================================================================================== */
@@ -283,10 +218,8 @@ export class CompanyService {
       where: { id },
       relations: {
         bankAccount: true,
-        admin: true,
-        offices: {
-          cashiers: true,
-        },
+        users: true,
+        offices: true,
         buses: { busType: true },
         owners: true,
       },
@@ -349,8 +282,8 @@ export class CompanyService {
         await manager.softRemove(company.bankAccount);
       }
 
-      if (company.admin) {
-        await manager.softRemove(company.admin);
+      if (company.users.length) {
+        await manager.softRemove(company.users);
       }
 
       if (company.buses?.length) {

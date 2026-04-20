@@ -6,11 +6,12 @@ import { OwnersService } from './owners.service';
 import { Owner } from './entities/owner.entity';
 
 import { BusesModule } from '../buses/buses.module';
+import { RolesModule } from '../roles/roles.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Owner]), BusesModule],
+  imports: [TypeOrmModule.forFeature([Owner]), BusesModule, RolesModule],
   controllers: [OwnersController],
   providers: [OwnersService],
-  exports: [OwnersService],
+  exports: [OwnersService, TypeOrmModule],
 })
 export class OwnersModule {}

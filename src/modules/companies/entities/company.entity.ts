@@ -17,6 +17,7 @@ import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { Travel } from 'src/modules/travels/entities/travel.entity';
 import { Office } from 'src/modules/offices/entities/office.entity';
 import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
+import { Staff } from 'src/modules/travels/entities/staff.entity';
 
 @Entity('companies')
 export class Company {
@@ -51,12 +52,8 @@ export class Company {
   @JoinColumn()
   bankAccount: BankAccount;
 
-  @OneToOne(() => User, (user) => user.company, {
-    nullable: false,
-    cascade: true,
-  })
-  @JoinColumn()
-  admin: User;
+  @OneToMany(() => User, (user) => user.company, { cascade: true })
+  users: User[];
 
   @OneToMany(() => Office, (office) => office.company)
   offices: Office[];
@@ -80,4 +77,12 @@ export class Company {
 
   @OneToMany(() => Travel, (travel) => travel.company)
   travels: Travel[];
+
+  @ManyToMany(() => Staff, (staff) => staff.companies)
+  @JoinTable({
+    name: 'company_staff',
+    joinColumn: { name: 'companyId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'staffId', referencedColumnName: 'id' },
+  })
+  staff: Staff[];
 }

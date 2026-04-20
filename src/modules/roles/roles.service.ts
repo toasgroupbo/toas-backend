@@ -6,13 +6,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
+import { StaticRoles } from 'src/auth/enums';
+
 import { CreateRoleDto, UpdateRoleDto } from './dto';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { Permission } from './entities/permission.entity';
 import { Rol } from './entities/rol.entity';
-import { StaticRoles } from 'src/auth/enums';
+import { Permission } from './entities/permission.entity';
 
 @Injectable()
 export class RolesService {
@@ -68,7 +69,7 @@ export class RolesService {
       where: {
         name: In([
           StaticRoles.CASHIER,
-          StaticRoles.CASHIER_TRIPS,
+          //StaticRoles.CASHIER_OWNER,
           StaticRoles.CASHIER_SELLER,
         ]),
       },
@@ -102,6 +103,10 @@ export class RolesService {
     const role = await this.rolRepository.findOne({
       where: { name },
     });
+
+    if (!role) {
+      throw new NotFoundException(`Role not found`);
+    }
     return role;
   }
 
