@@ -144,7 +144,12 @@ export class UsersService {
   async findOneForLogin(id: number) {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: { rol: true, office: { company: true }, company: true },
+      relations: { rol: true },
+      select: {
+        id: true,
+        sessionToken: true,
+        rol: true,
+      },
     });
     if (!user) throw new NotFoundException('User not found');
     return user;

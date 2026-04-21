@@ -84,7 +84,17 @@ export class CustomersService {
   //?                                        FindOne                                                 */
   //? ============================================================================================== */
 
-  async findOne(id: number, manager?: EntityManager) {
+  async findOne(id: number) {
+    const customer = await this.customerRepository.findOne({
+      where: { id },
+    });
+    if (!customer) throw new NotFoundException('Customer not found');
+    return customer;
+  }
+
+  //? ============================================================================================== */
+
+  async findOneFull(id: number, manager?: EntityManager) {
     const repository = manager
       ? manager.getRepository(Customer)
       : this.customerRepository;
@@ -107,26 +117,19 @@ export class CustomersService {
     };
   }
 
-  async findOneForLogin(id: number, manager?: EntityManager) {
-    const repository = manager
-      ? manager.getRepository(Customer)
-      : this.customerRepository;
+  //? ============================================================================================== */
 
-    const customer = await repository.findOne({
+  async findOneForLogin(id: number) {
+    const customer = await this.customerRepository.findOne({
       where: { id },
-      //relations: { ticketsBought: true },
+      select: {
+        id: true,
+        sessionToken: true,
+      },
     });
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
   }
-
-  //? ============================================================================================== */
-
-  /*   async findOneByC(ci: string) {
-    const customer = await this.customerRepository.findOne({ where: { ci } });
-    if (!customer) throw new NotFoundException('Customer not found');
-    return customer;
-  } */
 
   //? ============================================================================================== */
 
@@ -165,7 +168,12 @@ export class CustomersService {
   //? ============================================================================================== */
 
   async remove(id: number) {
-    const customer = await this.findOne(id);
+    const customer = await this.customerRepository.findOne({
+      where: { id },
+      relations: { ticketsBought: true },
+    });
+
+    if (!customer) throw new NotFoundException('Customer not found');
 
     try {
       await this.customerRepository.softRemove(customer);

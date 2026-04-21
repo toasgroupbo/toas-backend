@@ -56,7 +56,7 @@ export class Customer {
   @Column('jsonb', { nullable: true })
   billingObject?: any;
 
-  @Column('text', { nullable: true })
+  @Column('text', { nullable: true, select: false })
   sessionToken?: string | null;
 
   @CreateDateColumn({

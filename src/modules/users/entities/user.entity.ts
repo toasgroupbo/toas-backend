@@ -39,7 +39,7 @@ export class User {
   @Column('text')
   phone: string;
 
-  @Column('text', { nullable: true /* , select: false  */ })
+  @Column('text', { nullable: true, select: false })
   sessionToken?: string | null;
 
   @CreateDateColumn({

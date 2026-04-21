@@ -54,7 +54,7 @@ export class CustomersController {
   //!
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.customersService.findOne(id);
+    return this.customersService.findOneFull(id);
   }
 
   //? ============================================================================================== */
