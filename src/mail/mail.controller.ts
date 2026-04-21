@@ -4,10 +4,10 @@ import { MailService } from './mail.service';
 @Controller('mails')
 export class MailsController {
   constructor(private readonly mailsService: MailService) {}
-  /*  @Post()
+  @Post()
   sendEmail() {
     const dto = {
-      to: 'main.hostinger.2025@gmail.com',
+      to: 'luisdiegoborja8@gmail.com',
       ticketNumber: 'TK-001',
       ticketDate: '2026-04-06',
       totalPrice: 120,
@@ -40,5 +40,5 @@ export class MailsController {
     };
 
     return this.mailsService.sendMail(dto);
-  } */
+  }
 }

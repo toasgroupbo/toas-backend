@@ -54,7 +54,7 @@ export class MailService {
       to,
       subject: 'Confirmación de Pago',
       //cc: envs.MAIL_FROM,
-      template: 'paid-order',
+      template: 'paid-order-test',
       context,
 
       //! se agrega el PDF como adjunto
