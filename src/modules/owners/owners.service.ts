@@ -212,16 +212,32 @@ export class OwnersService {
   //? ============================================================================================== */
 
   async findAll(companyId: number) {
+    return await this.ownerRepository.find({
+      where: {
+        companies: { id: companyId },
+        users: { company: { id: companyId } },
+      },
+      relations: {
+        bankAccount: true,
+        users: true,
+        companies: true,
+        buses: true,
+      },
+    });
+  }
+
+  /* async findAll(companyId: number) {
     return this.ownerRepository
       .createQueryBuilder('owner')
       .leftJoinAndSelect('owner.bankAccount', 'bankAccount')
+      .leftJoinAndSelect('owner.users', 'users')
       .leftJoinAndSelect('owner.buses', 'bus', 'bus.companyId = :companyId', {
         companyId,
       })
       .leftJoin('owner.companies', 'company')
       .where('company.id = :companyId', { companyId })
       .getMany();
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
