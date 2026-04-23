@@ -312,6 +312,11 @@ export class SeedService implements OnModuleInit {
           },
 
           {
+            resourse: ValidResourses.ROUTES_CASHIER,
+            permissions: [ValidPermissions.READ],
+          },
+
+          {
             resourse: ValidResourses.TICKET_CASHIER,
             permissions: [
               ValidPermissions.CREATE,
@@ -338,6 +343,11 @@ export class SeedService implements OnModuleInit {
             resourse: ValidResourses.ROUTES_CASHIER,
             permissions: [ValidPermissions.READ],
           }, */
+
+          {
+            resourse: ValidResourses.ROUTES_CASHIER,
+            permissions: [ValidPermissions.READ],
+          },
 
           {
             resourse: ValidResourses.TRAVEL_CASHIER,

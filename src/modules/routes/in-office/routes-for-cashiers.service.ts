@@ -29,6 +29,19 @@ export class RoutesForCashierService {
   //?                                       FindAll                                                  */
   //? ============================================================================================== */
 
+  async findAllForOwner(companyId: number) {
+    return await this.routeRepository.find({
+      where: {
+        enabled: true,
+        officeOrigin: { company: { id: companyId } },
+      },
+    });
+  }
+
+  //? ============================================================================================== */
+  //?                                       FindAll                                                  */
+  //? ============================================================================================== */
+
   async findOne(id: number) {
     const Route = await this.routeRepository.findOne({
       where: { id, enabled: true },

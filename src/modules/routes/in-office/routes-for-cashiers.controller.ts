@@ -1,7 +1,7 @@
 import { Get, Controller } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { Auth, GetOffice, Resource } from 'src/auth/decorators';
+import { Auth, GetCompany, GetOffice, Resource } from 'src/auth/decorators';
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { Office } from '../../offices/entities/office.entity';
@@ -30,5 +30,17 @@ export class RoutesForCashierController {
   @Get('all')
   finAll(@GetOffice() office: Office) {
     return this.routesForCashierService.findAll(office);
+  }
+
+  //? ============================================================================================== */
+  //?                                FindAllForOwner                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
+  @Get('owner/all')
+  finAllForOwner(@GetCompany() companyId: number) {
+    return this.routesForCashierService.findAllForOwner(companyId);
   }
 }
