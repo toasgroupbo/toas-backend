@@ -154,7 +154,7 @@ export class FilesController {
       storage: diskStorage({
         destination: './static/certs',
         filename: (req, file, callback) => {
-          callback(null, 'BUSINESS_PROD.crt'); //! cambiar para producción
+          callback(null, 'ENC_TOASS_PROD.pfx'); //! cambiar para producción
         },
       }),
     }),
