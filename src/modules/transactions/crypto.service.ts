@@ -1,4 +1,4 @@
-/* import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as forge from 'node-forge';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -148,9 +148,9 @@ export class CryptoService implements OnModuleInit {
       // 1. Cargar certificado BUSINESS
       const businessCertPath = path.join(
         process.cwd(),
-        'static', // ← Misma estructura que HttpService
+        'static',
         'certs',
-        'BUSINESS.crt',
+        'BUSINESS_PROD.crt', //'BUSINESS.crt',
       );
       this.businessCert = this.loadCertificate(businessCertPath);
 
@@ -159,7 +159,7 @@ export class CryptoService implements OnModuleInit {
         process.cwd(),
         'static',
         'certs',
-        'ENC_DESA.pfx',
+        'ENC_TOASS_PROD.pfx', //'ENC_DESA.pfx',
       );
       this.pfxEncBuffer = fs.readFileSync(pfxPath);
 
@@ -273,4 +273,3 @@ export class CryptoService implements OnModuleInit {
     );
   }
 }
- */

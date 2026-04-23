@@ -1,7 +1,10 @@
-/* import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Not, Repository } from 'typeorm';
 
+import { GetBatchDetailEncrypt } from './interfaces/toEncrypt/getbatchdetail-to-encrypt.interface';
+
+import { StaticRoles } from 'src/auth/enums';
 import { TravelStatus } from '../travels/enums';
 import { BankCode } from '../bank-accounts/enums/bank-code.enum';
 
@@ -18,7 +21,6 @@ import { HttpService } from './http/http.service';
 import { Travel } from '../travels/entities/travel.entity';
 import { Company } from '../companies/entities/company.entity';
 import { Transaction, TransactionStatus } from './entities/transaction.entity';
-import { GetBatchDetailEncrypt } from './interfaces/toEncrypt/getbatchdetail-to-encrypt.interface';
 
 enum BcpResponseCode {
   SUCCESS = '00',
@@ -195,6 +197,7 @@ export class TransactionsService {
       if (result.StatusOperation !== 'Completado') {
         continue;
       }
+      //!
 
       const snapshot = transaction.travelsSnapshot || [];
 
@@ -256,6 +259,7 @@ export class TransactionsService {
       // Buscar empresas con viajes pendientes de pago
       const companies = await manager.find(Company, {
         where: {
+          users: { rol: { name: StaticRoles.COMPANY_ADMIN } }, //! cuidado
           travels: {
             travel_status: TravelStatus.CLOSED,
             enabled: true,
@@ -265,7 +269,7 @@ export class TransactionsService {
         relations: {
           travels: true,
           bankAccount: true,
-          admin: true,
+          users: true,
         },
       });
 
@@ -343,7 +347,7 @@ export class TransactionsService {
     }));
 
     return {
-      // Usar valores REALES (los que funcionan en pruebas)
+      // Usar valores REALES
       documentNumber: '4850147', // ← Cambiar de '00255921' a '4850147'
       documentType: 'Q',
       documentExtension: 'LP', // ← Cambiar de 'CB' a 'LP'
@@ -352,10 +356,10 @@ export class TransactionsService {
       currency: Currency.BOL,
       fundSource: 'Venta pasajes',
       fundDestination: `Pago a ${company.name}`,
-      sourceAccount: '2011040905323', // ← Cambiar placeholder por cuenta real
+      sourceAccount: '2011040905323', // ← Cambiar por cuenta real
       sourceCurrency: Currency.BOL,
       description: `Pago automático travels`,
-      sendVouchers: company.admin?.email || 'prueba@gmail.com',
+      sendVouchers: company.users[0]?.email /* || 'prueba@gmail.com' */,
 
       cismartApprovers: [
         {
@@ -365,7 +369,7 @@ export class TransactionsService {
       ],
 
       spreadsheet: {
-        // Crear UNA LÍNEA POR TRAVEL (como en tu ejemplo funcional)
+        // Crear UNA LÍNEA POR TRAVEL
         formProvidersPayments: isBcp
           ? paymentLines.map(({ line, amount, travelId }) => ({
               paymentType: PaymentType.PROV,
@@ -378,7 +382,7 @@ export class TransactionsService {
               documentExtension: company.bankAccount.documentExtension,
               firstDetail: `Travel ID: ${travelId}`,
               secondDetails: '',
-              mail: company.admin?.email,
+              mail: company.users[0]?.email, //company.admin?.email,
             }))
           : [],
 
@@ -391,7 +395,7 @@ export class TransactionsService {
               amount,
               branchOfficeId: company.bankAccount.branchOfficeId,
               firstDetail: `Travel ID: ${travelId}`,
-              mail: company.admin?.email,
+              mail: company.users[0]?.email, //company.admin?.email,
               bankId: company.bankAccount.bankCode,
               documentNumber: company.bankAccount.documentNumber,
               documentType: company.bankAccount.documentType,
@@ -516,4 +520,3 @@ export class TransactionsService {
     throw new Error(`Estado de respuesta inválido: ${response.isOk}`);
   }
 }
- */

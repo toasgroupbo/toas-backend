@@ -1,4 +1,4 @@
-/* import { Controller, Post } from '@nestjs/common';
+import { Controller, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { TransactionsService } from './transactions.service';
@@ -32,4 +32,3 @@ export class TransactionsController {
     };
   }
 }
- */

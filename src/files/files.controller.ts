@@ -131,7 +131,7 @@ export class FilesController {
   //?                                  Upload_Certs                                                  */
   //? ============================================================================================== */
 
-  //!
+  /*  //!
   @Auth(ValidPermissions.CREATE)
   @ApiBearerAuth('access-token')
   //!
@@ -165,5 +165,5 @@ export class FilesController {
     }
 
     return { message: 'Certificado subido correctamente' };
-  }
+  } */
 }

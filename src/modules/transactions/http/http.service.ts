@@ -1,4 +1,4 @@
-/* import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
 import { envs } from 'src/config/environments/environments';
@@ -225,4 +225,3 @@ export class HttpService {
     }
   }
 }
- */

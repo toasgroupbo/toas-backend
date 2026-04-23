@@ -84,19 +84,6 @@ export class TicketsInAppService {
     }
   }
 
-  /* async create(dto: CreateTicketInAppDto, buyer: Customer) {
-    const queryRunner = this.createTransaction();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    return this.ticketsService.createTicketBase({
-      dto,
-      buyer,
-      type: TicketType.IN_APP,
-      paymentType: PaymentType.QR,
-    });
-  } */
-
   //? ============================================================================================== */
 
   private async findActiveTravel(
