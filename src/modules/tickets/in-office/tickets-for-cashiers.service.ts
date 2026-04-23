@@ -186,7 +186,7 @@ export class TicketsForCashierService {
 
   async findAll(
     travelId: number,
-    cashier: User,
+    //cashier: User,
     filters: TicketForCashierFilterDto,
   ) {
     return await this.dataSource.transaction(async (manager) => {
@@ -207,7 +207,7 @@ export class TicketsForCashierService {
         where: {
           ...where,
           travel: { id: travelId },
-          soldBy: { id: cashier.id },
+          //soldBy: { id: cashier.id },
         },
         relations: {
           travel: { company: true },

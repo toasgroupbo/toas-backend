@@ -110,7 +110,10 @@ export class TicketsForCashiersController {
     @Param('travelId', ParseIntPipe) travelId: number,
     @GetUser() cashier: User,
   ) {
-    return this.ticketsForCashierService.findAll(travelId, cashier, filters);
+    return this.ticketsForCashierService.findAll(
+      travelId,
+      filters /* cashier */,
+    );
   }
 
   //? ============================================================================================== */
