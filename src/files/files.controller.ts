@@ -131,7 +131,7 @@ export class FilesController {
   //?                                  Upload_Certs                                                  */
   //? ============================================================================================== */
 
-  /*   //!
+  //!
   @Auth(ValidPermissions.CREATE)
   @ApiBearerAuth('access-token')
   //!
@@ -154,7 +154,7 @@ export class FilesController {
       storage: diskStorage({
         destination: './static/certs',
         filename: (req, file, callback) => {
-          callback(null, 'TOASL.pfx'); //! cambiar para producción
+          callback(null, 'BUSINESS_PROD.crt'); //! cambiar para producción
         },
       }),
     }),
@@ -165,5 +165,5 @@ export class FilesController {
     }
 
     return { message: 'Certificado subido correctamente' };
-  } */
+  }
 }
