@@ -106,7 +106,7 @@ export class UsersService {
   async findAll() {
     const users = await this.userRepository.find({
       where: { rol: { isStatic: false } },
-      relations: { /* rol: true,  */ office: true, company: true },
+      relations: { rol: true, office: true, company: true },
     });
     return users;
   }
@@ -121,7 +121,7 @@ export class UsersService {
           name: In([StaticRoles.CASHIER, StaticRoles.CASHIER_SELLER]),
         },
       },
-      relations: { office: true, company: true },
+      relations: { rol: true, office: true, company: true },
     });
     return cashiers;
   }
