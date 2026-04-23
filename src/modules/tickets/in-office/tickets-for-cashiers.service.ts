@@ -210,7 +210,13 @@ export class TicketsForCashierService {
           //soldBy: { id: cashier.id },
         },
         relations: {
-          travel: { company: true, route: true },
+          travel: {
+            company: true,
+            route: {
+              officeOrigin: { place: true },
+              officeDestination: { place: true },
+            },
+          },
           billing: true,
           travelSeats: true,
           buyer: true,
