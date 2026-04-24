@@ -360,7 +360,7 @@ export class TransactionsService {
       currency: Currency.BOL,
       fundSource: 'Venta pasajes',
       fundDestination: `Pago a ${company.name}`,
-      sourceAccount: '2011040905323', // ← Cambiar por cuenta real
+      sourceAccount: '7015103341336', //! cuenta real de Toass
       sourceCurrency: Currency.BOL,
       description: `Pago automático travels`,
       sendVouchers: company.users[0]?.email /* || 'prueba@gmail.com' */,
@@ -439,10 +439,10 @@ export class TransactionsService {
   ): Promise<DecryptAuthorizedBatch> {
     const payload: AuthorizedBachToEncrypt = {
       TransactionsId: transactionsId,
-      UserIp: '212.85.20.252', //'172.31.12.65',
-      documentNumber: '00255921',
+      UserIp: '212.85.20.252',
+      documentNumber: '07706841',
       documentType: 'Q',
-      documentExtension: 'LP',
+      documentExtension: 'SC',
       documentComplement: '',
       type: '1',
     };
