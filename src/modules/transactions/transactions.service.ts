@@ -424,10 +424,14 @@ export class TransactionsService {
       payloadProcessMultipleToEncrypt,
     );
 
+    console.log(encrypted);
+
     const response: ResponseBCP = await this.httpService.processMultiple({
       data: encrypted.data,
       signature: encrypted.signature,
     });
+
+    console.log(response);
 
     return this.decryptResponse<DecryptProcessMultiple>(response);
   }
