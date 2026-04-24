@@ -175,11 +175,15 @@ export class TransactionsService {
 
     if (!transactions.length) return;
 
+    //console.log(transactions);
+
     const transactionsId = transactions
       .filter((t) => t.transactionId)
       .map((t) => Number(t.transactionId));
 
     const response = await this.getBatchDetail(transactionsId);
+
+    console.log(response.Result);
 
     if (response.Code !== BcpResponseCode.SUCCESS) {
       throw new Error(response.Message);
@@ -347,9 +351,10 @@ export class TransactionsService {
 
     return {
       // Usar valores REALES
-      documentNumber: '4850147', // ← Cambiar de '00255921' a '4850147'
+
+      documentNumber: '01000029',
       documentType: 'Q',
-      documentExtension: 'LP', // ← Cambiar de 'CB' a 'LP'
+      documentExtension: 'SN',
       documentComplement: '',
       amount: totalNet,
       currency: Currency.BOL,
