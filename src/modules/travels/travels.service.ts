@@ -234,7 +234,11 @@ export class TravelsService {
         { office: 0, app: 0 },
       );
 
-      return { data: travels.data, meta: travels.meta, amounts: totals };
+      return {
+        data: travelsWithSeats /* travels.data */,
+        meta: travels.meta,
+        amounts: totals,
+      };
     });
   }
 
