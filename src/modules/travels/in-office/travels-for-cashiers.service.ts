@@ -69,13 +69,13 @@ export class TravelsForCashierService {
     if (status) where.travel_status = status;
 
     //! Origen
-    if (origin_placeId) {
+    /* if (origin_placeId) {
       where.route.officeOrigin = {
         place: {
           id: origin_placeId,
         },
       };
-    }
+    } */
 
     //! Destino
     if (destination_placeId) {
@@ -178,10 +178,6 @@ export class TravelsForCashierService {
 
     if (!owner) throw new NotFoundException('Owner not found');
 
-    const options: any = {
-      where: {},
-    };
-
     const where: any = {
       travel_status: In([TravelStatus.ACTIVE, TravelStatus.CLOSED]),
       enabled: true,
@@ -191,22 +187,22 @@ export class TravelsForCashierService {
     //! status
     if (status) where.travel_status = status;
 
-    //! Origen
-    if (origin_placeId) {
-      where.route.officeOrigin = {
-        place: {
-          id: origin_placeId,
-        },
-      };
-    }
+    if (origin_placeId || destination_placeId) {
+      where.route = {};
 
-    //! Destino
-    if (destination_placeId) {
-      where.route.officeDestination = {
-        place: {
-          id: destination_placeId,
-        },
-      };
+      //! Origen
+      if (origin_placeId) {
+        where.route.officeOrigin = {
+          place: { id: origin_placeId },
+        };
+      }
+
+      //! Destino
+      if (destination_placeId) {
+        where.route.officeDestination = {
+          place: { id: destination_placeId },
+        };
+      }
     }
 
     //! Por dia

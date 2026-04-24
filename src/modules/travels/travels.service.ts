@@ -154,22 +154,22 @@ export class TravelsService {
         options.where.travel_status = status;
       }
 
-      //! Origen
-      if (origin_placeId) {
-        options.where.route.officeOrigin = {
-          place: {
-            id: origin_placeId,
-          },
-        };
-      }
+      if (origin_placeId || destination_placeId) {
+        options.where.route = {};
 
-      //! Destino
-      if (destination_placeId) {
-        options.where.route.officeDestination = {
-          place: {
-            id: destination_placeId,
-          },
-        };
+        //! origen
+        if (origin_placeId) {
+          options.where.route.officeOrigin = {
+            place: { id: origin_placeId },
+          };
+        }
+
+        //! Destino
+        if (destination_placeId) {
+          options.where.route.officeDestination = {
+            place: { id: destination_placeId },
+          };
+        }
       }
 
       //! Por dia
