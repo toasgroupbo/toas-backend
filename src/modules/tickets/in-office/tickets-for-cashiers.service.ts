@@ -207,7 +207,6 @@ export class TicketsForCashierService {
         where: {
           ...where,
           travel: { id: travelId },
-          //soldBy: { id: cashier.id },
         },
         relations: {
           travel: {

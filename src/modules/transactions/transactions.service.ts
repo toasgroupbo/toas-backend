@@ -2,8 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Not, Repository } from 'typeorm';
 
-import { GetBatchDetailEncrypt } from './interfaces/toEncrypt/getbatchdetail-to-encrypt.interface';
-
 import { StaticRoles } from 'src/auth/enums';
 import { TravelStatus } from '../travels/enums';
 import { BankCode } from '../bank-accounts/enums/bank-code.enum';
@@ -12,6 +10,7 @@ import { ResponseBCP } from './interfaces/response-bcp.interface';
 import { DecryptGetBatchDetail } from './interfaces/decrypt-get-batch-detail.interface';
 import { DecryptProcessMultiple } from './interfaces/decrypt-process-multiple.interface';
 import { DecryptAuthorizedBatch } from './interfaces/decrypt-authorized-batch.interface';
+import { GetBatchDetailEncrypt } from './interfaces/toEncrypt/getbatchdetail-to-encrypt.interface';
 import { AuthorizedBachToEncrypt } from './interfaces/toEncrypt/authorizedbach-to-encrypt.interface';
 import { ProcessMultipleToEncrypt } from './interfaces/toEncrypt/processmultiple-to-encrypt.interface';
 
@@ -435,7 +434,7 @@ export class TransactionsService {
   ): Promise<DecryptAuthorizedBatch> {
     const payload: AuthorizedBachToEncrypt = {
       TransactionsId: transactionsId,
-      UserIp: '172.31.12.65',
+      UserIp: '212.85.20.252', //'172.31.12.65',
       documentNumber: '00255921',
       documentType: 'Q',
       documentExtension: 'LP',
