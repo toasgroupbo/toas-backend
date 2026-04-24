@@ -165,67 +165,6 @@ export class TravelsForCashierService {
   }
 
   //? ============================================================================================== */
-
-  async getSeatsStatsByTravels(travelIds: number[]) {
-    if (!travelIds.length) return new Map();
-
-    const raw = await this.travelSeatRepository
-      .createQueryBuilder('ts')
-      .leftJoin('ts.ticket', 't')
-      .select('ts.travelId', 'travelId')
-      .addSelect('COUNT(*)', 'totalSeats')
-      .addSelect(
-        `
-      SUM(CASE 
-        WHEN t.id IS NOT NULL AND t.type = :app THEN 1 
-        ELSE 0 
-      END)
-    `,
-        'seatsApp',
-      )
-      .addSelect(
-        `
-      SUM(CASE 
-        WHEN t.id IS NOT NULL AND t.type = :office THEN 1 
-        ELSE 0 
-      END)
-    `,
-        'seatsOffice',
-      )
-      .addSelect(
-        `
-      SUM(CASE 
-        WHEN t.id IS NULL THEN 1 
-        ELSE 0 
-      END)
-    `,
-        'seatsAvailable',
-      )
-      .where('ts.travelId IN (:...ids)', { ids: travelIds })
-      .andWhere('(t.status IS NULL OR t.status != :cancelled)', {
-        cancelled: TicketStatus.CANCELLED,
-      })
-      .groupBy('ts.travelId')
-      .setParameters({
-        app: TicketType.IN_APP,
-        office: TicketType.IN_OFFICE,
-      })
-      .getRawMany();
-
-    return new Map(
-      raw.map((r) => [
-        Number(r.travelId),
-        {
-          totalSeats: Number(r.totalSeats),
-          seatsApp: Number(r.seatsApp),
-          seatsOffice: Number(r.seatsOffice),
-          seatsAvailable: Number(r.seatsAvailable),
-        },
-      ]),
-    );
-  }
-
-  //? ============================================================================================== */
   //?                               FindAllForOwners                                                 */
   //? ============================================================================================== */
 
@@ -300,7 +239,7 @@ export class TravelsForCashierService {
       filters,
     );
 
-    const travelsWithSeats = await Promise.all(
+    /* const travelsWithSeats = await Promise.all(
       travels.data.map(async (travel) => {
         const seatsAvailable = await this.getSeatsAvailableCount(travel.id);
         return {
@@ -308,7 +247,28 @@ export class TravelsForCashierService {
           seatsAvailable,
         };
       }),
-    );
+    ); */
+
+    const travelIds = travels.data.map((t) => t.id);
+    const statsMap = await this.getSeatsStatsByTravels(travelIds);
+
+    const travelsWithSeats = travels.data.map((travel) => {
+      const stats = statsMap.get(travel.id) || {
+        totalSeats: 0,
+        seatsApp: 0,
+        seatsOffice: 0,
+        seatsAvailable: 0,
+      };
+
+      return {
+        ...travel,
+        totalBusSeats: stats.totalSeats,
+        seatsApp: stats.seatsApp,
+        seatsOffice: stats.seatsOffice,
+        seatsAvailable: stats.seatsAvailable,
+        totalSoldSeats: stats.seatsApp + stats.seatsOffice,
+      };
+    });
 
     const allTravels = await this.travelRepository.find({
       where,
@@ -325,6 +285,67 @@ export class TravelsForCashierService {
     );
 
     return { data: travelsWithSeats, meta: travels.meta, amounts: totals };
+  }
+
+  //? ============================================================================================== */
+
+  async getSeatsStatsByTravels(travelIds: number[]) {
+    if (!travelIds.length) return new Map();
+
+    const raw = await this.travelSeatRepository
+      .createQueryBuilder('ts')
+      .leftJoin('ts.ticket', 't')
+      .select('ts.travelId', 'travelId')
+      .addSelect('COUNT(*)', 'totalSeats')
+      .addSelect(
+        `
+      SUM(CASE 
+        WHEN t.id IS NOT NULL AND t.type = :app THEN 1 
+        ELSE 0 
+      END)
+    `,
+        'seatsApp',
+      )
+      .addSelect(
+        `
+      SUM(CASE 
+        WHEN t.id IS NOT NULL AND t.type = :office THEN 1 
+        ELSE 0 
+      END)
+    `,
+        'seatsOffice',
+      )
+      .addSelect(
+        `
+      SUM(CASE 
+        WHEN t.id IS NULL THEN 1 
+        ELSE 0 
+      END)
+    `,
+        'seatsAvailable',
+      )
+      .where('ts.travelId IN (:...ids)', { ids: travelIds })
+      .andWhere('(t.status IS NULL OR t.status != :cancelled)', {
+        cancelled: TicketStatus.CANCELLED,
+      })
+      .groupBy('ts.travelId')
+      .setParameters({
+        app: TicketType.IN_APP,
+        office: TicketType.IN_OFFICE,
+      })
+      .getRawMany();
+
+    return new Map(
+      raw.map((r) => [
+        Number(r.travelId),
+        {
+          totalSeats: Number(r.totalSeats),
+          seatsApp: Number(r.seatsApp),
+          seatsOffice: Number(r.seatsOffice),
+          seatsAvailable: Number(r.seatsAvailable),
+        },
+      ]),
+    );
   }
 
   //? ============================================================================================== */

@@ -9,6 +9,7 @@ import { Between, DataSource, LessThan, MoreThan, Repository } from 'typeorm';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { TravelStatus } from './enums';
+import { TicketStatus, TicketType } from '../tickets/enums';
 
 import { CreateTravelDto } from './dto';
 import { paginate } from 'src/common/pagination/paginate';
@@ -21,12 +22,16 @@ import { Travel } from './entities/travel.entity';
 import { Bus } from '../buses/entities/bus.entity';
 import { User } from '../users/entities/user.entity';
 import { Office } from '../offices/entities/office.entity';
+import { TravelSeat } from './entities/travel-seat.entity';
 
 @Injectable()
 export class TravelsService {
   constructor(
     @InjectRepository(Travel)
     private readonly travelRepository: Repository<Travel>,
+
+    @InjectRepository(TravelSeat)
+    private readonly travelSeatRepository: Repository<TravelSeat>,
 
     private readonly ticketExpirationService: TicketExpirationService,
     private dataSource: DataSource,
@@ -194,6 +199,27 @@ export class TravelsService {
         pagination,
       );
 
+      const travelIds = travels.data.map((t) => t.id);
+      const statsMap = await this.getSeatsStatsByTravels(travelIds);
+
+      const travelsWithSeats = travels.data.map((travel) => {
+        const stats = statsMap.get(travel.id) || {
+          totalSeats: 0,
+          seatsApp: 0,
+          seatsOffice: 0,
+          seatsAvailable: 0,
+        };
+
+        return {
+          ...travel,
+          totalBusSeats: stats.totalSeats,
+          seatsApp: stats.seatsApp,
+          seatsOffice: stats.seatsOffice,
+          seatsAvailable: stats.seatsAvailable,
+          totalSoldSeats: stats.seatsApp + stats.seatsOffice,
+        };
+      });
+
       const allTravels = await this.travelRepository.find({
         ...options,
         select: { cash_amount: true, qr_amount: true, app_amount: true },
@@ -209,9 +235,68 @@ export class TravelsService {
       );
 
       return { data: travels.data, meta: travels.meta, amounts: totals };
-
-      //return travels;
     });
+  }
+
+  //? ============================================================================================== */
+
+  async getSeatsStatsByTravels(travelIds: number[]) {
+    if (!travelIds.length) return new Map();
+
+    const raw = await this.travelSeatRepository
+      .createQueryBuilder('ts')
+      .leftJoin('ts.ticket', 't')
+      .select('ts.travelId', 'travelId')
+      .addSelect('COUNT(*)', 'totalSeats')
+      .addSelect(
+        `
+      SUM(CASE 
+        WHEN t.id IS NOT NULL AND t.type = :app THEN 1 
+        ELSE 0 
+      END)
+    `,
+        'seatsApp',
+      )
+      .addSelect(
+        `
+      SUM(CASE 
+        WHEN t.id IS NOT NULL AND t.type = :office THEN 1 
+        ELSE 0 
+      END)
+    `,
+        'seatsOffice',
+      )
+      .addSelect(
+        `
+      SUM(CASE 
+        WHEN t.id IS NULL THEN 1 
+        ELSE 0 
+      END)
+    `,
+        'seatsAvailable',
+      )
+      .where('ts.travelId IN (:...ids)', { ids: travelIds })
+      .andWhere('(t.status IS NULL OR t.status != :cancelled)', {
+        cancelled: TicketStatus.CANCELLED,
+      })
+      .groupBy('ts.travelId')
+      .setParameters({
+        app: TicketType.IN_APP,
+        office: TicketType.IN_OFFICE,
+      })
+      .getRawMany();
+
+    return new Map(
+      raw.map((r) => [
+        Number(r.travelId),
+        {
+          totalSeats: Number(r.totalSeats),
+          seatsApp: Number(r.seatsApp),
+          seatsOffice: Number(r.seatsOffice),
+          seatsAvailable: Number(r.seatsAvailable),
+        },
+      ]),
+    );
   }
 
   //? ============================================================================================== */
