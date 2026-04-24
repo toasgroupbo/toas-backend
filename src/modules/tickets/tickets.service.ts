@@ -608,12 +608,12 @@ export class TicketsService {
       return await manager.find(Ticket, {
         where: {
           ...where,
-          order: { id: 'DESC' },
           travel: {
             id: travelId,
             company: { id: companyId },
           },
         },
+        order: { id: 'DESC' },
         relations: {
           travel: {
             company: true,
