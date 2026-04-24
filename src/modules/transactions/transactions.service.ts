@@ -175,7 +175,7 @@ export class TransactionsService {
 
     if (!transactions.length) return;
 
-    //console.log(transactions);
+    console.log(transactions);
 
     const transactionsId = transactions
       .filter((t) => t.transactionId)
@@ -367,7 +367,7 @@ export class TransactionsService {
 
       cismartApprovers: [
         {
-          idc: '00255921-Q-LP', // ← Cambiar de 'CB' a 'LP'
+          idc: '07706841-Q-SC', // ← Cambiar de 'CB' a 'LP'
           type: 1,
         },
       ],
