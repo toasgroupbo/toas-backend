@@ -81,6 +81,8 @@ export class TransactionsService {
       try {
         const response = await this.proccesMultiple(payload);
 
+        console.log(response);
+
         // VALIDAR RESPUESTA DEL BANCO
         if (response.Code !== BcpResponseCode.SUCCESS) {
           transaction.status = TransactionStatus.FAILED;
