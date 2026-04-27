@@ -28,7 +28,7 @@ export class CryptoService implements OnModuleInit {
     signature: string;
   } {
     payload.companyId = +envs.H2H_COMPANYID;
-    payload.password = envs.H2H_PASSWORD;
+    payload.password = envs.H2H_PASSWORD_PAYLOAD;
 
     const data = this.encryptPayload(payload);
     const signature = this.signData(data);
@@ -42,7 +42,7 @@ export class CryptoService implements OnModuleInit {
     signature: string;
   } {
     payload.companyId = +envs.H2H_COMPANYID;
-    payload.password = envs.H2H_PASSWORD;
+    payload.password = envs.H2H_PASSWORD_PAYLOAD;
 
     const data = this.encryptPayload(payload);
     const signature = this.signData(data);
@@ -56,7 +56,7 @@ export class CryptoService implements OnModuleInit {
     signature: string;
   } {
     payload.companyId = +envs.H2H_COMPANYID;
-    payload.password = envs.H2H_PASSWORD;
+    payload.password = envs.H2H_PASSWORD_PAYLOAD;
 
     const data = this.encryptPayload(payload);
     const signature = this.signData(data);

@@ -42,6 +42,7 @@ interface IEnvironmentVariables {
   H2H_COMPANYID: string;
   H2H_USERNAME: string;
   H2H_PASSWORD: string;
+  H2H_PASSWORD_PAYLOAD: string;
   H2H_BASEURL: string;
   H2H_PFX_PASSWORD: string;
 
@@ -106,6 +107,7 @@ export const envs = {
   H2H_COMPANYID: envVariables.H2H_COMPANYID,
   H2H_USERNAME: envVariables.H2H_USERNAME,
   H2H_PASSWORD: envVariables.H2H_PASSWORD,
+  H2H_PASSWORD_PAYLOAD: envVariables.H2H_PASSWORD_PAYLOAD,
   H2H_BASEURL: envVariables.H2H_BASEURL,
   H2H_PFX_PASSWORD: envVariables.H2H_PFX_PASSWORD,
 

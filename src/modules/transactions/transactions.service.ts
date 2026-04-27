@@ -369,7 +369,7 @@ export class TransactionsService {
 
       cismartApprovers: [
         {
-          idc: '07706841-Q-SC', // ← Cambiar de 'CB' a 'LP'
+          idc: '07706841-Q-XX', // ← Cambiar de 'CB' a 'LP'
           type: 1,
         },
       ],
