@@ -13,6 +13,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../modules/users/users.module';
 import { CustomersModule } from '../modules/customers/customers.module';
 
+import { AppleAuthService } from './services/apple-auth.service';
+
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -26,7 +28,7 @@ import { CustomersModule } from '../modules/customers/customers.module';
     CustomersModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy],
+  providers: [AuthService, JwtStrategy, GoogleStrategy, AppleAuthService],
   exports: [JwtStrategy, PassportModule, JwtModule],
 })
 export class AuthModule {}

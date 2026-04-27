@@ -1,8 +1,8 @@
 import {
   Injectable,
+  NotFoundException,
   BadRequestException,
   UnauthorizedException,
-  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -11,15 +11,17 @@ import { Repository } from 'typeorm';
 import { OAuth2Client } from 'google-auth-library';
 
 import { IJwtPayload } from './interfaces/jwt-payload.interface';
-import { LoginCustomerDto, LoginUserDto } from './dto';
+import { AppleLoginDto, LoginCustomerDto, LoginUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
+
+import { envs } from 'src/config/environments/environments';
 
 import { AuthProviders } from './enums';
 import { LoginType } from '../common/enums/login-type.enum';
 
 import { UsersService } from '../modules/users/users.service';
+import { AppleAuthService } from './services/apple-auth.service';
 
-import { envs } from 'src/config/environments/environments';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Customer } from '../modules/customers/entities/customer.entity';
 
@@ -34,6 +36,8 @@ export class AuthService {
 
     private readonly jwtService: JwtService,
     private readonly userService: UsersService,
+
+    private readonly appleAuthService: AppleAuthService,
   ) {}
 
   private googleClient = new OAuth2Client(envs.GOOGLE_ID_OAUTH);
@@ -216,24 +220,94 @@ export class AuthService {
   }
 
   //? ============================================================================================== */
-  //?                                  Login_Customer                                                */
+  //?                                    Apple_Verify                                                */
   //? ============================================================================================== */
 
-  /* async loginCustomer(dto: LoginCustomerDto) {
-    const customer = await this.customerRepository.findOneBy({
-      email: dto.email,
-    });
-    if (!customer) {
-      throw new NotFoundException('Customer not found');
+  async appleVerify(dto: AppleLoginDto) {
+    const { identityToken, fullName } = dto;
+
+    if (!identityToken) {
+      throw new BadRequestException('Missing identityToken');
     }
 
+    // --------------------------------------------------
+    // 1. Verificar token Apple
+    // --------------------------------------------------
+    const claims =
+      await this.appleAuthService.verifyIdentityToken(identityToken);
+
+    const { sub, email } = claims;
+
+    if (!sub) {
+      throw new UnauthorizedException('Invalid Apple token');
+    }
+
+    // --------------------------------------------------
+    // 2. Buscar cliente existente por Apple ID
+    // --------------------------------------------------
+    let customer = await this.customerRepository.findOne({
+      where: { idProvider: sub },
+    });
+
+    // --------------------------------------------------
+    // 3. Crear cliente si no existe
+    // --------------------------------------------------
+    if (!customer) {
+      customer = await this.customerRepository.save(
+        this.customerRepository.create({
+          email: email || '',
+          name: fullName ?? `Apple User ${sub.slice(0, 6)}`,
+          provider: AuthProviders.APPLE,
+          idProvider: sub,
+          is_verified: false,
+        }),
+      );
+    }
+
+    // --------------------------------------------------
+    // 4. Completar datos faltantes si Apple los envía
+    // --------------------------------------------------
+    let shouldUpdate = false;
+
+    if (!customer.email && email) {
+      customer.email = email;
+      shouldUpdate = true;
+    }
+
+    if (!customer.name && fullName) {
+      customer.name = fullName;
+      shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+      customer = await this.customerRepository.save(customer);
+    }
+
+    // --------------------------------------------------
+    // 5. Generar JWT propio
+    // --------------------------------------------------
+    const token = this.generateJwt({
+      id: customer.id,
+      type: LoginType.customer,
+    });
+
+    // --------------------------------------------------
+    // 6. Invalidar sesión previa
+    // --------------------------------------------------
+    await this.customerRepository.update(
+      { id: customer.id },
+      { sessionToken: token },
+    );
+
     return {
-      token: this.generateJwt({
-        id: customer.id,
-        type: LoginType.customer,
-      }),
+      token,
+      user: customer,
     };
-  } */
+  }
+
+  //? ============================================================================================== */
+  //?                                  Login_Customer                                                */
+  //? ============================================================================================== */
 
   async loginCustomer(dto: LoginCustomerDto) {
     const { email, password } = dto;

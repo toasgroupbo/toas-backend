@@ -352,7 +352,7 @@ export class TransactionsService {
     }));
 
     return {
-      // Usar valores REALES
+      // valores REALES
 
       documentNumber: '01000029',
       documentType: 'Q',
@@ -365,7 +365,7 @@ export class TransactionsService {
       sourceAccount: '7015103341336', //! cuenta real de Toass
       sourceCurrency: Currency.BOL,
       description: `Pago automático travels`,
-      sendVouchers: company.users[0]?.email /* || 'prueba@gmail.com' */,
+      sendVouchers: 'luisdiegoborja8@gmail.com', //company.users[0]?.email /*
 
       cismartApprovers: [
         {
@@ -448,7 +448,7 @@ export class TransactionsService {
       UserIp: '212.85.20.252',
       documentNumber: '07706841',
       documentType: 'Q',
-      documentExtension: 'SC',
+      documentExtension: 'XX',
       documentComplement: '',
       type: '1',
     };
