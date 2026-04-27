@@ -138,7 +138,10 @@ export class TicketsInAppService {
           buyer: { id: customer.id },
         },
         relations: {
-          travel: { route: { officeOrigin: true, officeDestination: true } },
+          travel: {
+            bus: true,
+            route: { officeOrigin: true, officeDestination: true },
+          },
         },
       });
 
