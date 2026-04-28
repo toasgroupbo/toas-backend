@@ -467,6 +467,7 @@ export class TravelsService {
             await this.walletService.creditFromTicketCancel(
               ticket,
               ticket.buyer,
+              false,
               manager,
             );
 

@@ -139,7 +139,7 @@ export class TicketsInAppService {
         },
         relations: {
           travel: {
-            bus: true,
+            bus: { busType: true },
             route: { officeOrigin: true, officeDestination: true },
           },
         },
@@ -232,6 +232,7 @@ export class TicketsInAppService {
         await this.walletService.creditFromTicketCancel(
           ticket,
           ticket.buyer,
+          true,
           queryRunner.manager,
         );
       }

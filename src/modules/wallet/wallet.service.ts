@@ -7,9 +7,9 @@ import {
   WalletTransaction,
 } from './entities/wallet-transactions.entity';
 import { Wallet } from './entities/wallet.entity';
+import { PaymentQR } from '../payments/entities/payment-qr.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { Customer } from 'src/modules/customers/entities/customer.entity';
-import { PaymentQR } from '../payments/entities/payment-qr.entity';
 
 @Injectable()
 export class WalletService {
@@ -131,6 +131,7 @@ export class WalletService {
   async creditFromTicketCancel(
     ticket: Ticket,
     customer: Customer,
+    applyCommissionPenalty: boolean,
     manager?: EntityManager,
   ) {
     const walletRepo = this.getWalletRepo(manager);
@@ -138,10 +139,14 @@ export class WalletService {
 
     const wallet = await this.getOrCreateWallet(customer, manager);
 
+    let comision = 0;
+
+    if (applyCommissionPenalty) {
+      comision = Number(ticket.commission);
+    }
+
     const amount =
-      Number(ticket.wallet_amount) +
-      Number(ticket.qr_amount) -
-      Number(ticket.commission); //! comision  //0
+      Number(ticket.wallet_amount) + Number(ticket.qr_amount) - comision;
 
     if (amount <= 0) return null;
 
