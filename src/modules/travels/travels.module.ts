@@ -17,6 +17,8 @@ import { TravelsForCashierService } from './in-office/travels-for-cashiers.servi
 import { Staff } from './entities/staff.entity';
 import { Travel } from './entities/travel.entity';
 import { TravelSeat } from './entities/travel-seat.entity';
+import { UsersModule } from '../users/users.module';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -24,6 +26,10 @@ import { TravelSeat } from './entities/travel-seat.entity';
     RoutesModule,
 
     OwnersModule,
+
+    WalletModule,
+
+    forwardRef(() => UsersModule),
 
     forwardRef(() => TicketsModule),
   ],

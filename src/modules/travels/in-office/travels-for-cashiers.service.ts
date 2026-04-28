@@ -27,6 +27,7 @@ import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { TravelSeat } from '../entities/travel-seat.entity';
 import { Office } from '../../offices/entities/office.entity';
 import { Owner } from 'src/modules/owners/entities/owner.entity';
+import { CancelTravelDto } from '../dto';
 
 @Injectable()
 export class TravelsForCashierService {

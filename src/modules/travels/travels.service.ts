@@ -2,20 +2,26 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, LessThan, MoreThan, Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { TravelStatus } from './enums';
+import { SeatStatus } from 'src/common/enums';
 import { TicketStatus, TicketType } from '../tickets/enums';
 
-import { CreateTravelDto } from './dto';
+import { CancelTravelDto, CreateTravelDto } from './dto';
 import { paginate } from 'src/common/pagination/paginate';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
+import { UsersService } from '../users/users.service';
+import { WalletService } from '../wallet/wallet.service';
 import { TicketExpirationService } from '../tickets/ticket-expiration.service';
 
 import { Travel } from './entities/travel.entity';
@@ -23,6 +29,7 @@ import { Bus } from '../buses/entities/bus.entity';
 import { User } from '../users/entities/user.entity';
 import { Office } from '../offices/entities/office.entity';
 import { TravelSeat } from './entities/travel-seat.entity';
+import { Ticket } from '../tickets/entities/ticket.entity';
 
 @Injectable()
 export class TravelsService {
@@ -34,6 +41,11 @@ export class TravelsService {
     private readonly travelSeatRepository: Repository<TravelSeat>,
 
     private readonly ticketExpirationService: TicketExpirationService,
+
+    private readonly userService: UsersService,
+
+    private readonly walletService: WalletService,
+
     private dataSource: DataSource,
   ) {}
 
@@ -331,7 +343,25 @@ export class TravelsService {
   //?                                        Cancel                                                  */
   //? ============================================================================================== */
 
-  async cancel(id: number, office: Office) {
+  /* async cancel(
+    id: number,
+    office: Office,
+    dto: CancelTravelDto,
+    cashier: User,
+  ) {
+    const { password } = dto;
+
+    const user = await this.userService.findOneByEmail(cashier.email);
+
+    if (!user) {
+      throw new UnauthorizedException('Cashier not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Password Incorrecto');
+    }
+
     return await this.dataSource.transaction(async (manager) => {
       await this.ticketExpirationService.expireTravelIfNeeded(id, manager);
 
@@ -339,6 +369,11 @@ export class TravelsService {
         where: {
           id,
           route: { officeOrigin: { company: { id: office.company.id } } },
+        },
+        relations: {
+          tickets: {
+            buyer: true,
+          },
         },
       });
 
@@ -354,6 +389,153 @@ export class TravelsService {
       } catch (error) {
         handleDBExceptions(error);
       }
+    });
+  } */
+
+  async cancel(
+    id: number,
+    office: Office,
+    dto: CancelTravelDto,
+    cashier: User,
+  ) {
+    const { password } = dto;
+
+    const user = await this.userService.findOneByEmail(cashier.email);
+
+    if (!user) {
+      throw new UnauthorizedException('Cashier not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Password Incorrecto');
+    }
+
+    return await this.dataSource.transaction(async (manager) => {
+      //! Expirar viaje si corresponde
+      await this.ticketExpirationService.expireTravelIfNeeded(id, manager);
+
+      //! Buscar viaje con tickets + buyers
+      const travel = await manager.findOne(Travel, {
+        where: {
+          id,
+          route: {
+            officeOrigin: {
+              company: { id: office.company.id },
+            },
+          },
+        },
+        relations: {
+          tickets: {
+            buyer: true,
+            travelSeats: true,
+          },
+        },
+      });
+
+      if (!travel) {
+        throw new NotFoundException('Travel not found');
+      }
+
+      if (travel.travel_status !== TravelStatus.ACTIVE) {
+        throw new BadRequestException('The Travel is not active');
+      }
+
+      let cancelledTickets = 0;
+      let refundedTickets = 0;
+
+      //! Recorrer todos los tickets del viaje
+      for (const ticket of travel.tickets) {
+        //! Solo tickets cancelables
+        if (
+          ![
+            TicketStatus.SOLD,
+            TicketStatus.RESERVED,
+            TicketStatus.PENDING_PAYMENT,
+          ].includes(ticket.status)
+        ) {
+          continue;
+        }
+
+        //! ===============================
+        //! Tickets comprados desde APP
+        //! ===============================
+        if (ticket.type === TicketType.IN_APP) {
+          //! Refund wallet sin comisión
+          if (ticket.status === TicketStatus.SOLD && ticket.buyer) {
+            await this.walletService.creditFromTicketCancel(
+              ticket,
+              ticket.buyer,
+              manager,
+            );
+
+            refundedTickets++;
+          }
+
+          //! Lógica equivalente a TicketsInAppService.applyCancelledState()
+          ticket.reserve_expiresAt = null;
+
+          if (
+            ticket.status === TicketStatus.RESERVED ||
+            ticket.status === TicketStatus.PENDING_PAYMENT
+          ) {
+            ticket.deletedAt = new Date();
+          }
+
+          for (const seat of ticket.travelSeats) {
+            seat.status = SeatStatus.AVAILABLE;
+            seat.ticket = null;
+            seat.price = '0';
+            seat.passenger = null;
+          }
+
+          ticket.status = TicketStatus.CANCELLED;
+        }
+
+        //! ===============================
+        //! Tickets vendidos en oficina
+        //! ===============================
+        else if (ticket.type === TicketType.IN_OFFICE) {
+          //! Lógica equivalente a TicketsForCashierService.applyCancelledState()
+          const previousStatus = ticket.status;
+
+          ticket.reserve_expiresAt = null;
+          ticket.cancelledAt = new Date();
+          ticket.canceledBy = cashier;
+          ticket.status = TicketStatus.CANCELLED;
+
+          if (
+            previousStatus === TicketStatus.RESERVED ||
+            previousStatus === TicketStatus.PENDING_PAYMENT
+          ) {
+            ticket.deletedAt = new Date();
+          }
+
+          for (const seat of ticket.travelSeats) {
+            seat.status = SeatStatus.AVAILABLE;
+            seat.ticket = null;
+            seat.price = '0';
+            seat.passenger = null;
+          }
+        }
+
+        await manager.save(Ticket, ticket);
+
+        cancelledTickets++;
+      }
+
+      //! Cancelar viaje
+      travel.travel_status = TravelStatus.CANCELLED;
+
+      await manager.save(Travel, travel);
+
+      return {
+        message: 'Travel canceled successfully',
+        travelId: travel.id,
+        cancelledTickets,
+        refundedTickets,
+      };
     });
   }
 

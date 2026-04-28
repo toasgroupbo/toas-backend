@@ -25,6 +25,6 @@ export class TravelForCashierFilterDto extends PaginationDto {
   endDate?: string;
 
   @IsOptional()
-  @IsEnum([TravelStatus.ACTIVE, TravelStatus.CLOSED])
+  @IsEnum([TravelStatus.ACTIVE, TravelStatus.CLOSED, TravelStatus.CANCELLED])
   status?: TravelStatus;
 }

@@ -369,7 +369,7 @@ export class TransactionsService {
 
       cismartApprovers: [
         {
-          idc: '07706841-Q-XX', // ← Cambiar de 'CB' a 'LP'
+          idc: '07706841-Q-XX',
           type: 1,
         },
       ],
@@ -380,7 +380,7 @@ export class TransactionsService {
           ? paymentLines.map(({ line, amount, travelId }) => ({
               paymentType: PaymentType.PROV,
               line,
-              accountNumber: Number(company.bankAccount.account),
+              accountNumber: company.bankAccount.account,
               glossPayment: `Pago travel ${travelId}`,
               amount,
               documentType: company.bankAccount.documentType,
@@ -396,7 +396,7 @@ export class TransactionsService {
           ? paymentLines.map(({ line, amount, travelId }) => ({
               paymentType: PaymentType.ACH,
               line,
-              accountNumber: Number(company.bankAccount.account),
+              accountNumber: company.bankAccount.account,
               titularName: company.bankAccount.titularName,
               amount,
               branchOfficeId: company.bankAccount.branchOfficeId,

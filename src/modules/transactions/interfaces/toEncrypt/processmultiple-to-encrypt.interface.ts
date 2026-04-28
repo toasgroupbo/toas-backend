@@ -31,7 +31,7 @@ export interface Spreadsheet {
 export interface FormProvidersPayment {
   paymentType: string;
   line: number;
-  accountNumber: number;
+  accountNumber: string;
   glossPayment: string;
   amount: number;
   documentType: string;
@@ -45,7 +45,7 @@ export interface FormProvidersPayment {
 export interface FormAchPayment {
   paymentType: string;
   line: number;
-  accountNumber: number;
+  accountNumber: string;
   titularName: string;
   amount: number;
   branchOfficeId: number;

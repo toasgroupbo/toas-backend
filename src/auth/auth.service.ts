@@ -7,12 +7,12 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 import { OAuth2Client } from 'google-auth-library';
 
 import { IJwtPayload } from './interfaces/jwt-payload.interface';
 import { AppleLoginDto, LoginCustomerDto, LoginUserDto } from './dto';
-import * as bcrypt from 'bcrypt';
 
 import { envs } from 'src/config/environments/environments';
 
@@ -35,6 +35,7 @@ export class AuthService {
     private userRepository: Repository<User>,
 
     private readonly jwtService: JwtService,
+
     private readonly userService: UsersService,
 
     private readonly appleAuthService: AppleAuthService,

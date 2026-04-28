@@ -22,7 +22,7 @@ import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 import { TravelForCashierFilterDto } from '../pagination';
 
-import { CreateTravelDto } from '../dto';
+import { CancelTravelDto, CreateTravelDto } from '../dto';
 import { AssignStaffDto } from '../dto/assing-staff.dto';
 
 import { StaffService } from '../staff.service';
@@ -134,7 +134,7 @@ export class TravelsForCashiersController {
   @ApiQuery({
     name: 'status',
     required: false,
-    enum: [TravelStatus.ACTIVE, TravelStatus.CLOSED],
+    enum: [TravelStatus.ACTIVE, TravelStatus.CLOSED, TravelStatus.CANCELLED],
   })
   @Get('owner/all')
   findAllForOwners(
@@ -192,8 +192,13 @@ export class TravelsForCashiersController {
   @Auth(ValidPermissions.CANCEL)
   //!
   @Post('cancel/:id')
-  cancel(@Param('id', ParseIntPipe) id: number, @GetOffice() office: Office) {
-    return this.travelsService.cancel(id, office); //! Get Office
+  cancel(
+    @Param('id', ParseIntPipe) id: number,
+    @GetOffice() office: Office,
+    @GetUser() cashier: User,
+    @Body() dto: CancelTravelDto,
+  ) {
+    return this.travelsService.cancel(id, office, dto, cashier);
   }
 
   //? ============================================================================================== */
