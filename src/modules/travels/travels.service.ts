@@ -409,7 +409,7 @@ export class TravelsService {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Password Incorrecto');
+      throw new BadRequestException('Password Incorrecto');
     }
 
     return await this.dataSource.transaction(async (manager) => {
