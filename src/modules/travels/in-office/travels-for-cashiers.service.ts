@@ -180,7 +180,11 @@ export class TravelsForCashierService {
     if (!owner) throw new NotFoundException('Owner not found');
 
     const where: any = {
-      travel_status: In([TravelStatus.ACTIVE, TravelStatus.CLOSED]),
+      travel_status: In([
+        TravelStatus.ACTIVE,
+        TravelStatus.CLOSED,
+        TravelStatus.CANCELLED,
+      ]),
       enabled: true,
       bus: { owner: { id: owner.id } },
     };

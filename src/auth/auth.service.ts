@@ -260,7 +260,7 @@ export class AuthService {
           name: fullName ?? `Apple User ${sub.slice(0, 6)}`,
           provider: AuthProviders.APPLE,
           idProvider: sub,
-          is_verified: false,
+          is_verified: true,
         }),
       );
     }
