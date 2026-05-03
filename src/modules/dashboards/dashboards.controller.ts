@@ -23,7 +23,7 @@ export class DashboardsController {
   //!
   @Auth(ValidPermissions.READ_DASBOARD_ADMIN)
   //!
-  @Get()
+  @Get('admin')
   getGeneralDashboard() {
     return this.dashboardsService.getGeneralDashboard();
   }
@@ -36,7 +36,7 @@ export class DashboardsController {
   @Auth(ValidPermissions.READ_DASBOARD_COMPANY)
   //!
   @ApiQuery({ name: 'companyId', required: false, type: Number })
-  @Get()
+  @Get('company')
   getCompanyDashboard(@GetCompany() companyId: number) {
     return this.dashboardsService.getCompanyDashboard(companyId);
   }
