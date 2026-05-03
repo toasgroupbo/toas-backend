@@ -25,6 +25,7 @@ import { MailModule } from './mail/mail.module';
 import { FilesModule } from './files/files.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
+import { DashboardsModule } from './modules/dashboards/dashboards.module';
 
 @Module({
   imports: [
@@ -67,6 +68,8 @@ import { TransactionsModule } from './modules/transactions/transactions.module';
     SettingsModule,
 
     WalletModule,
+
+    DashboardsModule,
   ],
   controllers: [],
   providers: [],

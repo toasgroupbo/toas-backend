@@ -33,7 +33,16 @@ export class SeedService implements OnModuleInit {
       {
         name: StaticRoles.SUPER_ADMIN,
         isStatic: true,
+
         permissions: [
+          {
+            resourse: ValidResourses.DASHBOARD,
+            permissions: [
+              ValidPermissions.READ_DASBOARD_ADMIN,
+              ValidPermissions.READ_DASBOARD_COMPANY,
+            ],
+          },
+
           {
             resourse: ValidResourses.PAYMENTS,
             permissions: [ValidPermissions.RECHARGE],
@@ -176,6 +185,11 @@ export class SeedService implements OnModuleInit {
         name: StaticRoles.COMPANY_ADMIN,
         isStatic: true,
         permissions: [
+          {
+            resourse: ValidResourses.DASHBOARD,
+            permissions: [ValidPermissions.READ_DASBOARD_COMPANY],
+          },
+
           {
             resourse: ValidResourses.ROL,
             permissions: [ValidPermissions.READ_CASHIERS], //! cashier

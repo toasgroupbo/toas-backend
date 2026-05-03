@@ -37,6 +37,8 @@ export enum ValidResourses {
 
   FILE = 'FILE',
 
+  DASHBOARD = 'DASHBOARD',
+
   //! solo el cashier
 
   BUS_CASHIER = 'BUS_CASHIER',
