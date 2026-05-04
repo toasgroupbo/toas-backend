@@ -14,6 +14,7 @@ export enum ValidResoursesForAdmins {
 
   FILE = 'FILE',
   PAYMENTS = 'PAYMENTS',
+  DASHBOARD = 'DASHBOARD',
 }
 
 export enum ValidResourses {
