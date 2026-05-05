@@ -1,4 +1,10 @@
-import { IsDateString, IsEnum, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
 
 import { PaginationDto } from 'src/common/pagination/pagination.dto';
 
@@ -28,6 +34,10 @@ export class TravelPaginationDto extends PaginationDto {
   @IsOptional()
   @IsEnum(TravelStatus)
   status?: TravelStatus;
+
+  @IsOptional()
+  @IsBoolean()
+  isPaid?: boolean;
 
   @IsOptional()
   @Type(() => Number)

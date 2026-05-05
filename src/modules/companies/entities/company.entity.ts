@@ -14,10 +14,11 @@ import {
 import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Owner } from 'src/modules/owners/entities/owner.entity';
+import { Staff } from 'src/modules/travels/entities/staff.entity';
 import { Travel } from 'src/modules/travels/entities/travel.entity';
 import { Office } from 'src/modules/offices/entities/office.entity';
+import { Commission } from 'src/modules/commissions/entities/commission.entity';
 import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
-import { Staff } from 'src/modules/travels/entities/staff.entity';
 
 @Entity('companies')
 export class Company {
@@ -30,7 +31,7 @@ export class Company {
   @Column('text')
   logo: string;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', default: 0 })
   commission: number;
 
   @Column({ type: 'int' })
@@ -85,4 +86,7 @@ export class Company {
     inverseJoinColumn: { name: 'staffId', referencedColumnName: 'id' },
   })
   staff: Staff[];
+
+  @OneToMany(() => Commission, (commission) => commission.company)
+  commissions: Commission[];
 }

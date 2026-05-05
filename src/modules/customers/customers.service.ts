@@ -74,8 +74,19 @@ export class CustomersService {
       }),
     );
 
+    const allCustomers = await this.customerRepository.find();
+
+    //! balance total
+    const balances = await Promise.all(
+      allCustomers.map((customer) =>
+        this.walletService.getAvailableBalance({ customer }),
+      ),
+    );
+    const totalBalance = balances.reduce((sum, b) => sum + b, 0);
+
     return {
       ...result,
+      totalBalance,
       data: dataWithExtras,
     };
   }
@@ -148,20 +159,6 @@ export class CustomersService {
     const customer = await this.customerRepository.findOneBy({ email });
     return customer;
   }
-
-  //? ============================================================================================== */
-  //?                                        Update                                                  */
-  //? ============================================================================================== */
-
-  /*   async update(id: number, updateCustomerDto: UpdateCustomerDto) {
-    const customer = await this.findOne(id);
-    try {
-      Object.assign(customer, updateCustomerDto);
-      return await this.customerRepository.save(customer);
-    } catch (error) {
-      handleDBExceptions(error);
-    }
-  } */
 
   //? ============================================================================================== */
   //?                                        Delete                                                  */

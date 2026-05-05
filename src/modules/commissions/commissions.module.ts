@@ -1,0 +1,20 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { CommissionsController } from './commissions.controller';
+import { CommissionsService } from './commissions.service';
+import { Commission } from './entities/commission.entity';
+import { CompaniesModule } from '../companies/companies.module';
+import { TravelsModule } from '../travels/travels.module';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([Commission]),
+
+    CompaniesModule,
+    TravelsModule,
+  ],
+  controllers: [CommissionsController],
+  providers: [CommissionsService],
+})
+export class CommissionsModule {}

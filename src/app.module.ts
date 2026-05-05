@@ -26,6 +26,7 @@ import { FilesModule } from './files/files.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { DashboardsModule } from './modules/dashboards/dashboards.module';
+import { CommissionsModule } from './modules/commissions/commissions.module';
 
 @Module({
   imports: [
@@ -70,6 +71,8 @@ import { DashboardsModule } from './modules/dashboards/dashboards.module';
     WalletModule,
 
     DashboardsModule,
+
+    CommissionsModule,
   ],
   controllers: [],
   providers: [],

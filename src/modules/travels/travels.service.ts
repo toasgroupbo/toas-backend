@@ -140,6 +140,7 @@ export class TravelsService {
     return await this.dataSource.transaction(async (manager) => {
       const {
         status,
+        isPaid,
         endDate,
         startDate,
         origin_placeId,
@@ -160,6 +161,11 @@ export class TravelsService {
       const options: any = {
         where: { company: { id: companyId } },
       };
+
+      //! Pagados
+      if (isPaid != undefined) {
+        options.where.isPaid = isPaid;
+      }
 
       //! status
       if (status) {
@@ -247,7 +253,7 @@ export class TravelsService {
       );
 
       return {
-        data: travelsWithSeats /* travels.data */,
+        data: travelsWithSeats,
         meta: travels.meta,
         amounts: totals,
       };

@@ -1,12 +1,4 @@
-import {
-  Get,
-  Post,
-  Query,
-  Param,
-  Delete,
-  Controller,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Get, Query, Param, Controller, ParseIntPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { Auth, GetCompany, Resource } from 'src/auth/decorators';
@@ -60,6 +52,11 @@ export class TravelsController {
     name: 'status',
     required: false,
     enum: TravelStatus,
+  })
+  @ApiQuery({
+    name: 'isPaid',
+    required: false,
+    type: Boolean,
   })
   @Get()
   findAll(

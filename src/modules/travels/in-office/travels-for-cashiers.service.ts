@@ -170,8 +170,14 @@ export class TravelsForCashierService {
   //? ============================================================================================== */
 
   async findAllForOwners(filters: TravelForCashierFilterDto, cashier: User) {
-    const { destination_placeId, origin_placeId, startDate, endDate, status } =
-      filters;
+    const {
+      isPaid,
+      destination_placeId,
+      origin_placeId,
+      startDate,
+      endDate,
+      status,
+    } = filters;
 
     const owner = await this.ownerRepository.findOne({
       where: { users: { id: cashier.id } },
@@ -188,6 +194,11 @@ export class TravelsForCashierService {
       enabled: true,
       bus: { owner: { id: owner.id } },
     };
+
+    //! Pagados
+    if (isPaid != undefined) {
+      where.isPaid = isPaid;
+    }
 
     //! status
     if (status) where.travel_status = status;

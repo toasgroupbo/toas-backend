@@ -136,6 +136,11 @@ export class TravelsForCashiersController {
     required: false,
     enum: [TravelStatus.ACTIVE, TravelStatus.CLOSED, TravelStatus.CANCELLED],
   })
+  @ApiQuery({
+    name: 'isPaid',
+    required: false,
+    type: Boolean,
+  })
   @Get('owner/all')
   findAllForOwners(
     @Query() filters: TravelForCashierFilterDto,

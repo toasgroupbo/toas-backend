@@ -1,5 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
 
 import { TravelStatus } from '../enums';
 
@@ -23,6 +29,10 @@ export class TravelForCashierFilterDto extends PaginationDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPaid?: boolean;
 
   @IsOptional()
   @IsEnum([TravelStatus.ACTIVE, TravelStatus.CLOSED, TravelStatus.CANCELLED])
