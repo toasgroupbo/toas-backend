@@ -33,6 +33,9 @@ export class Commission {
 
   //? ============================================================================================== */
 
+  @Column({ type: 'int', default: 0 })
+  total_trips_count: number;
+
   @Column({ type: 'int' })
   tickets_app_count_total: number;
 

@@ -7,6 +7,7 @@ import { UpdateCommissionDto } from './dto/update-commission.dto';
 import { Commission } from './entities/commission.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Company } from '../companies/entities/company.entity';
+import { TravelStatus } from '../travels/enums';
 
 @Injectable()
 export class CommissionsService {
@@ -52,14 +53,19 @@ export class CommissionsService {
 
       const result = await this.travelRepository
         .createQueryBuilder('travel')
+        .select('COUNT(travel.id)', 'total_trips_count')
         .select('SUM(travel.tickets_app_count)', 'tickets_app_count_total')
         .addSelect('SUM(travel.total_commission)', 'commission_app_total')
         .where('travel.companyId = :companyId', { companyId: company.id })
         .andWhere('travel.departure_time >= :start', { start })
         .andWhere('travel.departure_time < :end', { end })
         .andWhere('travel.deletedAt IS NULL')
+        .andWhere('travel.travel_status = :status', {
+          status: TravelStatus.CLOSED,
+        })
         .getRawOne();
 
+      const totalTrips = Number(result?.total_trips_count || 0);
       const ticketsApp = Number(result?.tickets_app_count_total || 0);
       const commissionApp = Number(result?.commission_app_total || 0);
       const commissionRateAtTime = company.commission;
@@ -69,6 +75,7 @@ export class CommissionsService {
 
       const commission = this.commissionRepository.create({
         company,
+        total_trips_count: totalTrips,
         tickets_app_count_total: ticketsApp,
         commission_app_total: commissionApp.toFixed(2),
         commission_rate_at_time: commissionRateAtTime,
