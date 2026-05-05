@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -8,6 +12,7 @@ import { Commission } from './entities/commission.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Company } from '../companies/entities/company.entity';
 import { TravelStatus } from '../travels/enums';
+import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 @Injectable()
 export class CommissionsService {
@@ -45,9 +50,9 @@ export class CommissionsService {
       });
 
       if (existing) {
-        console.log(
+        /* console.log(
           `Comisión ya existe para empresa ${company.id} en ${periodKey}`,
-        );
+        ); */
         continue;
       }
 
@@ -67,9 +72,6 @@ export class CommissionsService {
         .getRawOne();
 
       const totalTrips = Number(result?.total_trips_count || 0);
-
-      console.log(totalTrips);
-
       const ticketsApp = Number(result?.tickets_app_count_total || 0);
       const commissionApp = Number(result?.commission_app_total || 0);
       const commissionRateAtTime = company.commission;
@@ -99,23 +101,41 @@ export class CommissionsService {
   //?                                       FindAll                                                  */
   //? ============================================================================================== */
 
-  findAll() {
-    return `This action returns all commissions`;
+  async findAll() {
+    const commissions = await this.commissionRepository.find({
+      relations: { company: true },
+    });
+    return commissions;
   }
 
   //? ============================================================================================== */
-  //?                                       FindOne                                                  */
-  //? ============================================================================================== */
 
-  findOne(id: number) {
-    return `This action returns a #${id} commission`;
+  async findAllForCompany(companyId: number) {
+    const commissions = await this.commissionRepository.find({
+      where: { company: { id: companyId } },
+      relations: { company: true },
+    });
+    return commissions;
   }
 
   //? ============================================================================================== */
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
-  update(id: number, updateCommissionDto: UpdateCommissionDto) {
-    return `This action updates a #${id} commission`;
+  async update(id: number, dto: UpdateCommissionDto) {
+    const commission = await this.commissionRepository.findOne({
+      where: { id },
+    });
+
+    if (!commission) {
+      throw new NotFoundException(`Commission with id ${id} not found`);
+    }
+
+    try {
+      Object.assign(commission, dto);
+      return await this.commissionRepository.save(commission);
+    } catch (error) {
+      handleDBExceptions(error);
+    }
   }
 }

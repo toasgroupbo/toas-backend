@@ -15,6 +15,7 @@ export enum ValidResoursesForAdmins {
   FILE = 'FILE',
   PAYMENTS = 'PAYMENTS',
   DASHBOARD = 'DASHBOARD',
+  COMMISSION = 'COMMISSION',
 }
 
 export enum ValidResourses {
@@ -39,6 +40,7 @@ export enum ValidResourses {
   FILE = 'FILE',
 
   DASHBOARD = 'DASHBOARD',
+  COMMISSION = 'COMMISSION',
 
   //! solo el cashier
 

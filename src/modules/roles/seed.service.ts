@@ -38,8 +38,17 @@ export class SeedService implements OnModuleInit {
           {
             resourse: ValidResourses.DASHBOARD,
             permissions: [
-              ValidPermissions.READ_DASBOARD_ADMIN,
-              ValidPermissions.READ_DASBOARD_COMPANY,
+              ValidPermissions.READ_ADMIN,
+              ValidPermissions.READ_COMPANY,
+            ],
+          },
+
+          {
+            resourse: ValidResourses.COMMISSION,
+            permissions: [
+              ValidPermissions.READ_ADMIN,
+              ValidPermissions.UPDATE_ADMIN,
+              ValidPermissions.READ_COMPANY,
             ],
           },
 
@@ -187,7 +196,12 @@ export class SeedService implements OnModuleInit {
         permissions: [
           {
             resourse: ValidResourses.DASHBOARD,
-            permissions: [ValidPermissions.READ_DASBOARD_COMPANY],
+            permissions: [ValidPermissions.READ_COMPANY],
+          },
+
+          {
+            resourse: ValidResourses.COMMISSION,
+            permissions: [ValidPermissions.READ_COMPANY],
           },
 
           {
