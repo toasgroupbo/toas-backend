@@ -54,7 +54,8 @@ export class CommissionsService {
       const result = await this.travelRepository
         .createQueryBuilder('travel')
         .select('COUNT(travel.id)', 'total_trips_count')
-        .select('SUM(travel.tickets_app_count)', 'tickets_app_count_total')
+        .addSelect('SUM(travel.tickets_app_count)', 'tickets_app_count_total')
+        //.select('SUM(travel.tickets_app_count)', 'tickets_app_count_total')
         .addSelect('SUM(travel.total_commission)', 'commission_app_total')
         .where('travel.companyId = :companyId', { companyId: company.id })
         .andWhere('travel.departure_time >= :start', { start })
