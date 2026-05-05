@@ -66,6 +66,9 @@ export class CommissionsService {
         .getRawOne();
 
       const totalTrips = Number(result?.total_trips_count || 0);
+
+      console.log(totalTrips);
+
       const ticketsApp = Number(result?.tickets_app_count_total || 0);
       const commissionApp = Number(result?.commission_app_total || 0);
       const commissionRateAtTime = company.commission;
