@@ -4,8 +4,8 @@ import {
   Body,
   Patch,
   Param,
-  Controller,
   Query,
+  Controller,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
@@ -71,7 +71,6 @@ export class CommissionsController {
 
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'page', required: false, type: Number })
-  //@ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({
     name: 'startDate',
     required: false,

@@ -53,17 +53,63 @@ export class TravelsController {
     required: false,
     enum: TravelStatus,
   })
-  @ApiQuery({
+  /* @ApiQuery({
     name: 'isPaid',
     required: false,
     type: Boolean,
-  })
+  }) */
   @Get()
   findAll(
     @Query() pagination: TravelPaginationDto,
     @GetCompany() companyId: number,
   ) {
     return this.travelsService.findAll(pagination, companyId);
+  }
+
+  //? ============================================================================================== */
+  //?                              FindAll_For_Admin                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.READ_ADMIN)
+  //!
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
+  @ApiQuery({
+    name: 'origin_placeId',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'destination_placeId',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: TravelStatus,
+  })
+  @ApiQuery({
+    name: 'isPaid',
+    required: false,
+    type: Boolean,
+  })
+  @Get('admin')
+  findAllForAdmin(
+    @Query() pagination: TravelPaginationDto,
+    @GetCompany() companyId: number,
+  ) {
+    return this.travelsService.findAllForAdmin(pagination, companyId);
   }
 
   //? ============================================================================================== */

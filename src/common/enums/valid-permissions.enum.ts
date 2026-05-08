@@ -8,6 +8,8 @@ export enum ValidPermissions {
   UPDATE_ADMIN = 'UPDATE_ADMIN',
   READ_COMPANY = 'READ_COMPANY',
 
+  PAY = 'PAY',
+
   CLOSE = 'CLOSE',
   CONFIRM = 'CONFIRM',
   CANCEL = 'CANCEL',

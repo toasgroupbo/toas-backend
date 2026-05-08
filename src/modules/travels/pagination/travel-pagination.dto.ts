@@ -1,16 +1,16 @@
 import {
-  IsBoolean,
-  IsDateString,
   IsEnum,
   IsNumber,
+  IsBoolean,
   IsOptional,
+  IsDateString,
 } from 'class-validator';
 
 import { PaginationDto } from 'src/common/pagination/pagination.dto';
 
 import { TravelStatus } from '../enums/travel-status.enum';
 
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class TravelPaginationDto extends PaginationDto {
   @Type(() => Number)
@@ -37,6 +37,11 @@ export class TravelPaginationDto extends PaginationDto {
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   isPaid?: boolean;
 
   @IsOptional()

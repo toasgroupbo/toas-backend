@@ -16,6 +16,7 @@ export enum ValidResoursesForAdmins {
   PAYMENTS = 'PAYMENTS',
   DASHBOARD = 'DASHBOARD',
   COMMISSION = 'COMMISSION',
+  TRANSACTION = 'TRANSACTION',
 }
 
 export enum ValidResourses {
@@ -41,6 +42,7 @@ export enum ValidResourses {
 
   DASHBOARD = 'DASHBOARD',
   COMMISSION = 'COMMISSION',
+  TRANSACTION = 'TRANSACTION',
 
   //! solo el cashier
 

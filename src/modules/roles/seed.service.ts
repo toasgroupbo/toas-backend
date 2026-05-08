@@ -36,6 +36,11 @@ export class SeedService implements OnModuleInit {
 
         permissions: [
           {
+            resourse: ValidResourses.TRANSACTION,
+            permissions: [ValidPermissions.PAY],
+          },
+
+          {
             resourse: ValidResourses.DASHBOARD,
             permissions: [
               ValidPermissions.READ_ADMIN,
@@ -143,7 +148,7 @@ export class SeedService implements OnModuleInit {
 
           {
             resourse: ValidResourses.TRAVEL,
-            permissions: [ValidPermissions.READ],
+            permissions: [ValidPermissions.READ, ValidPermissions.READ_ADMIN],
           },
 
           {

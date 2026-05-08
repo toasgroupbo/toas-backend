@@ -162,7 +162,7 @@ export class CommissionsService {
       filters,
 
       //! SEARCH
-      ['company.name'],
+      [],
 
       //! RELATIONS
       ['company'],
