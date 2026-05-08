@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Not, Repository } from 'typeorm';
 
-import { StaticRoles } from 'src/auth/enums';
 import { TravelStatus } from '../travels/enums';
 import { BankCode } from '../bank-accounts/enums/bank-code.enum';
 
@@ -17,8 +20,8 @@ import { ProcessMultipleToEncrypt } from './interfaces/toEncrypt/processmultiple
 import { CryptoService } from './crypto.service';
 import { HttpService } from './http/http.service';
 
+import { Owner } from '../owners/entities/owner.entity';
 import { Travel } from '../travels/entities/travel.entity';
-import { Company } from '../companies/entities/company.entity';
 import { Transaction, TransactionStatus } from './entities/transaction.entity';
 
 enum BcpResponseCode {
@@ -48,8 +51,8 @@ enum Currency {
 }
 
 interface PreparedTransaction {
-  company: Company;
-  travels: Travel[];
+  owner: Owner;
+  travel: Travel;
   transaction: Transaction;
   payload: ProcessMultipleToEncrypt;
 }
@@ -64,309 +67,410 @@ export class TransactionsService {
     private readonly travelRepository: Repository<Travel>,
 
     private readonly cryptoService: CryptoService,
+
     private readonly httpService: HttpService,
 
     private readonly dataSource: DataSource,
   ) {}
 
   //? ============================================================================================== ?/
+  //?                                       Process                                                  ?/
   //? ============================================================================================== ?/
 
-  async processTransactions() {
-    const preparedTransactions = await this.prepareTransactions();
-
-    for (const prepared of preparedTransactions) {
-      const { transaction, payload } = prepared;
-
-      try {
-        const response = await this.proccesMultiple(payload);
-
-        console.log(response);
-
-        // VALIDAR RESPUESTA DEL BANCO
-        if (response.Code !== BcpResponseCode.SUCCESS) {
-          transaction.status = TransactionStatus.FAILED;
-          transaction.errorMessage = response.Message;
-          transaction.responsePayload = response;
-
-          await this.transactionRepository.save(transaction);
-          continue;
-        }
-
-        // solo si es exitoso
-        transaction.status = TransactionStatus.PROCESSED;
-        transaction.transactionId = String(response.TransactionId);
-        transaction.responsePayload = response;
-        transaction.processedAt = new Date();
-
-        await this.transactionRepository.save(transaction);
-      } catch (error) {
-        transaction.status = TransactionStatus.FAILED;
-        transaction.errorMessage = error.message;
-
-        await this.transactionRepository.save(transaction);
-
-        continue;
-      }
-    }
-  }
-
-  //? ============================================================================================== ?/
-  //? ============================================================================================== ?/
-
-  async authorizeTransactions() {
-    const transactions = await this.transactionRepository.find({
-      where: {
-        status: TransactionStatus.PROCESSED,
-        transactionId: Not(IsNull()),
-      },
-    });
-
-    if (!transactions.length) return;
-
-    // 2. Filtrar las que tienen transactionId del banco
-    const validTransactions = transactions.filter((t) => t.transactionId);
-
-    if (!validTransactions.length) return;
-
-    // 3. Mapear IDs del banco
-    const transactionsId = validTransactions.map((t) =>
-      Number(t.transactionId),
-    );
+  async processTransaction(travelId: number) {
+    const preparedTransaction = await this.prepareTransaction(travelId);
+    const { transaction, payload } = preparedTransaction;
 
     try {
-      const response = await this.authorizedBatch(transactionsId);
+      const response = await this.proccesMultiple(payload);
 
-      // validar respuesta del banco
+      // VALIDAR RESPUESTA DEL BANCO
       if (response.Code !== BcpResponseCode.SUCCESS) {
-        throw new Error(response.Message);
-      }
-
-      // 5. Actualizar TODAS como AUTHORIZED
-      for (const transaction of validTransactions) {
-        transaction.status = TransactionStatus.AUTHORIZED;
-        transaction.authorizedAt = new Date();
-
-        transaction.responsePayload = {
-          ...transaction.responsePayload,
-          authorize: response,
-        };
-
-        await this.transactionRepository.save(transaction);
-      }
-    } catch (error) {
-      // NO cambiar a FAILED
-      // porque el lote ya existe
-
-      for (const transaction of validTransactions) {
-        transaction.errorMessage = `Authorize error: ${error.message}`;
-        await this.transactionRepository.save(transaction);
-      }
-    }
-  }
-
-  //? ============================================================================================== ?/
-  //? ============================================================================================== ?/
-
-  async syncBatchResults() {
-    const transactions = await this.transactionRepository.find({
-      where: {
-        status: TransactionStatus.AUTHORIZED,
-      },
-    });
-
-    if (!transactions.length) return;
-
-    console.log(transactions);
-
-    const transactionsId = transactions
-      .filter((t) => t.transactionId)
-      .map((t) => Number(t.transactionId));
-
-    const response = await this.getBatchDetail(transactionsId);
-
-    console.log(response.Result);
-
-    if (response.Code !== BcpResponseCode.SUCCESS) {
-      throw new Error(response.Message);
-    }
-
-    for (const result of response.Result) {
-      const transaction = transactions.find(
-        (t) => Number(t.transactionId) === result.ProcessBatchId,
-      );
-
-      if (!transaction) continue;
-
-      //! Revisar
-      if (result.StatusOperation !== 'Completado') {
-        continue;
-      }
-      //!
-
-      const snapshot = transaction.travelsSnapshot || [];
-
-      const payments = [
-        ...result.Spreadsheet.FormProvidersPayments,
-        ...result.Spreadsheet.FormAchPayments,
-      ];
-
-      let successCount = 0;
-
-      for (const payment of payments) {
-        const snapshotItem = snapshot.find((s) => s.line === payment.Line);
-
-        if (!snapshotItem) continue;
-
-        const isSuccess =
-          payment.OperationStatusDescription?.toLowerCase().includes(
-            'autorizado',
-          ) ||
-          payment.OperationStatusDescription?.toLowerCase().includes(
-            'completed',
-          );
-
-        if (isSuccess) {
-          await this.travelRepository.update(snapshotItem.travelId, {
-            isPaid: true,
-            transaction: transaction,
-          });
-
-          successCount++;
-        }
-      }
-
-      // estado final
-      if (successCount === payments.length) {
-        transaction.status = TransactionStatus.COMPLETED;
-        transaction.completedAt = new Date();
-      } else if (successCount > 0) {
-        transaction.status = TransactionStatus.PARTIAL;
-      } else {
         transaction.status = TransactionStatus.FAILED;
+        transaction.errorMessage = response.Message;
+        transaction.processResponse = response;
+
+        return await this.transactionRepository.save(transaction);
       }
 
-      transaction.responsePayload = {
-        ...transaction.responsePayload,
-        batchDetail: result,
-      };
+      // solo si es exitoso
+      transaction.status = TransactionStatus.PROCESSED;
+      transaction.transactionId = String(response.TransactionId);
+      transaction.processResponse = response;
+      transaction.processedAt = new Date();
+
+      //return await this.transactionRepository.save(transaction);
+      const transactionEntity =
+        await this.transactionRepository.save(transaction);
+
+      return this.authorizeTransaction(transactionEntity.id);
+    } catch (error) {
+      transaction.status = TransactionStatus.FAILED;
+      transaction.errorMessage = error.message;
 
       await this.transactionRepository.save(transaction);
     }
   }
 
   //? ============================================================================================== ?/
+  //?                                    Authorized                                                  ?/
+  //? ============================================================================================== ?/
 
-  private async prepareTransactions(): Promise<PreparedTransaction[]> {
-    const preparedTransactions: PreparedTransaction[] = [];
+  async authorizeTransaction(transactionId: number) {
+    // =====================================================
+    // Buscar transaction
+    // =====================================================
 
-    await this.dataSource.transaction(async (manager) => {
-      // Buscar empresas con viajes pendientes de pago
-      const companies = await manager.find(Company, {
-        where: {
-          users: { rol: { name: StaticRoles.COMPANY_ADMIN } }, //! cuidado
-          travels: {
-            travel_status: TravelStatus.CLOSED,
-            enabled: true,
-            isPaid: false,
-          },
-        },
-        relations: {
-          travels: true,
-          bankAccount: true,
-          users: true,
-        },
-      });
-
-      for (const company of companies) {
-        // Filtrar viajes no pagados
-        const unpaidTravels = company.travels.filter(
-          (t) => !t.isPaid && t.travel_status === TravelStatus.CLOSED,
-        );
-
-        if (unpaidTravels.length === 0) continue;
-
-        // Calcular monto total
-        const totalNet = unpaidTravels.reduce(
-          (sum, t) => sum + Number(t.net_to_company),
-          0,
-        );
-
-        if (totalNet <= 0) {
-          console.log(
-            `Empresa ${company.name}: monto total inválido (${totalNet})`,
-          );
-          continue;
-        }
-
-        // Crear registro de transacción
-        const transaction = manager.create(Transaction, {
-          companyId: company.id,
-          amount: totalNet.toString(),
-          status: TransactionStatus.PENDING,
-        });
-        await manager.save(transaction);
-
-        // Construir payload para el banco
-        const payload = this.buildProcessMultiplePayload(
-          company,
-          unpaidTravels,
-          totalNet,
-        );
-
-        // Guardar payload para auditoría
-        transaction.requestPayload = JSON.stringify(payload);
-        await manager.save(transaction);
-
-        preparedTransactions.push({
-          company,
-          travels: unpaidTravels,
-          transaction,
-          payload,
-        });
-
-        console.log(
-          `📝 Preparado: ${company.name} - ${totalNet} Bs. (${unpaidTravels.length} viajes)`,
-        );
-      }
+    const transaction = await this.transactionRepository.findOne({
+      where: {
+        id: transactionId,
+        status: TransactionStatus.PROCESSED,
+        transactionId: Not(IsNull()),
+      },
     });
 
-    return preparedTransactions;
+    if (!transaction) {
+      throw new NotFoundException('Transaction Not Found');
+    }
+
+    // =====================================================
+    // ID del banco
+    // =====================================================
+
+    const transactionsId = [Number(transaction.transactionId)];
+
+    // =====================================================
+    // Guardar request
+    // =====================================================
+
+    transaction.authorizeRequest = {
+      transactionsId,
+    };
+
+    await this.transactionRepository.save(transaction);
+
+    try {
+      // ===================================================
+      // Autorizar en banco
+      // ===================================================
+
+      const response = await this.authorizedBatch(transactionsId);
+      transaction.authorizeResponse = response;
+
+      // ===================================================
+      // Validar respuesta
+      // ===================================================
+
+      if (response.Code !== BcpResponseCode.SUCCESS) {
+        transaction.errorMessage = response.Message;
+
+        transaction.bankErrors = [
+          ...(transaction.bankErrors || []),
+          {
+            step: 'authorizeBatch',
+            date: new Date(),
+            message: response.Message,
+          },
+        ];
+
+        await this.transactionRepository.save(transaction);
+
+        throw new BadRequestException(response.Message);
+      }
+
+      // ===================================================
+      // SUCCESS
+      // ===================================================
+
+      transaction.status = TransactionStatus.AUTHORIZED;
+
+      transaction.authorizedAt = new Date();
+
+      await this.transactionRepository.save(transaction);
+
+      return transaction;
+    } catch (error) {
+      // ===================================================
+      // Error general
+      // ===================================================
+
+      transaction.errorMessage = `Authorize error: ${error.message}`;
+
+      transaction.bankErrors = [
+        ...(transaction.bankErrors || []),
+        {
+          step: 'authorizeBatch',
+          date: new Date(),
+          message: error.message,
+        },
+      ];
+
+      await this.transactionRepository.save(transaction);
+
+      throw error;
+    }
   }
 
   //? ============================================================================================== ?/
+  //?                                    Get_Detail                                                  ?/
+  //? ============================================================================================== ?/
 
-  private buildProcessMultiplePayload(
-    company: Company,
-    travels: Travel[],
-    totalNet: number,
+  async verifyTransaction(transactionId: number) {
+    const transaction = await this.transactionRepository.findOne({
+      where: {
+        id: transactionId,
+        status: TransactionStatus.AUTHORIZED,
+      },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException('Transaction Not Found');
+    }
+
+    if (!transaction.transactionId) {
+      throw new BadRequestException('Transaction without bank ID');
+    }
+
+    // =====================================================
+    // Request
+    // =====================================================
+
+    const transactionsId = [Number(transaction.transactionId)];
+
+    transaction.batchDetailRequest = {
+      transactionsId,
+    };
+
+    await this.transactionRepository.save(transaction);
+
+    // =====================================================
+    // Consultar banco
+    // =====================================================
+
+    const response = await this.getBatchDetail(transactionsId);
+
+    // =====================================================
+    // Validar respuesta general
+    // =====================================================
+
+    if (response.Code !== BcpResponseCode.SUCCESS) {
+      throw new BadRequestException(response.Message);
+    }
+
+    // =====================================================
+    // Resultado único
+    // =====================================================
+
+    const result = response.Result?.[0];
+
+    if (!result) {
+      throw new BadRequestException('Bank result not found');
+    }
+
+    // =====================================================
+    // Snapshot
+    // =====================================================
+
+    const snapshot = transaction.travelsSnapshot?.[0];
+
+    if (!snapshot) {
+      throw new BadRequestException('Snapshot not found');
+    }
+
+    // =====================================================
+    // Payment único
+    // =====================================================
+
+    const payment =
+      result.Spreadsheet?.FormProvidersPayments?.[0] ||
+      result.Spreadsheet?.FormAchPayments?.[0];
+
+    if (!payment) {
+      throw new BadRequestException('Payment not found');
+    }
+
+    // =====================================================
+    // Validar éxito
+    // =====================================================
+
+    const isSuccess = !!String(payment.OperationNumberDebitHost || '').trim();
+
+    // =====================================================
+    // Buscar travel
+    // =====================================================
+
+    const travel = await this.travelRepository.findOne({
+      where: {
+        id: snapshot.travelId,
+      },
+    });
+
+    if (!travel) {
+      throw new NotFoundException('Travel Not Found');
+    }
+
+    // =====================================================
+    // SUCCESS
+    // =====================================================
+
+    if (isSuccess) {
+      if (!travel.isPaid) {
+        await this.travelRepository.update(travel.id, {
+          isPaid: true,
+          paidAt: new Date(),
+          transaction,
+        });
+      }
+
+      transaction.status = TransactionStatus.COMPLETED;
+      transaction.completedAt = new Date();
+    } else {
+      transaction.status = TransactionStatus.FAILED;
+    }
+
+    // =====================================================
+    // Guardar response
+    // =====================================================
+
+    transaction.batchDetailResponse = result;
+    await this.transactionRepository.save(transaction);
+    return transaction;
+  }
+
+  //? ============================================================================================== ?/
+  //? ============================================================================================== ?/
+
+  private async prepareTransaction(
+    travelId: number,
+  ): Promise<PreparedTransaction> {
+    return await this.dataSource.transaction(async (manager) => {
+      // =====================================================
+      // Buscar travel
+      // =====================================================
+
+      const travel = await manager.findOne(Travel, {
+        where: {
+          id: travelId,
+          travel_status: TravelStatus.CLOSED,
+          enabled: true,
+          isPaid: false,
+        },
+        relations: {
+          company: true,
+          bus: {
+            owner: {
+              bankAccount: true,
+              users: true,
+            },
+          },
+        },
+      });
+
+      if (!travel) {
+        throw new NotFoundException('Travel Not Found');
+      }
+
+      // =====================================================
+      // Owner
+      // =====================================================
+
+      const owner = travel.bus?.owner;
+
+      if (!owner) {
+        throw new NotFoundException('Owner Not Found');
+      }
+
+      // =====================================================
+      // Validaciones bancarias
+      // =====================================================
+
+      if (!owner.bankAccount) {
+        throw new NotFoundException('Bank Account Not Found');
+      }
+
+      if (!owner.bankAccount.account) {
+        throw new NotFoundException('Bank Account Number Not Found');
+      }
+
+      // =====================================================
+      // Monto
+      // =====================================================
+
+      const amount = Number(travel.net_to_company);
+      if (amount <= 0) {
+        throw new BadRequestException('The deposit amount cannot be 0');
+      }
+
+      // =====================================================
+      // Crear transaction
+      // =====================================================
+
+      const transaction = manager.create(Transaction, {
+        totalAmount: amount.toString(),
+        status: TransactionStatus.PENDING,
+
+        travelsSnapshot: [
+          {
+            line: 1,
+            travelId: travel.id,
+            amount,
+          },
+        ],
+      });
+
+      await manager.save(transaction);
+
+      // =====================================================
+      // Payload
+      // =====================================================
+
+      const payload = this.buildProcessPayload(owner, travel);
+
+      // =====================================================
+      // Guardar request
+      // =====================================================
+
+      transaction.processRequest = payload;
+      await manager.save(transaction);
+
+      // =====================================================
+      // Resultado
+      // =====================================================
+
+      const preparedTransaction: PreparedTransaction = {
+        owner,
+        travel,
+        transaction,
+        payload,
+      };
+
+      return preparedTransaction;
+    });
+  }
+
+  //? ============================================================================================== ?/
+  //? ============================================================================================== ?/
+
+  private buildProcessPayload(
+    owner: Owner,
+    travel: Travel,
   ): ProcessMultipleToEncrypt {
-    const isBcp = company.bankAccount.bankCode === BankCode.BANCO_DE_CREDITO;
-
-    // IMPORTANTE: Si son múltiples travels, debes crear múltiples líneas
-    // NO agrupar todo en una sola línea
-    const paymentLines = travels.map((travel, index) => ({
-      line: index + 1,
-      amount: Number(travel.net_to_company),
-      travelId: travel.id,
-    }));
+    const isBcp = owner.bankAccount.bankCode === BankCode.BANCO_DE_CREDITO;
+    const amount = Number(travel.net_to_company);
 
     return {
-      // valores REALES
-
-      documentNumber: '01000029',
+      documentNumber: '1000029',
       documentType: 'Q',
       documentExtension: 'SN',
       documentComplement: '',
-      amount: totalNet,
+      amount,
       currency: Currency.BOL,
       fundSource: 'Venta pasajes',
-      fundDestination: `Pago a ${company.name}`,
-      sourceAccount: '7015103341336', //! cuenta real de Toass
+      fundDestination: `Pago a ${owner.name}`,
+      sourceAccount: '7015103341336',
       sourceCurrency: Currency.BOL,
-      description: `Pago automático travels`,
-      sendVouchers: 'luisdiegoborja8@gmail.com', //company.users[0]?.email /*
-
+      description: `Pago automático travel ${travel.id}`,
+      sendVouchers: 'luisdiegoborja8@gmail.com',
       cismartApprovers: [
         {
           idc: '07706841-Q-XX',
@@ -375,39 +479,41 @@ export class TransactionsService {
       ],
 
       spreadsheet: {
-        // Crear UNA LÍNEA POR TRAVEL
         formProvidersPayments: isBcp
-          ? paymentLines.map(({ line, amount, travelId }) => ({
-              paymentType: PaymentType.PROV,
-              line,
-              accountNumber: company.bankAccount.account,
-              glossPayment: `Pago travel ${travelId}`,
-              amount,
-              documentType: company.bankAccount.documentType,
-              documentNumber: company.bankAccount.documentNumber,
-              documentExtension: company.bankAccount.documentExtension,
-              firstDetail: `Travel ID: ${travelId}`,
-              secondDetails: '',
-              mail: company.users[0]?.email, //company.admin?.email,
-            }))
+          ? [
+              {
+                paymentType: PaymentType.PROV,
+                line: 1,
+                accountNumber: owner.bankAccount.account,
+                glossPayment: `Pago travel ${travel.id}`,
+                amount,
+                documentType: owner.bankAccount.documentType,
+                documentNumber: owner.bankAccount.documentNumber,
+                documentExtension: owner.bankAccount.documentExtension,
+                firstDetail: `Travel ID: ${travel.id}`,
+                secondDetails: '',
+                mail: owner.users?.[0]?.email || '',
+              },
+            ]
           : [],
-
         formAchPayments: !isBcp
-          ? paymentLines.map(({ line, amount, travelId }) => ({
-              paymentType: PaymentType.ACH,
-              line,
-              accountNumber: company.bankAccount.account,
-              titularName: company.bankAccount.titularName,
-              amount,
-              branchOfficeId: company.bankAccount.branchOfficeId,
-              firstDetail: `Travel ID: ${travelId}`,
-              mail: company.users[0]?.email, //company.admin?.email,
-              bankId: company.bankAccount.bankCode,
-              documentNumber: company.bankAccount.documentNumber,
-              documentType: company.bankAccount.documentType,
-              documentExtension: company.bankAccount.documentExtension,
-              documentComplement: '',
-            }))
+          ? [
+              {
+                paymentType: PaymentType.ACH,
+                line: 1,
+                accountNumber: owner.bankAccount.account,
+                titularName: owner.bankAccount.titularName,
+                amount,
+                branchOfficeId: owner.bankAccount.branchOfficeId,
+                firstDetail: `Travel ID: ${travel.id}`,
+                mail: owner.users?.[0]?.email || '',
+                bankId: owner.bankAccount.bankCode,
+                documentNumber: owner.bankAccount.documentNumber,
+                documentType: owner.bankAccount.documentType,
+                documentExtension: owner.bankAccount.documentExtension,
+                documentComplement: '',
+              },
+            ]
           : [],
       },
     };
@@ -424,14 +530,10 @@ export class TransactionsService {
       payloadProcessMultipleToEncrypt,
     );
 
-    console.log(encrypted);
-
     const response: ResponseBCP = await this.httpService.processMultiple({
       data: encrypted.data,
       signature: encrypted.signature,
     });
-
-    console.log(response);
 
     return this.decryptResponse<DecryptProcessMultiple>(response);
   }
@@ -471,9 +573,9 @@ export class TransactionsService {
     transactionsId: number[],
   ): Promise<DecryptGetBatchDetail> {
     const payload: GetBatchDetailEncrypt = {
-      documentNumber: '00255921',
+      documentNumber: '07706841',
       documentType: 'Q',
-      documentExtension: 'LP',
+      documentExtension: 'XX',
       documentComplement: '',
       transactionsId: transactionsId,
     };

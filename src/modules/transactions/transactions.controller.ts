@@ -1,4 +1,4 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { TransactionsService } from './transactions.service';
@@ -8,27 +8,34 @@ import { TransactionsService } from './transactions.service';
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
-  @Post('process')
-  async processTransactions() {
-    await this.transactionsService.processTransactions();
-    return {
-      message: 'Transactions processed',
-    };
+  //? ============================================================================================== ?/
+  //?                              Process_Multiple                                                  ?/
+  //? ============================================================================================== ?/
+
+  @Post('process/:travelId')
+  async processTransaction(@Param('travelId', ParseIntPipe) travelId: number) {
+    return this.transactionsService.processTransaction(travelId);
   }
 
-  @Post('authorize')
-  async authorizeTransactions() {
-    await this.transactionsService.authorizeTransactions();
-    return {
-      message: 'Transactions authorized',
-    };
-  }
+  //? ============================================================================================== ?/
+  //?                              Authorized_Batch                                                  ?/
+  //? ============================================================================================== ?/
 
-  @Post('sync')
-  async syncTransactions() {
-    await this.transactionsService.syncBatchResults();
-    return {
-      message: 'GetBatchDetail ejecutado',
-    };
+  /* @Post('authorize/:transactionId')
+  async authorizeTransaction(
+    @Param('transactionId', ParseIntPipe) transactionId: number,
+  ) {
+    return await this.transactionsService.authorizeTransaction(transactionId);
+  }
+ */
+  //? ============================================================================================== ?/
+  //?                              Get_Batch_Detail                                                  ?/
+  //? ============================================================================================== ?/
+
+  @Post('verify/:transactionId')
+  async verifyTransaction(
+    @Param('transactionId', ParseIntPipe) transactionId: number,
+  ) {
+    return await this.transactionsService.verifyTransaction(transactionId);
   }
 }

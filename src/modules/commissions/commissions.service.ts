@@ -1,18 +1,18 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, IsNull, Not, Repository } from 'typeorm';
+
+import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { UpdateCommissionDto } from './dto/update-commission.dto';
+import { paginateAdvanced } from 'src/common/pagination/paginate-advanced';
+import { CommissionPaginationDto } from './pagination/commission.pagination';
+
+import { TravelStatus } from '../travels/enums';
 
 import { Commission } from './entities/commission.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Company } from '../companies/entities/company.entity';
-import { TravelStatus } from '../travels/enums';
-import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 @Injectable()
 export class CommissionsService {
@@ -100,23 +100,92 @@ export class CommissionsService {
   //? ============================================================================================== */
   //?                                       FindAll                                                  */
   //? ============================================================================================== */
+  async findAll(filters: CommissionPaginationDto) {
+    const { startDate, endDate, isPaid } = filters;
 
-  async findAll() {
-    const commissions = await this.commissionRepository.find({
-      relations: { company: true },
-    });
-    return commissions;
+    const where: any = {};
+
+    //! FECHAS
+    if (startDate && endDate) {
+      where.date_to_pay = Between(startDate, endDate);
+    }
+
+    //! PAGADO
+    if (typeof isPaid === 'boolean') {
+      where.paidAt = isPaid ? Not(IsNull()) : IsNull();
+    }
+
+    return paginateAdvanced(
+      this.commissionRepository,
+      filters,
+
+      //! SEARCH
+      ['company.name'],
+
+      //! RELATIONS
+      ['company'],
+
+      //! ORDER
+      {
+        'entity.date_to_pay': 'DESC',
+      },
+
+      true,
+
+      //! WHERE
+      where,
+    );
   }
-
   //? ============================================================================================== */
 
-  async findAllForCompany(companyId: number) {
+  async findAllForCompany(companyId: number, filters: CommissionPaginationDto) {
+    const { startDate, endDate, isPaid } = filters;
+
+    const where: any = {
+      company: {
+        id: companyId,
+      },
+    };
+
+    //! FECHAS
+    if (startDate && endDate) {
+      where.date_to_pay = Between(startDate, endDate);
+    }
+
+    //! PAGADO
+    if (typeof isPaid === 'boolean') {
+      where.paidAt = isPaid ? Not(IsNull()) : IsNull();
+    }
+
+    return paginateAdvanced(
+      this.commissionRepository,
+      filters,
+
+      //! SEARCH
+      ['company.name'],
+
+      //! RELATIONS
+      ['company'],
+
+      //! ORDER
+      {
+        'entity.date_to_pay': 'DESC',
+      },
+
+      true,
+
+      //! WHERE
+      where,
+    );
+  }
+  /* 
+  async findAllForCompany(companyId: number, filters: CommissionPaginationDto) {
     const commissions = await this.commissionRepository.find({
       where: { company: { id: companyId } },
       relations: { company: true },
     });
     return commissions;
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                        Update                                                  */

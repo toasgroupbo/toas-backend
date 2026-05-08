@@ -4,9 +4,11 @@ import {
   OneToMany,
   CreateDateColumn,
   PrimaryGeneratedColumn,
+  ManyToOne,
 } from 'typeorm';
 
 import { Travel } from 'src/modules/travels/entities/travel.entity';
+import { Owner } from 'src/modules/owners/entities/owner.entity';
 
 export enum TransactionStatus {
   PENDING = 'PENDING',
@@ -22,9 +24,6 @@ export class Transaction {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  companyId: number;
-
   // ID que devuelve el BCP
   @Column({ type: 'text', nullable: true })
   transactionId?: string;
@@ -38,14 +37,34 @@ export class Transaction {
 
   //* ============================================================================================== */
 
-  // Lo que enviaste al banco
-  @Column({ type: 'jsonb', nullable: true })
-  requestPayload?: any;
+  // PROCESS MULTIPLE
 
-  // Lo que respondió el banco
   @Column({ type: 'jsonb', nullable: true })
-  responsePayload?: any;
+  processRequest?: any;
 
+  @Column({ type: 'jsonb', nullable: true })
+  processResponse?: any;
+
+  // AUTHORIZE BATCH
+
+  @Column({ type: 'jsonb', nullable: true })
+  authorizeRequest?: any;
+
+  @Column({ type: 'jsonb', nullable: true })
+  authorizeResponse?: any;
+
+  // GET BATCH DETAIL
+
+  @Column({ type: 'jsonb', nullable: true })
+  batchDetailRequest?: any;
+
+  @Column({ type: 'jsonb', nullable: true })
+  batchDetailResponse?: any;
+
+  // Historial de errores del banco
+
+  @Column({ type: 'jsonb', nullable: true })
+  bankErrors?: any[];
   //* ============================================================================================== */
 
   @Column({ type: 'text', nullable: true })
@@ -59,7 +78,7 @@ export class Transaction {
   //* ============================================================================================== */
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  totalAmount: number;
+  totalAmount: string;
 
   @Column({ type: 'int', default: 0 })
   totalTravels: number;
