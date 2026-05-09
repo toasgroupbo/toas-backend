@@ -143,6 +143,113 @@ export class AuthService {
   //?                                   Google_Verify                                                */
   //? ============================================================================================== */
 
+  /*   async googleVerify(idToken: string) {
+    if (!idToken) {
+      throw new BadRequestException('Missing idToken');
+    }
+
+    const ticket = await this.googleClient.verifyIdToken({
+      idToken,
+      audience: envs.GOOGLE_ID_OAUTH,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload) {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+
+    const {
+      sub,
+      email,
+      email_verified,
+      name,
+      given_name,
+      family_name,
+      picture,
+    } = payload;
+
+    if (!email_verified) {
+      throw new UnauthorizedException('Google email not verified');
+    }
+
+    if (!email) {
+      throw new UnauthorizedException('Email not Found');
+    }
+
+    // 1. Buscar primero por Google ID
+    let customer = await this.customerRepository.findOne({
+      where: { idProvider: sub, provider: AuthProviders.GOOGLE },
+    });
+
+    // 2. Si no existe por Google ID, buscar por email
+    if (!customer) {
+      customer = await this.findCustomerByEmail(email);
+
+      // Si existe por email (de Apple u otro), vincular cuenta Google
+      if (customer) {
+        customer.idProvider = sub;
+        customer.provider = AuthProviders.GOOGLE;
+
+        if (!customer.is_verified) {
+          customer.is_verified = true;
+        }
+
+        // Actualizar nombre si es necesario
+        if (!customer.name && name) {
+          customer.name = name;
+        }
+
+        customer = await this.customerRepository.save(customer);
+      }
+    }
+
+    // 3. Crear nuevo cliente si no existe
+    if (!customer) {
+      customer = await this.customerRepository.save(
+        this.customerRepository.create({
+          email,
+          name:
+            name ||
+            `${given_name || ''} ${family_name || ''}`.trim() ||
+            `Google User ${sub.slice(0, 6)}`,
+          provider: AuthProviders.GOOGLE,
+          idProvider: sub,
+          is_verified: true,
+        }),
+      );
+    }
+
+    // 4. Actualizar datos faltantes si Google los envía
+    let shouldUpdate = false;
+
+    if (!customer.name && name) {
+      customer.name = name;
+      shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+      customer = await this.customerRepository.save(customer);
+    }
+
+    // Generar token
+    const token = this.generateJwt({
+      id: customer.id,
+      type: LoginType.customer,
+    });
+
+    // Invalidar sesión anterior guardando el nuevo token
+    await this.customerRepository.update(
+      { id: customer.id },
+      { sessionToken: token },
+    );
+
+    return {
+      token,
+      user: customer,
+    };
+  } */
+
   async googleVerify(idToken: string) {
     if (!idToken) {
       throw new BadRequestException('Missing idToken');
@@ -211,13 +318,6 @@ export class AuthService {
     };
 
     //!
-    /* return {
-      token: this.generateJwt({
-        id: customer.id,
-        type: LoginType.customer,
-      }),
-      user: customer,
-    }; */
   }
 
   //? ============================================================================================== */
@@ -225,6 +325,111 @@ export class AuthService {
   //? ============================================================================================== */
 
   async appleVerify(dto: AppleLoginDto) {
+    const { identityToken, fullName } = dto;
+
+    if (!identityToken) {
+      throw new BadRequestException('Missing identityToken');
+    }
+
+    // --------------------------------------------------
+    // 1. Verificar token Apple
+    // --------------------------------------------------
+    const claims =
+      await this.appleAuthService.verifyIdentityToken(identityToken);
+
+    const { sub, email } = claims;
+
+    if (!sub) {
+      throw new UnauthorizedException('Invalid Apple token');
+    }
+
+    // --------------------------------------------------
+    // 2. Buscar cliente por Apple ID
+    // --------------------------------------------------
+    let customer = await this.customerRepository.findOne({
+      where: { idProvider: sub },
+    });
+
+    // --------------------------------------------------
+    // 3. Si no existe, buscar por email
+    // --------------------------------------------------
+    if (!customer && email) {
+      customer = await this.customerRepository.findOne({
+        where: { email },
+      });
+
+      // --------------------------------------------------
+      // Vincular cuenta Apple a usuario existente
+      // --------------------------------------------------
+      if (customer) {
+        customer.idProvider = sub;
+        customer.provider = AuthProviders.APPLE;
+
+        if (!customer.is_verified) {
+          customer.is_verified = true;
+        }
+
+        customer = await this.customerRepository.save(customer);
+      }
+    }
+
+    // --------------------------------------------------
+    // 4. Crear cliente si no existe
+    // --------------------------------------------------
+    if (!customer) {
+      customer = await this.customerRepository.save(
+        this.customerRepository.create({
+          email: email || '',
+          name: fullName ?? `Apple User ${sub.slice(0, 6)}`,
+          provider: AuthProviders.APPLE,
+          idProvider: sub,
+          is_verified: true,
+        }),
+      );
+    }
+
+    // --------------------------------------------------
+    // 5. Completar datos faltantes
+    // --------------------------------------------------
+    let shouldUpdate = false;
+
+    if (!customer.email && email) {
+      customer.email = email;
+      shouldUpdate = true;
+    }
+
+    if (!customer.name && fullName) {
+      customer.name = fullName;
+      shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+      customer = await this.customerRepository.save(customer);
+    }
+
+    // --------------------------------------------------
+    // 6. Generar JWT propio
+    // --------------------------------------------------
+    const token = this.generateJwt({
+      id: customer.id,
+      type: LoginType.customer,
+    });
+
+    // --------------------------------------------------
+    // 7. Invalidar sesión previa
+    // --------------------------------------------------
+    await this.customerRepository.update(
+      { id: customer.id },
+      { sessionToken: token },
+    );
+
+    return {
+      token,
+      user: customer,
+    };
+  }
+
+  /*   async appleVerify(dto: AppleLoginDto) {
     const { identityToken, fullName } = dto;
 
     if (!identityToken) {
@@ -304,7 +509,7 @@ export class AuthService {
       token,
       user: customer,
     };
-  }
+  } */
 
   //? ============================================================================================== */
   //?                                  Login_Customer                                                */
