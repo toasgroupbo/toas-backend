@@ -11,10 +11,10 @@ import { Travel } from 'src/modules/travels/entities/travel.entity';
 export enum TransactionStatus {
   PENDING = 'PENDING',
   PROCESSED = 'PROCESSED',
+  IN_PROGRESS = 'IN_PROGRESS',
   AUTHORIZED = 'AUTHORIZED',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
-  PARTIAL = 'PARTIAL',
 }
 
 @Entity('transactions')

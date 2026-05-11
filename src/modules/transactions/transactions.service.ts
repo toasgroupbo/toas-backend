@@ -50,6 +50,11 @@ enum Currency {
   USD = 'USD',
 }
 
+export enum BcpOperationStatus {
+  PROCESADO_AUTOMATICO = 'Procesado Automático',
+  EN_PROCESO = 'En Proceso',
+}
+
 interface PreparedTransaction {
   owner: Owner;
   travel: Travel;
@@ -311,12 +316,6 @@ export class TransactionsService {
     }
 
     // =====================================================
-    // Validar éxito
-    // =====================================================
-
-    const isSuccess = !!String(payment.OperationNumberDebitHost || '').trim();
-
-    // =====================================================
     // Buscar travel
     // =====================================================
 
@@ -331,47 +330,50 @@ export class TransactionsService {
     }
 
     // =====================================================
+    // Status del banco
+    // =====================================================
+
+    const statusOperation = String(result.StatusOperation || '').trim();
+
+    // =====================================================
     // SUCCESS
     // =====================================================
 
-    /* if (isSuccess) {
-      if (!travel.isPaid) {
-        await this.travelRepository.update(travel.id, {
-          isPaid: true,
-          paidAt: new Date(),
-          transaction,
-        });
-      }
+    if (statusOperation === BcpOperationStatus.PROCESADO_AUTOMATICO) {
+      await this.travelRepository.update(travel.id, {
+        isPaid: true,
+        paidAt: new Date(),
+        transaction,
+      });
 
       transaction.status = TransactionStatus.COMPLETED;
       transaction.completedAt = new Date();
-    } else {
-      transaction.status = TransactionStatus.FAILED;
-    } */
+    }
 
-    if (isSuccess) {
-      if (!travel.isPaid) {
-        await this.travelRepository.update(travel.id, {
-          isPaid: true,
-          paidAt: new Date(),
-          transaction,
-        });
-      }
+    // =====================================================
+    // EN PROCESO
+    // =====================================================
+    else if (statusOperation === BcpOperationStatus.EN_PROCESO) {
+      await this.travelRepository.update(travel.id, {
+        isPaid: true,
+        paidAt: new Date(),
+        transaction,
+      });
 
-      transaction.status = TransactionStatus.COMPLETED;
-      transaction.completedAt = new Date();
-    } else {
-      transaction.status = TransactionStatus.FAILED;
+      transaction.status = TransactionStatus.IN_PROGRESS;
+    }
 
-      // =====================================================
-      // Revertir pago
-      // =====================================================
-
+    // =====================================================
+    // FAILED
+    // =====================================================
+    else {
       await this.travelRepository.update(travel.id, {
         isPaid: false,
         paidAt: null,
         //transaction: null,
       });
+
+      transaction.status = TransactionStatus.FAILED;
     }
 
     // =====================================================
