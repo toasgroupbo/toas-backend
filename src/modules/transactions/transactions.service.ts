@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, IsNull, Not, Repository } from 'typeorm';
+import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
 
 import { TravelStatus } from '../travels/enums';
 import { BankCode } from '../bank-accounts/enums/bank-code.enum';
@@ -245,7 +245,10 @@ export class TransactionsService {
     const transaction = await this.transactionRepository.findOne({
       where: {
         id: transactionId,
-        status: TransactionStatus.AUTHORIZED,
+        status: In([
+          TransactionStatus.AUTHORIZED,
+          TransactionStatus.IN_PROGRESS,
+        ]),
       },
     });
 
