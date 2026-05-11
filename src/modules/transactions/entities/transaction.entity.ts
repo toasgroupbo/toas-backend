@@ -4,11 +4,9 @@ import {
   OneToMany,
   CreateDateColumn,
   PrimaryGeneratedColumn,
-  ManyToOne,
 } from 'typeorm';
 
 import { Travel } from 'src/modules/travels/entities/travel.entity';
-import { Owner } from 'src/modules/owners/entities/owner.entity';
 
 export enum TransactionStatus {
   PENDING = 'PENDING',
@@ -39,7 +37,7 @@ export class Transaction {
 
   // PROCESS MULTIPLE
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'jsonb', nullable: true, select: false })
   processRequest?: any;
 
   @Column({ type: 'jsonb', nullable: true })
@@ -47,7 +45,7 @@ export class Transaction {
 
   // AUTHORIZE BATCH
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'jsonb', nullable: true, select: false })
   authorizeRequest?: any;
 
   @Column({ type: 'jsonb', nullable: true })
