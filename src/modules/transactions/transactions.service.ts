@@ -315,6 +315,55 @@ export class TransactionsService {
       throw new BadRequestException('Payment not found');
     }
 
+    /* // =====================================================
+    // Validar éxito
+    // =====================================================
+
+    const isSuccess = !!String(payment.OperationNumberDebitHost || '').trim();
+
+    // =====================================================
+    // Buscar travel
+    // =====================================================
+
+    const travel = await this.travelRepository.findOne({
+      where: {
+        id: snapshot.travelId,
+      },
+    });
+
+    if (!travel) {
+      throw new NotFoundException('Travel Not Found');
+    }
+
+    // =====================================================
+    // SUCCESS
+    // =====================================================
+
+    if (isSuccess) {
+      if (!travel.isPaid) {
+        await this.travelRepository.update(travel.id, {
+          isPaid: true,
+          paidAt: new Date(),
+          transaction,
+        });
+      }
+
+      transaction.status = TransactionStatus.COMPLETED;
+      transaction.completedAt = new Date();
+    } else {
+      transaction.status = TransactionStatus.FAILED;
+
+      // =====================================================
+      // Revertir pago
+      // =====================================================
+
+      await this.travelRepository.update(travel.id, {
+        isPaid: false,
+        paidAt: null,
+        //transaction: null,
+      });
+    } */
+
     // =====================================================
     // Buscar travel
     // =====================================================

@@ -15,6 +15,7 @@ export enum TransactionStatus {
   AUTHORIZED = 'AUTHORIZED',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
+  PARTIAL = 'PARTIAL',
 }
 
 @Entity('transactions')
