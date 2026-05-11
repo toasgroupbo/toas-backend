@@ -1,10 +1,10 @@
 import { Transform, Type } from 'class-transformer';
 import {
-  IsBoolean,
-  IsDateString,
   IsEnum,
   IsNumber,
+  IsBoolean,
   IsOptional,
+  IsDateString,
 } from 'class-validator';
 
 import { TravelStatus } from '../enums';

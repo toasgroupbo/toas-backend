@@ -178,15 +178,36 @@ export class TransactionsService {
         throw new BadRequestException(response.Message);
       }
 
-      // ===================================================
+      // =====================================================
       // SUCCESS
-      // ===================================================
+      // =====================================================
 
-      transaction.status = TransactionStatus.AUTHORIZED;
+      /* transaction.status = TransactionStatus.AUTHORIZED;
 
       transaction.authorizedAt = new Date();
 
       await this.transactionRepository.save(transaction);
+
+      return transaction; */
+
+      transaction.status = TransactionStatus.AUTHORIZED;
+      transaction.authorizedAt = new Date();
+
+      await this.transactionRepository.save(transaction);
+
+      // =====================================================
+      // Travel
+      // =====================================================
+
+      const snapshot = transaction.travelsSnapshot?.[0];
+
+      if (snapshot) {
+        await this.travelRepository.update(snapshot.travelId, {
+          isPaid: true,
+          paidAt: new Date(),
+          transaction,
+        });
+      }
 
       return transaction;
     } catch (error) {
@@ -313,6 +334,21 @@ export class TransactionsService {
     // SUCCESS
     // =====================================================
 
+    /* if (isSuccess) {
+      if (!travel.isPaid) {
+        await this.travelRepository.update(travel.id, {
+          isPaid: true,
+          paidAt: new Date(),
+          transaction,
+        });
+      }
+
+      transaction.status = TransactionStatus.COMPLETED;
+      transaction.completedAt = new Date();
+    } else {
+      transaction.status = TransactionStatus.FAILED;
+    } */
+
     if (isSuccess) {
       if (!travel.isPaid) {
         await this.travelRepository.update(travel.id, {
@@ -326,6 +362,16 @@ export class TransactionsService {
       transaction.completedAt = new Date();
     } else {
       transaction.status = TransactionStatus.FAILED;
+
+      // =====================================================
+      // Revertir pago
+      // =====================================================
+
+      await this.travelRepository.update(travel.id, {
+        isPaid: false,
+        paidAt: null,
+        //transaction: null,
+      });
     }
 
     // =====================================================
@@ -408,6 +454,8 @@ export class TransactionsService {
       const transaction = manager.create(Transaction, {
         totalAmount: amount.toString(),
         status: TransactionStatus.PENDING,
+
+        //travels:[travel],
 
         travelsSnapshot: [
           {

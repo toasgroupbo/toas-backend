@@ -68,7 +68,7 @@ export class Travel {
   isPaid: boolean;
 
   @Column({ type: 'timestamptz', nullable: true })
-  paidAt?: Date;
+  paidAt?: Date | null;
 
   //!Montos
 
