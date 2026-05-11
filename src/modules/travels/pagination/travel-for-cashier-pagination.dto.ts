@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
@@ -32,6 +32,11 @@ export class TravelForCashierFilterDto extends PaginationDto {
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   isPaid?: boolean;
 
   @IsOptional()
