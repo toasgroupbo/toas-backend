@@ -239,6 +239,7 @@ export class TravelsForCashierService {
       this.travelRepository,
       {
         where,
+        transaction: true,
         order: { id: 'DESC' },
         relations: {
           bus: true,

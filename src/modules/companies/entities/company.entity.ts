@@ -37,6 +37,9 @@ export class Company {
   @Column({ type: 'int' })
   hours_before_closing: number;
 
+  @Column('boolean', { default: true })
+  enabled: boolean;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })

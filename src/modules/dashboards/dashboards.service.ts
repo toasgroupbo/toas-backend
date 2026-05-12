@@ -331,7 +331,7 @@ export class DashboardsService {
         },
         relations: {
           company: true,
-          bus: true,
+          bus: { owner: true },
           route: {
             officeOrigin: {
               place: true,

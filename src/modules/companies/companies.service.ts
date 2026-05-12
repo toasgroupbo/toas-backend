@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
@@ -65,7 +61,10 @@ export class CompanyService {
 
   async findAll() {
     const companies = await this.companyRepository.find({
-      where: { users: { rol: { name: StaticRoles.COMPANY_ADMIN } } },
+      where: {
+        enabled: true,
+        users: { rol: { name: StaticRoles.COMPANY_ADMIN } },
+      },
       relations: { bankAccount: true, users: true },
     });
     return companies;
@@ -95,7 +94,7 @@ export class CompanyService {
       end = new Date(`${startDate}T23:59:59.999-04:00`);
     } else if (!startDate && endDate) {
       // hasta cierta fecha
-      start = new Date('1970-01-01T00:00:00-04:00'); // inicio "seguro"
+      start = new Date('1970-01-01T00:00:00-04:00');
       end = new Date(`${endDate}T23:59:59.999-04:00`);
     } else {
       // default: hoy
@@ -115,7 +114,12 @@ export class CompanyService {
     const result = await this.companyRepository
       .createQueryBuilder('company')
 
-      // join filtrado (más eficiente)
+      // SOLO EMPRESAS HABILITADAS
+      .where('company.enabled = :enabled', {
+        enabled: true,
+      })
+
+      // join filtrado
       .leftJoin(
         'company.travels',
         'travel',
@@ -161,7 +165,7 @@ export class CompanyService {
       .groupBy('company.id')
       .addGroupBy('company.name')
 
-      // opcional: ordenar por más ventas
+      // ordenar por más ventas
       .orderBy('total', 'DESC')
 
       .getRawMany();
@@ -175,7 +179,11 @@ export class CompanyService {
 
   async findOne(id: number) {
     const company = await this.companyRepository.findOne({
-      where: { id, users: { rol: { name: StaticRoles.COMPANY_ADMIN } } },
+      where: {
+        id,
+        enabled: true,
+        users: { rol: { name: StaticRoles.COMPANY_ADMIN } },
+      },
       relations: { bankAccount: true, users: true },
     });
     if (!company) throw new NotFoundException('Company not found');
@@ -188,7 +196,7 @@ export class CompanyService {
 
   async update(id: number, dto: UpdateCompanyDto) {
     const company = await this.companyRepository.findOne({
-      where: { id },
+      where: { id, enabled: true },
       relations: { bankAccount: true },
     });
 
@@ -276,7 +284,7 @@ export class CompanyService {
         }
       }
 
-      //! 6. Otros (igual que ya tenías)
+      //! 6. Otros
 
       if (company.bankAccount) {
         await manager.softRemove(company.bankAccount);
@@ -290,9 +298,12 @@ export class CompanyService {
         await manager.softRemove(company.buses);
       }
 
-      //! 7. Eliminar company y owners
+      if (company.owners?.length) {
+        await manager.softRemove(company.owners);
+      }
 
-      await manager.softRemove(company);
+      //! 7. Eliminar company y owners
+      await manager.update(Company, { id: company.id }, { enabled: false });
     });
 
     return { message: 'Company deleted', company };
