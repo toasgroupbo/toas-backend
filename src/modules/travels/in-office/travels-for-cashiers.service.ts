@@ -242,6 +242,7 @@ export class TravelsForCashierService {
         transaction: true,
         order: { id: 'DESC' },
         relations: {
+          transaction: true,
           bus: true,
           route: {
             officeOrigin: { place: true },
@@ -251,16 +252,6 @@ export class TravelsForCashierService {
       },
       filters,
     );
-
-    /* const travelsWithSeats = await Promise.all(
-      travels.data.map(async (travel) => {
-        const seatsAvailable = await this.getSeatsAvailableCount(travel.id);
-        return {
-          ...travel,
-          seatsAvailable,
-        };
-      }),
-    ); */
 
     const travelIds = travels.data.map((t) => t.id);
     const statsMap = await this.getSeatsStatsByTravels(travelIds);
