@@ -80,8 +80,8 @@ export class BankAccount {
   })
   createdAt: Date;
 
-  @DeleteDateColumn({ nullable: true, select: false })
-  deletedAt: Date;
+  /* @DeleteDateColumn({ nullable: true, select: false })
+  deletedAt: Date; */
 
   //* ============================================================================================== */
   //*                                        Relations                                               */

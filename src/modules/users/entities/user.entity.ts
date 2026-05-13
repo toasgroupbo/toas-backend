@@ -48,7 +48,7 @@ export class User {
   createdAt: Date;
 
   @DeleteDateColumn({ nullable: true, select: false })
-  deletedAt: Date;
+  deletedAt: Date | null;
 
   //* ============================================================================================== */
   //*                                        Relations                                               */
@@ -61,7 +61,6 @@ export class User {
 
   //! solo para cajeros, dueños y admins de companies
   @ManyToOne(() => Company, (company) => company.users, {
-    //cascade: true,
     nullable: true,
   })
   company?: Company;

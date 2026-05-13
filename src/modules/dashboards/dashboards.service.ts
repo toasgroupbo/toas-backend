@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Between, DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { TravelStatus } from '../travels/enums';
 
@@ -10,15 +10,412 @@ import { Owner } from '../owners/entities/owner.entity';
 import { Office } from '../offices/entities/office.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Company } from '../companies/entities/company.entity';
+import { CompanyOwner } from '../companies/entities/company-owners.entity';
 
 @Injectable()
 export class DashboardsService {
+  constructor(private readonly dataSource: DataSource) {}
+
+  //? ============================================================================================== */
+  //?                                      Helpers                                                   */
+  //? ============================================================================================== */
+
+  private getTodayRange() {
+    const today = new Date();
+    const start = new Date(today);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(today);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  }
+
+  private mapTravelStats(stats: any[]) {
+    return {
+      active: Number(
+        stats.find((s) => s.status === TravelStatus.ACTIVE)?.count || 0,
+      ),
+
+      cancelled: Number(
+        stats.find((s) => s.status === TravelStatus.CANCELLED)?.count || 0,
+      ),
+
+      closed: Number(
+        stats.find((s) => s.status === TravelStatus.CLOSED)?.count || 0,
+      ),
+    };
+  }
+
+  //? ============================================================================================== */
+  //?                            Dashboard: General                                                  */
+  //? ============================================================================================== */
+
+  async getGeneralDashboard() {
+    const companyRepo = this.dataSource.getRepository(Company);
+    const ownerRepo = this.dataSource.getRepository(Owner);
+    const busRepo = this.dataSource.getRepository(Bus);
+    const officeRepo = this.dataSource.getRepository(Office);
+    const routeRepo = this.dataSource.getRepository(Route);
+    const userRepo = this.dataSource.getRepository(User);
+    const travelRepo = this.dataSource.getRepository(Travel);
+
+    const { start, end } = this.getTodayRange();
+
+    // =========================================================
+    // SUMMARY
+    // =========================================================
+
+    const [
+      companies,
+      owners,
+      buses,
+      offices,
+      routes,
+      cashiers,
+
+      pendingDeposits,
+      totalPendingAmount,
+
+      travelStats,
+
+      upcomingTravels,
+    ] = await Promise.all([
+      companyRepo.count({
+        where: {
+          enabled: true,
+        },
+      }),
+
+      ownerRepo.count({
+        where: {
+          enabled: true,
+        },
+      }),
+
+      busRepo.count({
+        where: {
+          enabled: true,
+        },
+      }),
+
+      officeRepo.count({
+        where: {
+          enabled: true,
+        },
+      }),
+
+      routeRepo.count({
+        where: {
+          enabled: true,
+        },
+      }),
+
+      userRepo
+        .createQueryBuilder('user')
+        .where('user.officeId IS NOT NULL')
+        .andWhere('user.deletedAt IS NULL')
+        .getCount(),
+
+      // DEPÓSITOS PENDIENTES
+      travelRepo.count({
+        where: {
+          enabled: true,
+          isPaid: false,
+          travel_status: TravelStatus.CLOSED,
+        },
+      }),
+
+      // MONTO TOTAL PENDIENTE
+      travelRepo
+        .createQueryBuilder('travel')
+        .select('COALESCE(SUM(travel.net_to_company), 0)', 'total')
+        .where('travel.enabled = true')
+        .andWhere('travel.isPaid = false')
+        .andWhere('travel.travel_status = :status', {
+          status: TravelStatus.CLOSED,
+        })
+        .getRawOne(),
+
+      // ESTADÍSTICAS DE VIAJES
+      travelRepo
+        .createQueryBuilder('travel')
+        .select('travel.travel_status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .where('travel.enabled = true')
+        .andWhere('travel.departure_time BETWEEN :start AND :end', {
+          start,
+          end,
+        })
+        .groupBy('travel.travel_status')
+        .getRawMany(),
+
+      // PRÓXIMAS SALIDAS
+      travelRepo
+        .createQueryBuilder('travel')
+        .leftJoinAndSelect('travel.company', 'company')
+        .leftJoinAndSelect('travel.bus', 'bus')
+        .leftJoinAndSelect('travel.route', 'route')
+        .leftJoinAndSelect('route.officeOrigin', 'origin')
+        .leftJoinAndSelect('route.officeDestination', 'destination')
+        .leftJoinAndSelect('origin.place', 'originPlace')
+        .leftJoinAndSelect('destination.place', 'destinationPlace')
+        .where('travel.enabled = true')
+        .andWhere('travel.departure_time >= :today', {
+          today: new Date(),
+        })
+        .andWhere('travel.travel_status IN (:...statuses)', {
+          statuses: [
+            TravelStatus.ACTIVE,
+            //TravelStatus.PENDING,
+          ],
+        })
+        .orderBy('travel.departure_time', 'ASC')
+        .take(20)
+        .getMany(),
+    ]);
+
+    const mappedStats = this.mapTravelStats(travelStats);
+
+    return {
+      summary: {
+        companies,
+        owners,
+        buses,
+        offices,
+        routes,
+        cashiers,
+      },
+
+      travels_today: {
+        actives: mappedStats.active,
+        canceled: mappedStats.cancelled,
+        closed: mappedStats.closed,
+
+        total: mappedStats.active + mappedStats.cancelled + mappedStats.closed,
+      },
+
+      deposits: {
+        pendingDeposits,
+        amount_pending: Number(totalPendingAmount?.total || 0),
+      },
+
+      travels: upcomingTravels,
+    };
+  }
+
+  //? ============================================================================================== */
+  //?                            Dashboard: Company                                                  */
+  //? ============================================================================================== */
+
+  async getCompanyDashboard(companyId: number) {
+    const companyRepo = this.dataSource.getRepository(Company);
+    const busRepo = this.dataSource.getRepository(Bus);
+    const officeRepo = this.dataSource.getRepository(Office);
+    const routeRepo = this.dataSource.getRepository(Route);
+    const userRepo = this.dataSource.getRepository(User);
+    const travelRepo = this.dataSource.getRepository(Travel);
+    const ownerCompanyRepo = this.dataSource.getRepository(CompanyOwner);
+
+    // =========================================================
+    // VALIDAR EMPRESA
+    // =========================================================
+
+    const company = await companyRepo.findOne({
+      where: {
+        id: companyId,
+        enabled: true,
+      },
+    });
+
+    if (!company) {
+      throw new NotFoundException('Empresa no encontrada');
+    }
+
+    const { start, end } = this.getTodayRange();
+
+    // =========================================================
+    // CONTADORES
+    // =========================================================
+
+    const [
+      owners,
+      buses,
+      offices,
+      routes,
+      cashiers,
+
+      pendingDeposits,
+      totalPendingAmount,
+
+      travelStats,
+
+      upcomingTravels,
+    ] = await Promise.all([
+      // OWNERS
+      ownerCompanyRepo.count({
+        where: {
+          enabled: true,
+          company: {
+            id: companyId,
+          },
+        },
+      }),
+
+      // BUSES
+      busRepo.count({
+        where: {
+          enabled: true,
+          company: {
+            id: companyId,
+          },
+        },
+      }),
+
+      // OFFICES
+      officeRepo.count({
+        where: {
+          enabled: true,
+          company: {
+            id: companyId,
+          },
+        },
+      }),
+
+      // ROUTES
+      routeRepo
+        .createQueryBuilder('route')
+        .leftJoin('route.officeOrigin', 'origin')
+        .leftJoin('route.officeDestination', 'destination')
+        .select('COUNT(DISTINCT route.id)', 'count')
+        .where('route.enabled = true')
+        .andWhere(
+          `
+          (
+            origin.companyId = :companyId
+            OR destination.companyId = :companyId
+          )
+          `,
+          { companyId },
+        )
+        .getRawOne(),
+
+      // CASHIERS
+      userRepo
+        .createQueryBuilder('user')
+        .where('user.companyId = :companyId', {
+          companyId,
+        })
+        .andWhere('user.deletedAt IS NULL')
+        .getCount(),
+
+      // DEPÓSITOS PENDIENTES
+      travelRepo.count({
+        where: {
+          enabled: true,
+          company: {
+            id: companyId,
+          },
+          isPaid: false,
+          travel_status: TravelStatus.CLOSED,
+        },
+      }),
+
+      // TOTAL PENDIENTE
+      travelRepo
+        .createQueryBuilder('travel')
+        .select('COALESCE(SUM(travel.net_to_company), 0)', 'total')
+        .where('travel.enabled = true')
+        .andWhere('travel.companyId = :companyId', {
+          companyId,
+        })
+        .andWhere('travel.isPaid = false')
+        .andWhere('travel.travel_status = :status', {
+          status: TravelStatus.CLOSED,
+        })
+        .getRawOne(),
+
+      // ESTADÍSTICAS
+      travelRepo
+        .createQueryBuilder('travel')
+        .select('travel.travel_status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .where('travel.enabled = true')
+        .andWhere('travel.companyId = :companyId', {
+          companyId,
+        })
+        .andWhere('travel.departure_time BETWEEN :start AND :end', {
+          start,
+          end,
+        })
+        .groupBy('travel.travel_status')
+        .getRawMany(),
+
+      // PRÓXIMOS VIAJES
+      travelRepo
+        .createQueryBuilder('travel')
+        .leftJoinAndSelect('travel.company', 'company')
+        .leftJoinAndSelect('travel.bus', 'bus')
+        .leftJoinAndSelect('bus.owner', 'owner')
+        .leftJoinAndSelect('travel.route', 'route')
+        .leftJoinAndSelect('route.officeOrigin', 'origin')
+        .leftJoinAndSelect('route.officeDestination', 'destination')
+        .leftJoinAndSelect('origin.place', 'originPlace')
+        .leftJoinAndSelect('destination.place', 'destinationPlace')
+        .where('travel.enabled = true')
+        .andWhere('travel.companyId = :companyId', {
+          companyId,
+        })
+        .andWhere('travel.departure_time >= :today', {
+          today: new Date(),
+        })
+        .andWhere('travel.travel_status IN (:...statuses)', {
+          statuses: [
+            TravelStatus.ACTIVE,
+            //TravelStatus.PENDING,
+          ],
+        })
+        .orderBy('travel.departure_time', 'ASC')
+        .take(20)
+        .getMany(),
+    ]);
+
+    const mappedStats = this.mapTravelStats(travelStats);
+
+    return {
+      company: {
+        id: company.id,
+        name: company.name,
+        logo: company.logo,
+      },
+
+      summary: {
+        owners,
+        buses,
+        offices,
+        routes: Number(routes?.count || 0),
+        cashiers,
+      },
+
+      travels_today: {
+        actives: mappedStats.active,
+        canceled: mappedStats.cancelled,
+        closed: mappedStats.closed,
+
+        total: mappedStats.active + mappedStats.cancelled + mappedStats.closed,
+      },
+
+      deposits: {
+        pendingDeposits,
+        amount_pending: Number(totalPendingAmount?.total || 0),
+      },
+
+      travels: upcomingTravels,
+    };
+  }
+}
+
+/* @Injectable()
+export class DashboardsService {
   constructor(private dataSource: DataSource) {}
-
-  //? ============================================================================================== */
-  //?                              Dashboard: Admin                                                  */
-  //? ============================================================================================== */
-
   async getGeneralDashboard() {
     const companyRepo = this.dataSource.getRepository(Company);
     const ownerRepo = this.dataSource.getRepository(Owner);
@@ -119,9 +516,7 @@ export class DashboardsService {
 
       // PRÓXIMAS SALIDAS
       travelRepo.find({
-        /* where: {
-          departure_time: MoreThanOrEqual(today),
-        }, */
+
         relations: {
           company: true,
           bus: true,
@@ -171,9 +566,7 @@ export class DashboardsService {
     };
   }
 
-  //? ============================================================================================== */
-  //?                            Dashboard: Company                                                  */
-  //? ============================================================================================== */
+  
 
   async getCompanyDashboard(companyId: number) {
     const companyRepo = this.dataSource.getRepository(Company);
@@ -382,4 +775,4 @@ export class DashboardsService {
       travels: upcomingTravels,
     };
   }
-}
+} */

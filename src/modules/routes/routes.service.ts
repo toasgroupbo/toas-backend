@@ -54,8 +54,8 @@ export class RoutesService {
     const routes = await this.routeRepository.find({
       order: { id: 'DESC' },
       where: {
+        officeOrigin: { company: { id: companyId } },
         enabled: true,
-        officeOrigin: { company: { id: companyId }, enabled: true },
       },
       relations: {
         officeOrigin: true,
@@ -70,19 +70,19 @@ export class RoutesService {
   //? ============================================================================================== */
 
   async findOne(id: number, companyId: number) {
-    const Route = await this.routeRepository.findOne({
+    const route = await this.routeRepository.findOne({
       where: {
         id,
+        officeOrigin: { company: { id: companyId } },
         enabled: true,
-        officeOrigin: { company: { id: companyId }, enabled: true },
       },
       relations: {
         officeOrigin: true,
         officeDestination: true,
       },
     });
-    if (!Route) throw new NotFoundException('Route not found');
-    return Route;
+    if (!route) throw new NotFoundException('Route not found');
+    return route;
   }
 
   //? ============================================================================================== */
@@ -104,15 +104,7 @@ export class RoutesService {
   //? ============================================================================================== */
 
   async remove(id: number, companyId: number) {
-    const route = await this.routeRepository.findOne({
-      where: {
-        id,
-        enabled: true,
-        officeOrigin: { company: { id: companyId } },
-      },
-    });
-
-    if (!route) throw new NotFoundException();
+    const route = await this.findOne(id, companyId);
 
     await this.dataSource.transaction(async (manager) => {
       //! Deshabilitar travels
@@ -129,6 +121,6 @@ export class RoutesService {
       await manager.update(Route, { id: route.id }, { enabled: false });
     });
 
-    return { message: 'Route disabled successfully' };
+    return { message: 'Route Disabled', disabled: route };
   }
 }

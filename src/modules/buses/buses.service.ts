@@ -1,18 +1,22 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { CreateBusDto, UpdateBusDto } from './dto';
 
 import { Bus } from './entities/bus.entity';
+import { BusType } from './entities/bus-type.entity';
+import { Travel } from '../travels/entities/travel.entity';
 
 @Injectable()
 export class BusesService {
   constructor(
     @InjectRepository(Bus)
     private readonly busRepository: Repository<Bus>,
+
+    private dataSource: DataSource,
   ) {}
 
   //? ============================================================================================== */
@@ -23,18 +27,11 @@ export class BusesService {
     try {
       const { busType, ...data } = dto;
 
-      // --------------------------------------------
-      // 1. Determina si un bus tiene o no decks
-      // --------------------------------------------
-
+      //! Determina si un bus tiene o no decks
       let decks: boolean = false;
       if (busType.decks.length > 1) {
         decks = true;
       }
-
-      // --------------------------------------------
-      // 2. Se crea el Bus
-      // --------------------------------------------
 
       const newBus = this.busRepository.create({
         ...data,
@@ -57,6 +54,7 @@ export class BusesService {
     const buses = await this.busRepository.find({
       where: {
         company: { id: companyId },
+        enabled: true,
       },
       relations: { owner: true, busType: true },
     });
@@ -72,6 +70,7 @@ export class BusesService {
       where: {
         id,
         company: { id: companyId },
+        enabled: true,
       },
       relations: { owner: true, busType: true },
     });
@@ -100,10 +99,39 @@ export class BusesService {
   async remove(id: number, companyId: number) {
     const bus = await this.findOne(id, companyId);
     try {
-      await this.busRepository.softRemove(bus);
+      await this.dataSource.transaction(async (manager) => {
+        //! Deshabilitar viajes asociados
+        await manager.update(
+          Travel,
+          {
+            bus: { id: bus.id },
+            enabled: true,
+          },
+          {
+            enabled: false,
+          },
+        );
+
+        //! Deshabilitar busType
+        if (bus.busType) {
+          await manager.update(
+            BusType,
+            {
+              id: bus.busType.id,
+            },
+            {
+              enabled: false,
+            },
+          );
+        }
+
+        //! Deshabilitar bus
+        await manager.update(Bus, { id: bus.id }, { enabled: false });
+      });
+
       return {
-        message: 'Bus deleted successfully',
-        deleted: bus,
+        message: 'Bus Disabled',
+        disabled: bus,
       };
     } catch (error) {
       handleDBExceptions(error);

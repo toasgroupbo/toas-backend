@@ -28,16 +28,16 @@ export class Route {
   @Column({ type: 'int', default: 1 })
   travel_hours: number;
 
-  @Column('boolean', { default: true })
-  enabled: boolean;
-
   @CreateDateColumn({
     type: 'timestamptz',
   })
   createdAt: Date;
 
-  @DeleteDateColumn({ nullable: true, select: false })
-  deletedAt: Date;
+  @Column('boolean', { default: true })
+  enabled: boolean;
+
+  /* @DeleteDateColumn({ nullable: true, select: false })
+  deletedAt: Date; */
 
   //* ============================================================================================== */
   //*                                        Relations                                               */

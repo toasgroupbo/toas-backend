@@ -7,13 +7,12 @@ import {
   JoinColumn,
   ManyToMany,
   CreateDateColumn,
-  DeleteDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
+import { CompanyOwner } from './company-owners.entity';
 import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { User } from 'src/modules/users/entities/user.entity';
-import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { Staff } from 'src/modules/travels/entities/staff.entity';
 import { Travel } from 'src/modules/travels/entities/travel.entity';
 import { Office } from 'src/modules/offices/entities/office.entity';
@@ -37,16 +36,13 @@ export class Company {
   @Column({ type: 'int' })
   hours_before_closing: number;
 
-  @Column('boolean', { default: true })
-  enabled: boolean;
-
   @CreateDateColumn({
     type: 'timestamptz',
   })
   createdAt: Date;
 
-  @DeleteDateColumn({ nullable: true, select: false })
-  deletedAt: Date;
+  @Column('boolean', { default: true })
+  enabled: boolean;
 
   //* ============================================================================================== */
   //*                                        Relations                                               */
@@ -65,19 +61,8 @@ export class Company {
   @OneToMany(() => Bus, (bus) => bus.company, { cascade: true })
   buses: Bus[];
 
-  @ManyToMany(() => Owner, (owner) => owner.companies, { cascade: true })
-  @JoinTable({
-    name: 'company_owners',
-    joinColumn: {
-      name: 'companyId',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'ownerId',
-      referencedColumnName: 'id',
-    },
-  })
-  owners: Owner[];
+  @OneToMany(() => CompanyOwner, (companyOwner) => companyOwner.company)
+  companyOwner: CompanyOwner[];
 
   @OneToMany(() => Travel, (travel) => travel.company)
   travels: Travel[];

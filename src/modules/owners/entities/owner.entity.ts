@@ -6,7 +6,6 @@ import {
   ManyToMany,
   JoinColumn,
   CreateDateColumn,
-  DeleteDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -14,6 +13,7 @@ import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Company } from 'src/modules/companies/entities/company.entity';
 import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
+import { CompanyOwner } from 'src/modules/companies/entities/company-owners.entity';
 
 @Entity('owners')
 export class Owner {
@@ -34,8 +34,11 @@ export class Owner {
   })
   createdAt: Date;
 
-  @DeleteDateColumn({ nullable: true, select: false })
-  deletedAt: Date;
+  @Column('boolean', { default: true })
+  enabled: boolean;
+
+  /* @DeleteDateColumn({ nullable: true, select: false })
+  deletedAt: Date; */
 
   //* ============================================================================================== */
   //*                                        Relations                                               */
@@ -48,8 +51,8 @@ export class Owner {
   @OneToMany(() => Bus, (bus) => bus.owner, { cascade: true })
   buses: Bus[];
 
-  @ManyToMany(() => Company, (company) => company.owners)
-  companies: Company[];
+  @OneToMany(() => CompanyOwner, (companyOwner) => companyOwner.owner)
+  companyOwner: CompanyOwner[];
 
   @OneToMany(() => User, (user) => user.owner)
   users: User[];

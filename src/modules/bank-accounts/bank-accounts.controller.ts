@@ -81,11 +81,11 @@ export class BankAccountsController {
   //?                                        Delete                                                  */
   //? ============================================================================================== */
 
-  //!
+  /* //!
   @Auth(ValidPermissions.DELETE)
   //!
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.bankAccountsService.remove(id);
-  }
+  } */
 }

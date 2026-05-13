@@ -2,10 +2,9 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -17,15 +16,15 @@ import { Owner } from './entities/owner.entity';
 import { Bus } from '../buses/entities/bus.entity';
 import { Rol } from '../roles/entities/rol.entity';
 import { User } from '../users/entities/user.entity';
+import { Travel } from '../travels/entities/travel.entity';
+import { BusType } from '../buses/entities/bus-type.entity';
+import { CompanyOwner } from '../companies/entities/company-owners.entity';
 
 @Injectable()
 export class OwnersService {
   constructor(
     @InjectRepository(Owner)
     private readonly ownerRepository: Repository<Owner>,
-
-    @InjectRepository(Bus)
-    private readonly busRepository: Repository<Bus>,
 
     private dataSource: DataSource,
   ) {}
@@ -43,10 +42,159 @@ export class OwnersService {
     try {
       const { bankAccount, ci, email, password, ...data } = dto;
 
-      // --------------------------------------------
-      // 1. Buscar owner existente
-      // --------------------------------------------
+      //! Buscar owner existente
+      let owner = await queryRunner.manager.findOne(Owner, {
+        where: { ci },
+        relations: {
+          companyOwner: {
+            company: true,
+          },
+          users: {
+            company: true,
+          },
+        },
+      });
 
+      const role = await queryRunner.manager.findOne(Rol, {
+        where: { name: StaticRoles.CASHIER_OWNER },
+      });
+
+      if (!role) {
+        throw new NotFoundException('Role not found');
+      }
+
+      //! Crear owner si no existe
+      if (!owner) {
+        owner = queryRunner.manager.create(Owner, {
+          ...data,
+          ci,
+          bankAccount,
+        });
+
+        owner = await queryRunner.manager.save(owner);
+
+        //! Crear relación owner-company
+        const ownerCompany = queryRunner.manager.create(CompanyOwner, {
+          owner,
+          company: { id: companyId },
+        });
+
+        await queryRunner.manager.save(ownerCompany);
+      } else {
+        //! Verificar relación con company
+        const ownerCompany = owner.companyOwner.find(
+          (oc) => oc.company.id === companyId,
+        );
+
+        //! Si no existe -> crear relación
+        if (!ownerCompany) {
+          const newRelation = queryRunner.manager.create(CompanyOwner, {
+            owner,
+            company: { id: companyId },
+          });
+
+          await queryRunner.manager.save(newRelation);
+        }
+
+        //! Si existe pero está deshabilitada -> reactivar
+        else if (!ownerCompany.enabled) {
+          ownerCompany.enabled = true;
+          await queryRunner.manager.save(ownerCompany);
+        }
+
+        //! Reactivar owner si estaba deshabilitado
+        if (!owner.enabled) {
+          owner.enabled = true;
+        }
+
+        Object.assign(owner, data);
+
+        await queryRunner.manager.save(owner);
+      }
+
+      //! Verificar user existente en esta empresa
+      const existingUserForCompany = owner.users?.find(
+        (user) => user.company?.id === companyId && !user.deletedAt,
+      );
+
+      //! Reactivar user eliminado
+      if (existingUserForCompany?.deletedAt) {
+        existingUserForCompany.deletedAt = null;
+        await queryRunner.manager.save(existingUserForCompany);
+
+        await queryRunner.commitTransaction();
+        return owner;
+      }
+
+      //! Si ya existe activo
+      if (existingUserForCompany) {
+        await queryRunner.commitTransaction();
+        return owner;
+      }
+
+      //! Validar email SOLO en esta empresa
+      const emailExists = await queryRunner.manager.findOne(User, {
+        where: {
+          email,
+          company: { id: companyId },
+        },
+        withDeleted: true,
+      });
+
+      if (emailExists && !emailExists.deletedAt) {
+        throw new ConflictException('Email already in use for this company');
+      }
+
+      //! Reactivar user eliminado con mismo email
+      if (emailExists?.deletedAt) {
+        emailExists.deletedAt = null;
+        emailExists.password = password;
+        emailExists.fullName = data.name;
+        emailExists.phone = data.phone;
+        emailExists.ci = ci;
+        emailExists.owner = owner;
+
+        await queryRunner.manager.save(emailExists);
+
+        await queryRunner.commitTransaction();
+        return owner;
+      }
+
+      //! Crear user
+      const user = queryRunner.manager.create(User, {
+        email,
+        password,
+        fullName: data.name,
+        ci,
+        phone: data.phone,
+        rol: role,
+        owner,
+        company: { id: companyId },
+      });
+
+      await queryRunner.manager.save(user);
+
+      await queryRunner.commitTransaction();
+
+      return owner;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      handleDBExceptions(error);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /*   async create(dto: CreateOwnerDto, companyId: number) {
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const { bankAccount, ci, email, password, ...data } = dto;
+
+      //! Buscar owner existente
       let owner = await queryRunner.manager.findOne(Owner, {
         where: { ci },
         relations: {
@@ -65,9 +213,7 @@ export class OwnersService {
         throw new NotFoundException('Role not found');
       }
 
-      // --------------------------------------------
-      // 2. Crear owner si no existe
-      // --------------------------------------------
+      //! Crear owner si no existe
 
       if (!owner) {
         owner = queryRunner.manager.create(Owner, {
@@ -79,10 +225,7 @@ export class OwnersService {
 
         await queryRunner.manager.save(owner);
       } else {
-        // --------------------------------------------
-        // 3. Si existe → agregar company si falta
-        // --------------------------------------------
-
+        //! Si existe → agregar company si falta
         const companyAlreadyAdded = owner.companies.some(
           (c) => c.id === companyId,
         );
@@ -96,10 +239,7 @@ export class OwnersService {
         await queryRunner.manager.save(owner);
       }
 
-      // --------------------------------------------
-      // 4. Verificar si ya tiene user en esta empresa
-      // --------------------------------------------
-
+      //! Verificar si ya tiene user en esta empresa
       const existingUserForCompany = owner.users?.find(
         (user) => user.company!.id === companyId,
       );
@@ -109,10 +249,7 @@ export class OwnersService {
         return owner;
       }
 
-      // --------------------------------------------
-      // 5. Validar email SOLO en esta empresa
-      // --------------------------------------------
-
+      //! Validar email SOLO en esta empresa
       const emailExists = await queryRunner.manager.findOne(User, {
         where: {
           email,
@@ -124,9 +261,7 @@ export class OwnersService {
         throw new ConflictException('Email already in use for this company');
       }
 
-      // --------------------------------------------
-      // 6. Crear user para esta empresa
-      // --------------------------------------------
+      //! Crear user para esta empresa
 
       const user = queryRunner.manager.create(User, {
         email,
@@ -140,11 +275,6 @@ export class OwnersService {
       });
 
       await queryRunner.manager.save(user);
-
-      // --------------------------------------------
-      // 7. Commit
-      // --------------------------------------------
-
       await queryRunner.commitTransaction();
       return owner;
     } catch (error) {
@@ -152,58 +282,6 @@ export class OwnersService {
       handleDBExceptions(error);
     } finally {
       await queryRunner.release();
-    }
-  }
-
-  /*   async create(dto: CreateOwnerDto, companyId: number) {
-    try {
-        const { bankAccount, ci, createUser, email, password, ...data } = dto;
-
-      // --------------------------------------------
-      // 1. Buscar si existe un owner con el mismo CI
-      // --------------------------------------------
-
-      let owner = await this.ownerRepository.findOne({
-        where: { ci },
-        relations: { companies: true, bankAccount: true },
-      });
-
-      // --------------------------------------------
-      // 2. Si no existiera se crea uno nuevo owner
-      // --------------------------------------------
-
-      if (!owner) {
-        owner = this.ownerRepository.create({
-          ...data,
-          ci,
-          bankAccount, //* se crea la cuenta de banco
-          companies: [{ id: companyId }], //* se asigna la primera compañía
-        });
-
-        return await this.ownerRepository.save(owner);
-      }
-
-      // --------------------------------------------
-      // 3. Si ya existiera, se agrega la nueva company
-      // --------------------------------------------
-
-      const companyAlreadyAdded = owner.companies.some(
-        (c) => c.id === companyId,
-      );
-
-      if (!companyAlreadyAdded) {
-        owner.companies.push({ id: companyId } as any);
-      }
-
-      // --------------------------------------------
-      // 4. Actualizar los datos del owner existente
-      // --------------------------------------------
-
-      Object.assign(owner, data);
-
-      return await this.ownerRepository.save(owner);
-    } catch (error) {
-      handleDBExceptions(error);
     }
   } */
 
@@ -214,30 +292,29 @@ export class OwnersService {
   async findAll(companyId: number) {
     return await this.ownerRepository.find({
       where: {
-        companies: { id: companyId },
-        users: { company: { id: companyId } },
+        enabled: true,
+        companyOwner: {
+          company: {
+            id: companyId,
+          },
+          enabled: true,
+        },
+        users: {
+          company: {
+            id: companyId,
+          },
+        },
       },
       relations: {
         bankAccount: true,
         users: true,
-        companies: true,
         buses: true,
+        companyOwner: {
+          company: true,
+        },
       },
     });
   }
-
-  /* async findAll(companyId: number) {
-    return this.ownerRepository
-      .createQueryBuilder('owner')
-      .leftJoinAndSelect('owner.bankAccount', 'bankAccount')
-      .leftJoinAndSelect('owner.users', 'users')
-      .leftJoinAndSelect('owner.buses', 'bus', 'bus.companyId = :companyId', {
-        companyId,
-      })
-      .leftJoin('owner.companies', 'company')
-      .where('company.id = :companyId', { companyId })
-      .getMany();
-  } */
 
   //? ============================================================================================== */
   //?                                        FindOne                                                 */
@@ -245,12 +322,34 @@ export class OwnersService {
 
   async findOne(id: number, companyId: number) {
     const owner = await this.ownerRepository.findOne({
-      where: { id, companies: { id: companyId } },
-      relations: { bankAccount: true },
+      where: {
+        id,
+        enabled: true,
+        companyOwner: {
+          company: {
+            id: companyId,
+          },
+          enabled: true,
+        },
+      },
+      relations: {
+        users: true,
+        companyOwner: {
+          company: true,
+        },
+        buses: {
+          company: true,
+          busType: true,
+          travels: true,
+        },
+        bankAccount: true,
+      },
     });
+
     if (!owner) {
       throw new NotFoundException('Owner not found');
     }
+
     return owner;
   }
 
@@ -283,27 +382,97 @@ export class OwnersService {
   async remove(id: number, companyId: number) {
     const owner = await this.findOne(id, companyId);
 
-    // --------------------------------------------
-    // 1.  buses asociados al owner en esa company
-    // --------------------------------------------
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        //! Obtener buses de esa company
+        const buses = owner.buses.filter(
+          (bus) => bus.company?.id === companyId && bus.enabled,
+        );
 
-    await this.busRepository
-      .createQueryBuilder()
-      .softDelete()
-      .where('ownerId = :id', { id })
-      .andWhere('companyId = :companyId', { companyId })
-      .execute();
+        const busIds = buses.map((b) => b.id);
 
-    // --------------------------------------------
-    // 2. Delete de relación Owner - Company
-    // --------------------------------------------
+        //! Deshabilitar travels
+        if (busIds.length) {
+          await manager.update(
+            Travel,
+            {
+              bus: {
+                id: In(busIds),
+              },
+              enabled: true,
+            },
+            {
+              enabled: false,
+            },
+          );
+        }
 
-    await this.ownerRepository
-      .createQueryBuilder()
-      .relation(Owner, 'companies')
-      .of(id)
-      .remove(companyId);
+        //! Deshabilitar busTypes
+        const busTypeIds = buses
+          .filter((b) => b.busType)
+          .map((b) => b.busType.id);
 
-    return { message: 'Owner deleted successfully', deleted: owner };
+        if (busTypeIds.length) {
+          await manager.update(
+            BusType,
+            {
+              id: In(busTypeIds),
+            },
+            {
+              enabled: false,
+            },
+          );
+        }
+
+        //! Deshabilitar buses
+        if (busIds.length) {
+          await manager.update(
+            Bus,
+            {
+              id: In(busIds),
+            },
+            {
+              enabled: false,
+            },
+          );
+        }
+
+        //! Deshabilitar relación OwnerCompany
+        await manager.update(
+          CompanyOwner,
+          {
+            owner: { id },
+            company: { id: companyId },
+            enabled: true,
+          },
+          {
+            enabled: false,
+          },
+        );
+
+        //! Verificar relaciones activas restantes
+        const remainingRelations = owner.companyOwner.filter(
+          (oc) => oc.company.id !== companyId && oc.enabled,
+        );
+
+        //! Si ya no tiene companies activas
+        if (!remainingRelations.length) {
+          //! Soft delete users
+          if (owner.users?.length) {
+            await manager.softRemove(owner.users);
+          }
+
+          //! Deshabilitar owner
+          await manager.update(Owner, { id: owner.id }, { enabled: false });
+        }
+      });
+
+      return {
+        message: 'Owner Disabled',
+        disabled: owner,
+      };
+    } catch (error) {
+      handleDBExceptions(error);
+    }
   }
 }

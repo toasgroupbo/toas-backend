@@ -69,7 +69,7 @@ export class BankAccountsService {
   //?                                        Delete                                                  */
   //? ============================================================================================== */
 
-  async remove(id: number) {
+  /* async remove(id: number) {
     const bankAccount = await this.findOne(id);
     try {
       await this.bankAccountRepository.softRemove(bankAccount);
@@ -80,5 +80,5 @@ export class BankAccountsService {
     } catch (error) {
       handleDBExceptions(error);
     }
-  }
+  } */
 }

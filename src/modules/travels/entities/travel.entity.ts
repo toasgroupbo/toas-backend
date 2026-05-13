@@ -46,9 +46,6 @@ export class Travel {
   @Column({ type: 'text', default: TravelType.NORMAL })
   type: TravelType;
 
-  @Column({ default: true })
-  enabled: boolean;
-
   @Column({ type: 'int', nullable: true })
   lane: number;
 
@@ -106,6 +103,9 @@ export class Travel {
 
   @Column('jsonb', { nullable: true })
   assistants?: Array<{ name: string; ci: string; phone?: string }>;
+
+  @Column('boolean', { default: true })
+  enabled: boolean;
 
   //* ============================================================================================== */
   //*                                        Relations                                               */

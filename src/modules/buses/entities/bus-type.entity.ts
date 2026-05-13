@@ -18,8 +18,10 @@ export class BusType {
   @Column('json')
   decks: DeckLayoutDto[];
 
-  @DeleteDateColumn({ nullable: true, select: false })
-  deletedAt: Date;
+  @Column('boolean', { default: true })
+  enabled: boolean;
+  /* @DeleteDateColumn({ nullable: true, select: false })
+  deletedAt: Date; */
 
   //* ============================================================================================== */
   //*                                        Relations                                               */

@@ -92,8 +92,7 @@ export class OfficesService {
     if (!office) throw new NotFoundException();
 
     await this.dataSource.transaction(async (manager) => {
-      //! 1. Obtener IDs de rutas
-
+      //! Obtener IDs de rutas
       const routeIds = [
         ...(office.origenRoutes?.map((r) => r.id) || []),
         ...(office.destinationRoutes?.map((r) => r.id) || []),
@@ -101,8 +100,7 @@ export class OfficesService {
 
       const uniqueRouteIds = [...new Set(routeIds)];
 
-      //! 2. Deshabilitar travels
-
+      //! Deshabilitar travels
       if (uniqueRouteIds.length) {
         await manager.update(
           Travel,
@@ -114,8 +112,7 @@ export class OfficesService {
         );
       }
 
-      //! 3. Deshabilitar rutas
-
+      //! Deshabilitar rutas
       if (uniqueRouteIds.length) {
         await manager.update(
           Route,
@@ -124,14 +121,12 @@ export class OfficesService {
         );
       }
 
-      //! 4. Cashiers (decisión de negocio)
-
+      //! Cashiers
       if (office.cashiers?.length) {
-        // OPCIÓN A (actual)
         await manager.softRemove(office.cashiers);
       }
 
-      //* 5. Deshabilitar office
+      //! Deshabilitar office
       await manager.update(Office, { id: office.id }, { enabled: false });
     });
 

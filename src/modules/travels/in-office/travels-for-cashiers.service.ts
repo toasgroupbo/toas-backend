@@ -1,7 +1,7 @@
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, In, Repository } from 'typeorm';
@@ -27,7 +27,6 @@ import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { TravelSeat } from '../entities/travel-seat.entity';
 import { Office } from '../../offices/entities/office.entity';
 import { Owner } from 'src/modules/owners/entities/owner.entity';
-import { CancelTravelDto } from '../dto';
 
 @Injectable()
 export class TravelsForCashierService {

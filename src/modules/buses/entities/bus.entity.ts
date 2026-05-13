@@ -61,9 +61,11 @@ export class Bus {
   })
   createdAt: Date;
 
-  @DeleteDateColumn({ nullable: true, select: false })
-  deletedAt: Date;
+  @Column('boolean', { default: true })
+  enabled: boolean;
 
+  /* @DeleteDateColumn({ nullable: true, select: false })
+  deletedAt: Date; */
   //* ============================================================================================== */
   //*                                        Relations                                               */
   //* ============================================================================================== */
