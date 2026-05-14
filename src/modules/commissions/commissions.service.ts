@@ -76,7 +76,7 @@ export class CommissionsService {
       const totalTrips = Number(result?.total_trips_count || 0);
       const ticketsApp = Number(result?.tickets_app_count_total || 0);
       const commissionApp = Number(result?.commission_app_total || 0);
-      const commissionRateAtTime = company.commission_company;
+      const commissionRateAtTime = company.commission_app;
       const commissionCompanyNumber =
         (commissionApp * commissionRateAtTime) / 100;
       const commissionCompanyString = commissionCompanyNumber.toFixed(2);
@@ -167,7 +167,9 @@ export class CommissionsService {
 
     return {
       total_app: Number(raw?.total_app ?? 0).toFixed(2),
-      total_commission_company: Number(raw?.total_commission_company ?? 0).toFixed(2),
+      total_commission_company: Number(
+        raw?.total_commission_company ?? 0,
+      ).toFixed(2),
       total_balance: Number(raw?.total_balance ?? 0).toFixed(2),
     };
   }
