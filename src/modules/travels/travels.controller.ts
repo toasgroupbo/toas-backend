@@ -2,13 +2,14 @@ import { Get, Query, Param, Controller, ParseIntPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { Auth, GetCompany, Resource } from 'src/auth/decorators';
+
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 import { TravelStatus } from './enums/travel-status.enum';
 
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
+import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
 import { TravelsService } from './travels.service';
-import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
 //!
 @Resource(ValidResourses.TRAVEL)
@@ -53,63 +54,12 @@ export class TravelsController {
     required: false,
     enum: TravelStatus,
   })
-  /* @ApiQuery({
-    name: 'isPaid',
-    required: false,
-    type: Boolean,
-  }) */
   @Get()
   findAll(
     @Query() pagination: TravelPaginationDto,
     @GetCompany() companyId: number,
   ) {
     return this.travelsService.findAll(pagination, companyId);
-  }
-
-  //? ============================================================================================== */
-  //?                              FindAll_For_Admin                                                 */
-  //? ============================================================================================== */
-
-  //!
-  @Auth(ValidPermissions.READ_ADMIN)
-  //!
-  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
-  @ApiQuery({
-    name: 'origin_placeId',
-    required: false,
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'destination_placeId',
-    required: false,
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'startDate',
-    required: false,
-    type: String,
-  })
-  @ApiQuery({
-    name: 'endDate',
-    required: false,
-    type: String,
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: TravelStatus,
-  })
-  @ApiQuery({
-    name: 'isPaid',
-    required: false,
-    type: Boolean,
-  })
-  @Get('admin')
-  findAllForAdmin(
-    @Query() pagination: TravelPaginationDto,
-    @GetCompany() companyId: number,
-  ) {
-    return this.travelsService.findAllForAdmin(pagination, companyId);
   }
 
   //? ============================================================================================== */

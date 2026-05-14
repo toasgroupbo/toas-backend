@@ -21,7 +21,7 @@ export class CreateCompanyDto {
   @IsString()
   logo: string;
 
-  @ApiProperty({
+  /*   @ApiProperty({
     example: 10,
     minimum: 0,
     maximum: 100,
@@ -31,6 +31,29 @@ export class CreateCompanyDto {
   @Max(100)
   @IsInt()
   commission: number;
+ */
+
+  @ApiProperty({
+    example: 10,
+    description: 'Porcentaje de comisión de la app',
+    minimum: 0,
+    maximum: 100,
+  })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  commission_app: number;
+
+  @ApiProperty({
+    example: 15,
+    description: 'Porcentaje de comisión para la empresa',
+    minimum: 0,
+    maximum: 100,
+  })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  commission_company: number;
 
   @ApiProperty({
     example: 3,

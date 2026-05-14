@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { Between, EntityManager, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -43,8 +43,24 @@ export class CustomersService {
       },
     };
 
+    const { startDate, endDate } = pagination;
+
     if ('is_verified' in pagination) {
       options.where.is_verified = pagination.is_verified;
+    }
+
+    //! Por dia
+    if (startDate && !endDate) {
+      const start = new Date(`${startDate}T00:00:00-04:00`);
+      const end = new Date(`${startDate}T23:59:59.999-04:00`);
+      options.where.createdAt = Between(start, end);
+    }
+
+    //! Entre dos fechas
+    if (startDate && endDate) {
+      const from = new Date(`${startDate}T00:00:00-04:00`);
+      const to = new Date(`${endDate}T23:59:59.999-04:00`);
+      options.where.createdAt = Between(from, to);
     }
 
     const result = await paginate(

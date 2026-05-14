@@ -10,8 +10,8 @@ export class Setting {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  commission: string;
+  /* @Column({ type: 'decimal', precision: 10, scale: 2 })
+  commission: string; */
 
   @Column({ type: 'text', default: null })
   terminos_y_condiciones: string;

@@ -4,32 +4,24 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Not,
-  DataSource,
-  Repository,
-  QueryRunner,
-  EntityManager,
-} from 'typeorm';
+import { Not, DataSource, Repository, EntityManager } from 'typeorm';
 
 import { envs } from 'src/config/environments/environments';
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { SeatStatus } from 'src/common/enums';
 import { PaymentType, TicketStatus, TicketType } from './enums';
-import { TravelStatus } from '../travels/enums/travel-status.enum';
 
 import {
+  BillingDto,
   CreateTicketInAppDto,
   CreateTicketInOfficeDto,
-  BillingDto,
 } from './dto';
 import { PassengerSeatBatchDto } from './dto/assign-passengers-batch-in-app.dto';
 import { TicketForCashierFilterDto } from './pagination/ticket-for-cashier-pagination.dto';
 
 import { MailService } from 'src/mail/mail.service';
 import { WalletService } from '../wallet/wallet.service';
-import { PenaltiesService } from '../customers/penalties.service';
 import { PassengersService } from '../customers/passengers.service';
 import { TicketExpirationService } from './ticket-expiration.service';
 
@@ -37,7 +29,6 @@ import { Ticket } from './entities/ticket.entity';
 import { Billing } from './entities/billing.entity';
 import { User } from '../users/entities/user.entity';
 import { Travel } from '../travels/entities/travel.entity';
-import { Setting } from '../settings/entities/setting.entity';
 import { Penalty } from '../customers/entities/penalty.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { TravelSeat } from '../travels/entities/travel-seat.entity';
@@ -48,11 +39,9 @@ export class TicketsService {
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
 
-    private readonly penaltiesService: PenaltiesService,
     private readonly ticketExpirationService: TicketExpirationService,
     private readonly passengersService: PassengersService,
     private readonly walletService: WalletService,
-
     private readonly mailService: MailService,
     private dataSource: DataSource,
   ) {}
@@ -104,7 +93,8 @@ export class TicketsService {
           billing,
         );
 
-      const commission = await this.calculateCommission(type, manager);
+      const commissionPercentage = travel.company.commission_app || 0;
+      const commission = (totalPrice * commissionPercentage) / 100;
       const totalTicketAmount = totalPrice + commission;
 
       //! se calcula los montos totales de qr y wallet
@@ -117,7 +107,6 @@ export class TicketsService {
       });
 
       //! se crea el ticket
-
       const ticket = manager.create(Ticket, {
         type,
         travel,
@@ -148,110 +137,6 @@ export class TicketsService {
       handleDBExceptions(error);
     }
   }
-
-  /*  async createTicketBase({
-    dto,
-    buyer,
-    user,
-    type,
-    paymentType,
-  }: {
-    dto: CreateTicketInAppDto | CreateTicketInOfficeDto;
-    buyer?: Customer;
-    user?: User;
-    type: TicketType;
-    paymentType: PaymentType;
-  }) {
-    const queryRunner = this.createTransaction();
-
-    try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      const manager = queryRunner.manager;
-
-      await this.ticketExpirationService.expireTravelIfNeeded(
-        dto.travelId,
-        manager,
-      );
-
-      //! validacion del travel y obtencion
-      const travel = await this.findActiveTravel(dto.travelId, manager);
-
-      const seats = await this.getAndValidateAvailableSeats(
-        dto.travelId,
-        dto.seatSelections,
-        manager,
-      );
-
-      let billing: Billing | null = null;
-      if (type === TicketType.IN_OFFICE) {
-        const officeDto = dto as CreateTicketInOfficeDto;
-        billing = await this.billingService.createOrUpdateBilling(
-          officeDto.billing,
-          manager,
-        );
-      }
-
-      const { seatsWithPrices, totalPrice } =
-        await this.calculateAndUpdateSeatPrices(
-          seats,
-          dto.seatSelections,
-          travel,
-          manager,
-          billing || undefined, //! por defecto
-        );
-
-      const commission = await this.calculateCommission(type, manager);
-      const totalTicketAmount = totalPrice + commission;
-
-      const { walletAmount, qrAmount } = await this.resolvePaymentAmounts({
-        type,
-        buyer,
-        totalTicketAmount,
-        manager,
-        paymentType,
-      });
-
-      const ticket = await this.createTicket(manager, {
-        type,
-        travel,
-        buyer: type === TicketType.IN_APP ? buyer : null,
-        soldBy: type === TicketType.IN_OFFICE ? user : null,
-
-        seats: seats.map((seat) => ({
-          id: seat.id,
-          seatNumber: seat.seatNumber,
-          price: seat.price,
-        })),
-
-        travelSeats: seatsWithPrices,
-        reserve_expiresAt: this.getReservationExpiry(),
-        payment_type: paymentType,
-        commission: commission.toString(),
-
-        total_price: totalPrice.toFixed(2),
-        wallet_amount: walletAmount.toFixed(2),
-        qr_amount: qrAmount.toFixed(2),
-        status: TicketStatus.RESERVED,
-
-        billing: billing ?? null, //! null si es en app (momentaneo)
-      });
-
-      //! Penalty
-      if (type === TicketType.IN_APP && buyer) {
-        await this.registerPenalty(buyer, user, manager);
-      }
-
-      await queryRunner.commitTransaction();
-      return ticket;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      handleDBExceptions(error);
-    } finally {
-      await queryRunner.release();
-    }
-  } */
 
   //? ============================================================================================== */
 
@@ -298,32 +183,6 @@ export class TicketsService {
 
     return { walletAmount, qrAmount };
   }
-
-  //? ============================================================================================== */
-
-  /* private async findActiveTravel(
-    travelId: number,
-    manager: EntityManager,
-  ): Promise<Travel> {
-    const travel = await manager.findOne(Travel, {
-      where: { id: travelId },
-      relations: { bus: true },
-    });
-
-    if (!travel) {
-      throw new NotFoundException(`Travel with ID ${travelId} not found`);
-    }
-
-    if (travel.travel_status !== TravelStatus.ACTIVE) {
-      throw new BadRequestException(`Travel ${travelId} is not active`);
-    }
-
-    if (travel.enabled === false) {
-      throw new BadRequestException(`Travel ${travelId} is not enable`);
-    }
-
-    return travel;
-  } */
 
   //? ============================================================================================== */
 
@@ -388,41 +247,6 @@ export class TicketsService {
 
     return { seatsWithPrices: seats, totalPrice };
   }
-
-  //? ============================================================================================== */
-
-  private async calculateCommission(
-    type: TicketType,
-    manager: EntityManager,
-  ): Promise<number> {
-    if (type === TicketType.IN_APP) {
-      const settings = await manager.find(Setting);
-      return Number(settings[0]?.commission) || 0;
-    }
-    return 0;
-  }
-
-  //? ============================================================================================== */
-
-  /* private async createTicket(
-    manager: EntityManager,
-    ticketData: Partial<Ticket>,
-  ): Promise<Ticket> {
-    const ticket = manager.create(Ticket, ticketData);
-    return manager.save(ticket);
-  }
- */
-  //? ============================================================================================== */
-
-  /* private async registerPenalty(
-    buyer: Customer | undefined,
-    user: User | undefined,
-    manager: EntityManager,
-  ): Promise<void> {
-    if (buyer && !user) {
-      await this.penaltiesService.registerFailure(buyer, manager);
-    }
-  } */
 
   //? ============================================================================================== */
 

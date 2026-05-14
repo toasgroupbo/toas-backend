@@ -31,7 +31,10 @@ export class Company {
   logo: string;
 
   @Column({ type: 'int', default: 0 })
-  commission: number;
+  commission_app: number;
+
+  @Column({ type: 'int', default: 0 })
+  commission_company: number;
 
   @Column({ type: 'int' })
   hours_before_closing: number;

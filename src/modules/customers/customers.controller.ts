@@ -40,6 +40,16 @@ export class CustomersController {
     required: false,
     type: Boolean,
   })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+  })
   @Get()
   findAll(@Query() pagination: CustomerPaginationDto) {
     return this.customersService.findAll(pagination);

@@ -1,5 +1,5 @@
 import { PaginationDto } from 'src/common/pagination/pagination.dto';
-import { IsBoolean, IsOptional } from 'class-validator';
+import { IsBoolean, IsDateString, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CustomerPaginationDto extends PaginationDto {
@@ -11,4 +11,12 @@ export class CustomerPaginationDto extends PaginationDto {
     return value;
   })
   is_verified?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }

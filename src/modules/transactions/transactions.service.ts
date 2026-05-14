@@ -4,10 +4,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
+import { Between, DataSource, In, IsNull, Not, Repository } from 'typeorm';
 
+import { StaticRoles } from 'src/auth/enums';
 import { TravelStatus } from '../travels/enums';
 import { BankCode } from '../bank-accounts/enums/bank-code.enum';
+
+import { TravelPaginationDto } from '../travels/pagination';
+import { paginate } from 'src/common/pagination/paginate';
 
 import { ResponseBCP } from './interfaces/response-bcp.interface';
 import { DecryptGetBatchDetail } from './interfaces/decrypt-get-batch-detail.interface';
@@ -19,9 +23,11 @@ import { ProcessMultipleToEncrypt } from './interfaces/toEncrypt/processmultiple
 
 import { CryptoService } from './crypto.service';
 import { HttpService } from './http/http.service';
+import { TicketExpirationService } from '../tickets/ticket-expiration.service';
 
 import { Owner } from '../owners/entities/owner.entity';
 import { Travel } from '../travels/entities/travel.entity';
+import { Company } from '../companies/entities/company.entity';
 import { Transaction, TransactionStatus } from './entities/transaction.entity';
 
 enum BcpResponseCode {
@@ -70,6 +76,11 @@ export class TransactionsService {
 
     @InjectRepository(Travel)
     private readonly travelRepository: Repository<Travel>,
+
+    @InjectRepository(Company)
+    private readonly companyRepository: Repository<Company>,
+
+    private readonly ticketExpirationService: TicketExpirationService,
 
     private readonly cryptoService: CryptoService,
 
@@ -186,14 +197,6 @@ export class TransactionsService {
       // =====================================================
       // SUCCESS
       // =====================================================
-
-      /* transaction.status = TransactionStatus.AUTHORIZED;
-
-      transaction.authorizedAt = new Date();
-
-      await this.transactionRepository.save(transaction);
-
-      return transaction; */
 
       transaction.status = TransactionStatus.AUTHORIZED;
       transaction.authorizedAt = new Date();
@@ -317,55 +320,6 @@ export class TransactionsService {
     if (!payment) {
       throw new BadRequestException('Payment not found');
     }
-
-    /* // =====================================================
-    // Validar éxito
-    // =====================================================
-
-    const isSuccess = !!String(payment.OperationNumberDebitHost || '').trim();
-
-    // =====================================================
-    // Buscar travel
-    // =====================================================
-
-    const travel = await this.travelRepository.findOne({
-      where: {
-        id: snapshot.travelId,
-      },
-    });
-
-    if (!travel) {
-      throw new NotFoundException('Travel Not Found');
-    }
-
-    // =====================================================
-    // SUCCESS
-    // =====================================================
-
-    if (isSuccess) {
-      if (!travel.isPaid) {
-        await this.travelRepository.update(travel.id, {
-          isPaid: true,
-          paidAt: new Date(),
-          transaction,
-        });
-      }
-
-      transaction.status = TransactionStatus.COMPLETED;
-      transaction.completedAt = new Date();
-    } else {
-      transaction.status = TransactionStatus.FAILED;
-
-      // =====================================================
-      // Revertir pago
-      // =====================================================
-
-      await this.travelRepository.update(travel.id, {
-        isPaid: false,
-        paidAt: null,
-        //transaction: null,
-      });
-    } */
 
     // =====================================================
     // Buscar travel
@@ -732,5 +686,147 @@ export class TransactionsService {
     }
 
     throw new Error(`Estado de respuesta inválido: ${response.isOk}`);
+  }
+
+  //? ============================================================================================== ?/
+  //?                                    FindAll_Companies                                           ?/
+  //? ============================================================================================== ?/
+
+  async findAllCompanies() {
+    const companies = await this.companyRepository.find({
+      where: {
+        users: { rol: { name: StaticRoles.COMPANY_ADMIN } },
+      },
+      relations: { bankAccount: true, users: true },
+    });
+
+    const debts = await this.companyRepository
+      .createQueryBuilder('company')
+      .select('company.id', 'companyId')
+      .addSelect('COALESCE(SUM(travel.net_to_company), 0)', 'currentDebt')
+      .leftJoin(
+        'company.travels',
+        'travel',
+        'travel.isPaid = :isPaid AND travel.travel_status = :status AND travel.enabled = :tEnabled',
+        { isPaid: false, status: TravelStatus.CLOSED, tEnabled: true },
+      )
+      .groupBy('company.id')
+      .getRawMany();
+
+    const debtMap = new Map<number, number>(
+      debts.map((d) => [d.companyId, parseFloat(d.currentDebt)]),
+    );
+
+    const lastPaidDates = await this.companyRepository
+      .createQueryBuilder('company')
+      .select('company.id', 'companyId')
+      .addSelect('MAX(travel.paidAt)', 'lastPaidAt')
+      .leftJoin(
+        'company.travels',
+        'travel',
+        'travel.isPaid = :isPaid AND travel.enabled = :tEnabled',
+        { isPaid: true, tEnabled: true },
+      )
+      .groupBy('company.id')
+      .getRawMany();
+
+    const lastPaidMap = new Map<number, Date | null>(
+      lastPaidDates.map((d) => [d.companyId, d.lastPaidAt ?? null]),
+    );
+
+    return companies.map((company) => ({
+      ...company,
+      currentDebt: debtMap.get(company.id) ?? 0,
+      lastPaidAt: lastPaidMap.get(company.id) ?? null,
+    }));
+  }
+
+  //? ============================================================================================== ?/
+  //?                                      FindAll_Travels                                           ?/
+  //? ============================================================================================== ?/
+
+  async findAllTravels(pagination: TravelPaginationDto, companyId: number) {
+    return await this.dataSource.transaction(async (manager) => {
+      const {
+        status,
+        isPaid,
+        endDate,
+        startDate,
+        origin_placeId,
+        destination_placeId,
+      } = pagination;
+
+      const travelsToExpire = await manager.find(Travel, {
+        select: { id: true },
+      });
+
+      for (const travel of travelsToExpire) {
+        await this.ticketExpirationService.expireTravelIfNeeded(
+          travel.id,
+          manager,
+        );
+      }
+
+      const options: any = {
+        where: { company: { id: companyId } },
+      };
+
+      //! Pagados
+      if (isPaid != undefined) {
+        options.where.isPaid = isPaid;
+      }
+
+      //! status
+      if (status) {
+        options.where.travel_status = status;
+      }
+
+      if (origin_placeId || destination_placeId) {
+        options.where.route = {};
+
+        //! origen
+        if (origin_placeId) {
+          options.where.route.officeOrigin = {
+            place: { id: origin_placeId },
+          };
+        }
+
+        //! Destino
+        if (destination_placeId) {
+          options.where.route.officeDestination = {
+            place: { id: destination_placeId },
+          };
+        }
+      }
+
+      //! Por dia
+      if (startDate && !endDate) {
+        const start = new Date(`${startDate}T00:00:00-04:00`);
+        const end = new Date(`${startDate}T23:59:59.999-04:00`);
+        options.where.departure_time = Between(start, end);
+      }
+
+      //! Entre dos fechas
+      if (startDate && endDate) {
+        const from = new Date(`${startDate}T00:00:00-04:00`);
+        const to = new Date(`${endDate}T23:59:59.999-04:00`);
+        options.where.departure_time = Between(from, to);
+      }
+
+      const travels = await paginate(
+        manager.getRepository(Travel),
+        {
+          ...options,
+          order: { id: 'DESC' },
+          relations: {
+            transaction: true,
+            bus: { owner: { bankAccount: true } },
+          },
+        },
+        pagination,
+      );
+
+      return travels;
+    });
   }
 }

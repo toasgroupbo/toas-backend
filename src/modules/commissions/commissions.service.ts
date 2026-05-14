@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cron } from '@nestjs/schedule';
 import { Between, IsNull, Not, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
@@ -31,6 +32,7 @@ export class CommissionsService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
+  @Cron('0 0 1,15 * *')
   async create(date = new Date()) {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -74,7 +76,7 @@ export class CommissionsService {
       const totalTrips = Number(result?.total_trips_count || 0);
       const ticketsApp = Number(result?.tickets_app_count_total || 0);
       const commissionApp = Number(result?.commission_app_total || 0);
-      const commissionRateAtTime = company.commission;
+      const commissionRateAtTime = company.commission_company;
       const commissionCompanyNumber =
         (commissionApp * commissionRateAtTime) / 100;
       const commissionCompanyString = commissionCompanyNumber.toFixed(2);
@@ -100,6 +102,7 @@ export class CommissionsService {
   //? ============================================================================================== */
   //?                                       FindAll                                                  */
   //? ============================================================================================== */
+
   async findAll(filters: CommissionPaginationDto) {
     const { startDate, endDate, isPaid } = filters;
 
@@ -115,27 +118,60 @@ export class CommissionsService {
       where.paidAt = isPaid ? Not(IsNull()) : IsNull();
     }
 
-    return paginateAdvanced(
-      this.commissionRepository,
-      filters,
+    const [paginated, totals] = await Promise.all([
+      paginateAdvanced(
+        this.commissionRepository,
+        filters,
+        ['company.name'],
+        ['company'],
+        { 'entity.date_to_pay': 'DESC' },
+        true,
+        where,
+      ),
+      this._getTotals({ startDate, endDate, isPaid }),
+    ]);
 
-      //! SEARCH
-      ['company.name'],
-
-      //! RELATIONS
-      ['company'],
-
-      //! ORDER
-      {
-        'entity.date_to_pay': 'DESC',
-      },
-
-      true,
-
-      //! WHERE
-      where,
-    );
+    return { ...paginated, totals };
   }
+
+  private async _getTotals(filters: {
+    startDate?: string;
+    endDate?: string;
+    isPaid?: boolean;
+  }) {
+    const { startDate, endDate, isPaid } = filters;
+
+    const qb = this.commissionRepository
+      .createQueryBuilder('entity')
+      .select('SUM(entity.commission_app_total)', 'total_app')
+      .addSelect('SUM(entity.commission_company)', 'total_commission_company')
+      .addSelect(
+        'SUM(GREATEST(entity.commission_company - entity.paid, 0))',
+        'total_balance',
+      );
+
+    if (startDate && endDate) {
+      qb.andWhere('entity.date_to_pay BETWEEN :start AND :end', {
+        start: startDate,
+        end: endDate,
+      });
+    }
+
+    if (typeof isPaid === 'boolean') {
+      isPaid
+        ? qb.andWhere('entity.paidAt IS NOT NULL')
+        : qb.andWhere('entity.paidAt IS NULL');
+    }
+
+    const raw = await qb.getRawOne();
+
+    return {
+      total_app: Number(raw?.total_app ?? 0).toFixed(2),
+      total_commission_company: Number(raw?.total_commission_company ?? 0).toFixed(2),
+      total_balance: Number(raw?.total_balance ?? 0).toFixed(2),
+    };
+  }
+
   //? ============================================================================================== */
 
   async findAllForCompany(companyId: number, filters: CommissionPaginationDto) {
@@ -178,14 +214,6 @@ export class CommissionsService {
       where,
     );
   }
-  /* 
-  async findAllForCompany(companyId: number, filters: CommissionPaginationDto) {
-    const commissions = await this.commissionRepository.find({
-      where: { company: { id: companyId } },
-      relations: { company: true },
-    });
-    return commissions;
-  } */
 
   //? ============================================================================================== */
   //?                                        Update                                                  */

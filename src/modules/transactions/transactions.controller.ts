@@ -1,9 +1,21 @@
-import { Controller, Param, ParseIntPipe, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  Get,
+  Post,
+  Param,
+  Query,
+  Controller,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import { Auth, GetCompany, Resource } from 'src/auth/decorators';
+
+import { TravelStatus } from '../travels/enums';
+import { ValidPermissions, ValidResourses } from 'src/common/enums';
+
+import { TravelPaginationDto } from '../travels/pagination';
 
 import { TransactionsService } from './transactions.service';
-import { Auth, Resource } from 'src/auth/decorators';
-import { ValidPermissions, ValidResourses } from 'src/common/enums';
 
 //!
 @Resource(ValidResourses.TRANSACTION)
@@ -35,8 +47,8 @@ export class TransactionsController {
     @Param('transactionId', ParseIntPipe) transactionId: number,
   ) {
     return await this.transactionsService.authorizeTransaction(transactionId);
-  }
- */
+  }*/
+
   //? ============================================================================================== ?/
   //?                              Get_Batch_Detail                                                  ?/
   //? ============================================================================================== ?/
@@ -49,5 +61,63 @@ export class TransactionsController {
     @Param('transactionId', ParseIntPipe) transactionId: number,
   ) {
     return await this.transactionsService.verifyTransaction(transactionId);
+  }
+
+  //? ============================================================================================== ?/
+  //?                             FindAll_Companies                                                  ?/
+  //? ============================================================================================== ?/
+
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
+  @Get('companies')
+  findAll() {
+    return this.transactionsService.findAllCompanies();
+  }
+
+  //? ============================================================================================== ?/
+  //?                               FindAll_Travels                                                  ?/
+  //? ============================================================================================== ?/
+
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
+  @ApiQuery({
+    name: 'origin_placeId',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'destination_placeId',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: TravelStatus,
+  })
+  @ApiQuery({
+    name: 'isPaid',
+    required: false,
+    type: Boolean,
+  })
+  @Get('travels')
+  findAllForAdmin(
+    @Query() pagination: TravelPaginationDto,
+    @GetCompany() companyId: number,
+  ) {
+    return this.transactionsService.findAllTravels(pagination, companyId);
   }
 }

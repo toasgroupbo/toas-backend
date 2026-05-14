@@ -140,7 +140,6 @@ export class TravelsService {
     return await this.dataSource.transaction(async (manager) => {
       const {
         status,
-        //isPaid,
         endDate,
         startDate,
         origin_placeId,
@@ -162,11 +161,6 @@ export class TravelsService {
         where: { company: { id: companyId } },
       };
 
-      //! Pagados
-      /* if (isPaid != undefined) {
-        options.where.isPaid = isPaid;
-      }
- */
       //! status
       if (status) {
         options.where.travel_status = status;
@@ -210,8 +204,7 @@ export class TravelsService {
           ...options,
           order: { id: 'DESC' },
           relations: {
-            //transaction: true,
-            bus: true, //{ owner: { bankAccount: true } },
+            bus: true,
             route: { officeOrigin: true, officeDestination: true },
           },
         },
@@ -323,96 +316,6 @@ export class TravelsService {
   }
 
   //? ============================================================================================== */
-  //?                              FindAll_For_Admin                                                 */
-  //? ============================================================================================== */
-
-  async findAllForAdmin(pagination: TravelPaginationDto, companyId: number) {
-    return await this.dataSource.transaction(async (manager) => {
-      const {
-        status,
-        isPaid,
-        endDate,
-        startDate,
-        origin_placeId,
-        destination_placeId,
-      } = pagination;
-
-      const travelsToExpire = await manager.find(Travel, {
-        select: { id: true },
-      });
-
-      for (const travel of travelsToExpire) {
-        await this.ticketExpirationService.expireTravelIfNeeded(
-          travel.id,
-          manager,
-        );
-      }
-
-      const options: any = {
-        where: { company: { id: companyId } },
-      };
-
-      //! Pagados
-      if (isPaid != undefined) {
-        options.where.isPaid = isPaid;
-      }
-
-      //! status
-      if (status) {
-        options.where.travel_status = status;
-      }
-
-      if (origin_placeId || destination_placeId) {
-        options.where.route = {};
-
-        //! origen
-        if (origin_placeId) {
-          options.where.route.officeOrigin = {
-            place: { id: origin_placeId },
-          };
-        }
-
-        //! Destino
-        if (destination_placeId) {
-          options.where.route.officeDestination = {
-            place: { id: destination_placeId },
-          };
-        }
-      }
-
-      //! Por dia
-      if (startDate && !endDate) {
-        const start = new Date(`${startDate}T00:00:00-04:00`);
-        const end = new Date(`${startDate}T23:59:59.999-04:00`);
-        options.where.departure_time = Between(start, end);
-      }
-
-      //! Entre dos fechas
-      if (startDate && endDate) {
-        const from = new Date(`${startDate}T00:00:00-04:00`);
-        const to = new Date(`${endDate}T23:59:59.999-04:00`);
-        options.where.departure_time = Between(from, to);
-      }
-
-      const travels = await paginate(
-        manager.getRepository(Travel),
-        {
-          ...options,
-          order: { id: 'DESC' },
-          relations: {
-            transaction: true,
-            bus: { owner: { bankAccount: true } },
-            //route: { officeOrigin: true, officeDestination: true },
-          },
-        },
-        pagination,
-      );
-
-      return travels;
-    });
-  }
-
-  //? ============================================================================================== */
   //?                                        FindOne                                                 */
   //? ============================================================================================== */
 
@@ -439,55 +342,6 @@ export class TravelsService {
   //? ============================================================================================== */
   //?                                        Cancel                                                  */
   //? ============================================================================================== */
-
-  /* async cancel(
-    id: number,
-    office: Office,
-    dto: CancelTravelDto,
-    cashier: User,
-  ) {
-    const { password } = dto;
-
-    const user = await this.userService.findOneByEmail(cashier.email);
-
-    if (!user) {
-      throw new UnauthorizedException('Cashier not found');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Password Incorrecto');
-    }
-
-    return await this.dataSource.transaction(async (manager) => {
-      await this.ticketExpirationService.expireTravelIfNeeded(id, manager);
-
-      const travel = await manager.findOne(Travel, {
-        where: {
-          id,
-          route: { officeOrigin: { company: { id: office.company.id } } },
-        },
-        relations: {
-          tickets: {
-            buyer: true,
-          },
-        },
-      });
-
-      if (!travel) throw new NotFoundException('Travel not found');
-
-      if (travel.travel_status != TravelStatus.ACTIVE)
-        throw new NotFoundException('The Travel is not active');
-
-      try {
-        travel.travel_status = TravelStatus.CANCELLED;
-
-        return await manager.save(travel);
-      } catch (error) {
-        handleDBExceptions(error);
-      }
-    });
-  } */
 
   async cancel(
     id: number,
