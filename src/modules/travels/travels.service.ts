@@ -425,6 +425,19 @@ export class TravelsService {
             refundedTickets++;
           }
 
+          //! Restaurar créditos de wallet para tickets PENDING_PAYMENT (QR no pagado)
+          if (
+            ticket.status === TicketStatus.PENDING_PAYMENT &&
+            Number(ticket.wallet_amount) > 0 &&
+            ticket.buyer
+          ) {
+            await this.walletService.restoreCreditsFromExpiredTicket(
+              ticket,
+              ticket.buyer,
+              manager,
+            );
+          }
+
           //! Lógica equivalente a TicketsInAppService.applyCancelledState()
           ticket.reserve_expiresAt = null;
 

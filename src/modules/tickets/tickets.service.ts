@@ -93,7 +93,10 @@ export class TicketsService {
           billing,
         );
 
-      const commissionPercentage = travel.company.commission_app || 0;
+      const commissionPercentage =
+        type === TicketType.IN_APP
+          ? (travel.company?.commission_app ?? 0)
+          : 0;
       const commission = (totalPrice * commissionPercentage) / 100;
       const totalTicketAmount = totalPrice + commission;
 

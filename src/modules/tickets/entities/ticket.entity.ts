@@ -70,10 +70,7 @@ export class Ticket {
   @Column({ type: 'timestamptz', nullable: true })
   reserve_expiresAt?: Date | null;
 
-  @CreateDateColumn({
-    type: 'timestamptz',
-    nullable: true,
-  })
+  @Column({ type: 'timestamptz', nullable: true, default: null })
   cancelledAt?: Date | null;
 
   @CreateDateColumn({

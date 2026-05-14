@@ -69,7 +69,7 @@ export class TicketExpirationService {
   //?                                   Expire_Batch                                                 */
   //? ============================================================================================== */
 
-  async expireBatch(limit: number = 100) {
+  /*  async expireBatch(limit: number = 100) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -121,5 +121,5 @@ export class TicketExpirationService {
     } finally {
       await queryRunner.release();
     }
-  }
+  } */
 }

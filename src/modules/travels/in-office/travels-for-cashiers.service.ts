@@ -52,8 +52,7 @@ export class TravelsForCashierService {
   //? ============================================================================================== */
 
   async findAll(filters: TravelForCashierFilterDto, office: Office) {
-    const { destination_placeId, origin_placeId, startDate, endDate, status } =
-      filters;
+    const { destination_placeId, startDate, endDate, status } = filters;
 
     const where: any = {
       travel_status: In([TravelStatus.ACTIVE, TravelStatus.CLOSED]),
@@ -405,25 +404,6 @@ export class TravelsForCashierService {
 
   //? ============================================================================================== */
   //? ============================================================================================== */
-
-  private async getSeatsAvailableCount(travelId: number): Promise<number> {
-    return await this.dataSource.transaction(async (manager) => {
-      await this.ticketExpirationService.expireTravelIfNeeded(
-        travelId,
-        manager,
-      );
-
-      return await manager
-        .createQueryBuilder(TravelSeat, 'seat')
-        .where('seat.travelId = :travelId', { travelId })
-        .andWhere('seat.status IN (:...statuses)', {
-          statuses: [SeatStatus.AVAILABLE, SeatStatus.RESERVED],
-        })
-        .getCount();
-    });
-  }
-
-  //? ============================================================================================== */
   //?                                   AssignStaff                                                  */
   //? ============================================================================================== */
 
@@ -515,12 +495,11 @@ export class TravelsForCashierService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    await this.ticketExpirationService.expireTravelIfNeeded(
-      travelId,
-      queryRunner.manager,
-    );
-
     try {
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travelId,
+        queryRunner.manager,
+      );
       // --------------------------------------------
       // 1. BLOQUEAR viaje (SIN joins)
       // --------------------------------------------
@@ -644,6 +623,9 @@ export class TravelsForCashierService {
           } else {
             ticket.status = TicketStatus.CANCELLED_FOR_CLOSE;
           }
+          ticket.reserve_expiresAt = null;
+        } else if (ticket.status === TicketStatus.PENDING_PAYMENT) {
+          ticket.status = TicketStatus.CANCELLED_FOR_CLOSE;
           ticket.reserve_expiresAt = null;
         }
       }

@@ -94,7 +94,7 @@ export class TicketsForCashierService {
   ): Promise<Travel> {
     const travel = await manager.findOne(Travel, {
       where: { id: travelId },
-      relations: { bus: true },
+      relations: { bus: true, company: true },
     });
     if (!travel) {
       throw new NotFoundException(`Travel with ID ${travelId} not found`);
@@ -294,8 +294,7 @@ export class TicketsForCashierService {
       .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
       .innerJoinAndSelect('ticket.travel', 'travel')
       .innerJoin('travel.bus', 'bus')
-      .innerJoin('bus.owner', 'owner')
-      .innerJoin('owner.companies', 'company')
+      .innerJoin('bus.company', 'company')
 
       .where('ticket.id = :ticketId', { ticketId })
       .andWhere('company.id = :companyId', {
