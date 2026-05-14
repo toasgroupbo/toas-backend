@@ -301,9 +301,8 @@ export class DashboardsService {
       // CASHIERS
       userRepo
         .createQueryBuilder('user')
-        .where('user.companyId = :companyId', {
-          companyId,
-        })
+        .where('user.companyId = :companyId', { companyId })
+        .andWhere('user.officeId IS NOT NULL')
         .andWhere('user.deletedAt IS NULL')
         .getCount(),
 
