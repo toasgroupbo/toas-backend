@@ -49,6 +49,7 @@ export class CompanyService {
 
       const newCompany = this.companyRepository.create({
         ...data,
+        commission_company: String(data.commission_company),
         users: [{ ...manager, rol: { id: rol.id } }],
         bankAccount,
       });

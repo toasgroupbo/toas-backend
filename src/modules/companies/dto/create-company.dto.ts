@@ -46,10 +46,11 @@ export class CreateCompanyDto {
 
   @ApiProperty({
     example: 1.5,
-    description: 'Valor decimal por ticket vendido en la app que corresponde a la empresa',
+    description:
+      'Valor decimal por ticket vendido en la app que corresponde a la empresa',
     minimum: 0,
   })
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   commission_company: number;
 
