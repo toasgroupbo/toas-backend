@@ -71,7 +71,7 @@ export class TransactionsController {
   @Auth(ValidPermissions.READ)
   //!
   @Get('companies')
-  findAll() {
+  findAllCompanies() {
     return this.transactionsService.findAllCompanies();
   }
 

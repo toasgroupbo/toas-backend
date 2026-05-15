@@ -14,6 +14,7 @@ import { TravelStatus } from '../travels/enums';
 import { Commission } from './entities/commission.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Company } from '../companies/entities/company.entity';
+import { StaticRoles } from 'src/auth/enums';
 
 @Injectable()
 export class CommissionsService {
@@ -97,6 +98,19 @@ export class CommissionsService {
     }
   }
 
+  //? ============================================================================================== ?/
+  //?                                    FindAll_Companies                                           ?/
+  //? ============================================================================================== ?/
+
+  async findAllCompanies() {
+    return await this.companyRepository.find({
+      where: {
+        users: { rol: { name: StaticRoles.COMPANY_ADMIN } },
+      },
+      relations: { bankAccount: true, users: true },
+    });
+  }
+
   //? ============================================================================================== */
   //?                                       FindAll                                                  */
   //? ============================================================================================== */
@@ -136,8 +150,9 @@ export class CommissionsService {
     startDate?: string;
     endDate?: string;
     isPaid?: boolean;
+    companyId?: number;
   }) {
-    const { startDate, endDate, isPaid } = filters;
+    const { startDate, endDate, isPaid, companyId } = filters;
 
     const qb = this.commissionRepository
       .createQueryBuilder('entity')
@@ -147,6 +162,10 @@ export class CommissionsService {
         'SUM(GREATEST(entity.net_to_company - entity.paid, 0))',
         'total_balance',
       );
+
+    if (companyId) {
+      qb.andWhere('entity.companyId = :companyId', { companyId });
+    }
 
     if (startDate && endDate) {
       qb.andWhere('entity.date_to_pay BETWEEN :start AND :end', {
@@ -191,26 +210,20 @@ export class CommissionsService {
       where.paidAt = isPaid ? Not(IsNull()) : IsNull();
     }
 
-    return paginateAdvanced(
-      this.commissionRepository,
-      filters,
+    const [paginated, totals] = await Promise.all([
+      paginateAdvanced(
+        this.commissionRepository,
+        filters,
+        [],
+        ['company'],
+        { 'entity.date_to_pay': 'DESC' },
+        true,
+        where,
+      ),
+      this._getTotals({ startDate, endDate, isPaid, companyId }),
+    ]);
 
-      //! SEARCH
-      [],
-
-      //! RELATIONS
-      ['company'],
-
-      //! ORDER
-      {
-        'entity.date_to_pay': 'DESC',
-      },
-
-      true,
-
-      //! WHERE
-      where,
-    );
+    return { ...paginated, totals };
   }
 
   //? ============================================================================================== */

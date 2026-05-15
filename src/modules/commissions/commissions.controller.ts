@@ -36,6 +36,18 @@ export class CommissionsController {
     return this.commissionsService.create();
   }
 
+  //? ============================================================================================== ?/
+  //?                             FindAll_Companies                                                  ?/
+  //? ============================================================================================== ?/
+
+  //!
+  @Auth(ValidPermissions.READ_ADMIN)
+  //!
+  @Get('companies')
+  findAllCompanies() {
+    return this.commissionsService.findAllCompanies();
+  }
+
   //? ============================================================================================== */
   //?                                       FindAll                                                  */
   //? ============================================================================================== */
@@ -71,21 +83,9 @@ export class CommissionsController {
 
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({
-    name: 'startDate',
-    required: false,
-    type: String,
-  })
-  @ApiQuery({
-    name: 'endDate',
-    required: false,
-    type: String,
-  })
-  @ApiQuery({
-    name: 'isPaid',
-    required: false,
-    type: Boolean,
-  })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({ name: 'isPaid', required: false, type: Boolean })
 
   //!
   @Auth(ValidPermissions.READ_COMPANY)
@@ -94,7 +94,6 @@ export class CommissionsController {
   @Get('company')
   findAllForCompany(
     @GetCompany() companyId: number,
-
     @Query() filters: CommissionPaginationDto,
   ) {
     return this.commissionsService.findAllForCompany(companyId, filters);
