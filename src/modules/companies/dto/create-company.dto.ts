@@ -45,14 +45,12 @@ export class CreateCompanyDto {
   commission_app: number;
 
   @ApiProperty({
-    example: 15,
-    description: 'Porcentaje de comisión para la empresa',
+    example: 1.5,
+    description: 'Valor decimal por ticket vendido en la app que corresponde a la empresa',
     minimum: 0,
-    maximum: 100,
   })
-  @IsInt()
+  @IsNumber()
   @Min(0)
-  @Max(100)
   commission_company: number;
 
   @ApiProperty({

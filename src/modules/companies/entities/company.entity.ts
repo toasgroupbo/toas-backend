@@ -33,8 +33,8 @@ export class Company {
   @Column({ type: 'int', default: 0 })
   commission_app: number;
 
-  @Column({ type: 'int', default: 0 })
-  commission_company: number;
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  commission_company: string;
 
   @Column({ type: 'int' })
   hours_before_closing: number;

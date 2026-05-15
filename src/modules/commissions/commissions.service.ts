@@ -75,19 +75,17 @@ export class CommissionsService {
 
       const totalTrips = Number(result?.total_trips_count || 0);
       const ticketsApp = Number(result?.tickets_app_count_total || 0);
-      const commissionApp = Number(result?.commission_app_total || 0);
-      const commissionRateAtTime = company.commission_app;
-      const commissionCompanyNumber =
-        (commissionApp * commissionRateAtTime) / 100;
-      const commissionCompanyString = commissionCompanyNumber.toFixed(2);
+      const commissionAppTotal = Number(result?.commission_app_total || 0);
+      const commissionPerTicketAtTime = Number(company.commission_company);
+      const netToCompany = (ticketsApp * commissionPerTicketAtTime).toFixed(2);
 
       const commission = this.commissionRepository.create({
         company,
         total_trips_count: totalTrips,
         tickets_app_count_total: ticketsApp,
-        commission_app_total: commissionApp.toFixed(2),
-        commission_rate_at_time: commissionRateAtTime,
-        commission_company: commissionCompanyString,
+        commission_app_total: commissionAppTotal.toFixed(2),
+        commission_per_ticket_at_time: commissionPerTicketAtTime.toFixed(2),
+        net_to_company: netToCompany,
         date_to_pay: end,
         period_start: start,
         period_end: end,
@@ -144,9 +142,9 @@ export class CommissionsService {
     const qb = this.commissionRepository
       .createQueryBuilder('entity')
       .select('SUM(entity.commission_app_total)', 'total_app')
-      .addSelect('SUM(entity.commission_company)', 'total_commission_company')
+      .addSelect('SUM(entity.net_to_company)', 'total_net_to_company')
       .addSelect(
-        'SUM(GREATEST(entity.commission_company - entity.paid, 0))',
+        'SUM(GREATEST(entity.net_to_company - entity.paid, 0))',
         'total_balance',
       );
 
@@ -167,9 +165,7 @@ export class CommissionsService {
 
     return {
       total_app: Number(raw?.total_app ?? 0).toFixed(2),
-      total_commission_company: Number(
-        raw?.total_commission_company ?? 0,
-      ).toFixed(2),
+      total_net_to_company: Number(raw?.total_net_to_company ?? 0).toFixed(2),
       total_balance: Number(raw?.total_balance ?? 0).toFixed(2),
     };
   }

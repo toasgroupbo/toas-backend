@@ -43,10 +43,10 @@ export class Commission {
   commission_app_total: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  commission_company: string;
+  net_to_company: string;
 
-  @Column({ type: 'int' })
-  commission_rate_at_time: number;
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  commission_per_ticket_at_time: string;
 
   @Column({ type: 'timestamptz' })
   date_to_pay: Date;
