@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { TravelStatus } from '../travels/enums';
+import { TicketType } from '../tickets/enums/ticket-type.enum';
+import { TicketStatus } from '../tickets/enums/ticket-status.enum';
 
 import { Bus } from '../buses/entities/bus.entity';
 import { User } from '../users/entities/user.entity';
@@ -9,6 +11,7 @@ import { Route } from '../routes/entities/route.entity';
 import { Owner } from '../owners/entities/owner.entity';
 import { Office } from '../offices/entities/office.entity';
 import { Travel } from '../travels/entities/travel.entity';
+import { TravelSeat } from '../travels/entities/travel-seat.entity';
 import { Company } from '../companies/entities/company.entity';
 import { CompanyOwner } from '../companies/entities/company-owners.entity';
 
@@ -27,6 +30,52 @@ export class DashboardsService {
     const end = new Date(today);
     end.setHours(23, 59, 59, 999);
     return { start, end };
+  }
+
+  private async getSeatsStatsByTravels(travelIds: number[]) {
+    if (!travelIds.length) return new Map<number, any>();
+
+    const travelSeatRepo = this.dataSource.getRepository(TravelSeat);
+
+    const raw = await travelSeatRepo
+      .createQueryBuilder('ts')
+      .leftJoin('ts.ticket', 't')
+      .select('ts.travelId', 'travelId')
+      .addSelect('COUNT(*)', 'totalSeats')
+      .addSelect(
+        `SUM(CASE WHEN t.id IS NOT NULL AND t.type = :app THEN 1 ELSE 0 END)`,
+        'seatsApp',
+      )
+      .addSelect(
+        `SUM(CASE WHEN t.id IS NOT NULL AND t.type = :office THEN 1 ELSE 0 END)`,
+        'seatsOffice',
+      )
+      .addSelect(
+        `SUM(CASE WHEN t.id IS NULL THEN 1 ELSE 0 END)`,
+        'seatsAvailable',
+      )
+      .where('ts.travelId IN (:...ids)', { ids: travelIds })
+      .andWhere('(t.status IS NULL OR t.status != :cancelled)', {
+        cancelled: TicketStatus.CANCELLED,
+      })
+      .groupBy('ts.travelId')
+      .setParameters({
+        app: TicketType.IN_APP,
+        office: TicketType.IN_OFFICE,
+      })
+      .getRawMany();
+
+    return new Map<number, any>(
+      raw.map((r) => [
+        Number(r.travelId),
+        {
+          totalSeats: Number(r.totalSeats),
+          seatsApp: Number(r.seatsApp),
+          seatsOffice: Number(r.seatsOffice),
+          seatsAvailable: Number(r.seatsAvailable),
+        },
+      ]),
+    );
   }
 
   private mapTravelStats(stats: any[]) {
@@ -175,6 +224,26 @@ export class DashboardsService {
 
     const mappedStats = this.mapTravelStats(travelStats);
 
+    const travelIds = upcomingTravels.map((t) => t.id);
+    const seatsMap = await this.getSeatsStatsByTravels(travelIds);
+
+    const travels = upcomingTravels.map((travel) => {
+      const stats = seatsMap.get(travel.id) || {
+        totalSeats: 0,
+        seatsApp: 0,
+        seatsOffice: 0,
+        seatsAvailable: 0,
+      };
+      return {
+        ...travel,
+        totalBusSeats: stats.totalSeats,
+        seatsApp: stats.seatsApp,
+        seatsOffice: stats.seatsOffice,
+        seatsAvailable: stats.seatsAvailable,
+        totalSoldSeats: stats.seatsApp + stats.seatsOffice,
+      };
+    });
+
     return {
       summary: {
         companies,
@@ -198,7 +267,7 @@ export class DashboardsService {
         amount_pending: Number(totalPendingAmount?.total || 0),
       },
 
-      travels: upcomingTravels,
+      travels,
     };
   }
 
@@ -379,6 +448,26 @@ export class DashboardsService {
 
     const mappedStats = this.mapTravelStats(travelStats);
 
+    const travelIds = upcomingTravels.map((t) => t.id);
+    const seatsMap = await this.getSeatsStatsByTravels(travelIds);
+
+    const travels = upcomingTravels.map((travel) => {
+      const stats = seatsMap.get(travel.id) || {
+        totalSeats: 0,
+        seatsApp: 0,
+        seatsOffice: 0,
+        seatsAvailable: 0,
+      };
+      return {
+        ...travel,
+        totalBusSeats: stats.totalSeats,
+        seatsApp: stats.seatsApp,
+        seatsOffice: stats.seatsOffice,
+        seatsAvailable: stats.seatsAvailable,
+        totalSoldSeats: stats.seatsApp + stats.seatsOffice,
+      };
+    });
+
     return {
       company: {
         id: company.id,
@@ -407,7 +496,7 @@ export class DashboardsService {
         amount_pending: Number(totalPendingAmount?.total || 0),
       },
 
-      travels: upcomingTravels,
+      travels,
     };
   }
 }
