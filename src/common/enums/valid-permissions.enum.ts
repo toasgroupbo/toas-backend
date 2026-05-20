@@ -4,8 +4,8 @@ export enum ValidPermissions {
   UPDATE = 'UPDATE',
   DELETE = 'DELETE',
 
+  CREATE_ADMIN = 'CREATE_ADMIN',
   READ_ADMIN = 'READ_ADMIN',
-  UPDATE_ADMIN = 'UPDATE_ADMIN',
   READ_COMPANY = 'READ_COMPANY',
 
   PAY = 'PAY',

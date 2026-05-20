@@ -1,14 +1,14 @@
 import {
-  Index,
   Column,
   Entity,
-  ManyToOne,
+  OneToOne,
+  JoinColumn,
+  CreateDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { Company } from 'src/modules/companies/entities/company.entity';
+import { Travel } from 'src/modules/travels/entities/travel.entity';
 
-@Index(['company', 'period_key'], { unique: true })
 @Entity('commissions')
 export class Commission {
   @PrimaryGeneratedColumn()
@@ -16,54 +16,29 @@ export class Commission {
 
   //? ============================================================================================== */
 
-  @Column({
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
-    default: 0,
-    nullable: true,
-  })
-  paid: string;
-
-  @Column('text', { nullable: true })
-  voucher: string;
-
-  @Column({ type: 'timestamptz', nullable: true })
-  paidAt?: Date;
-
-  //? ============================================================================================== */
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  commission_company: string;
 
   @Column({ type: 'int', default: 0 })
-  total_trips_count: number;
-
-  @Column({ type: 'int' })
-  tickets_app_count_total: number;
+  tickets_app_count: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   commission_app_total: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  net_to_company: string;
-
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  commission_per_ticket_at_time: string;
+  commission_company_total: string;
 
   @Column({ type: 'timestamptz' })
-  date_to_pay: Date;
+  departure_time: Date;
 
-  @Column({ type: 'timestamptz', nullable: true })
-  period_start: Date;
-
-  @Column({ type: 'timestamptz', nullable: true })
-  period_end: Date;
-
-  @Column({ type: 'varchar', length: 7, nullable: true })
-  period_key: string;
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
 
   //* ============================================================================================== */
   //*                                        Relations                                               */
   //* ============================================================================================== */
 
-  @ManyToOne(() => Company, (company) => company.commissions)
-  company: Company;
+  @OneToOne(() => Travel)
+  @JoinColumn()
+  travel: Travel;
 }

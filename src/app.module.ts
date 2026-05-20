@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ScheduleModule } from '@nestjs/schedule';
 import { envs } from './config/environments/environments';
 
 import { SettingsModule } from './modules/settings/settings.module';
@@ -31,8 +30,6 @@ import { CommissionsModule } from './modules/commissions/commissions.module';
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
-
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: envs.DB_HOST,

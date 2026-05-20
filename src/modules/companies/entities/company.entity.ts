@@ -16,7 +16,6 @@ import { User } from 'src/modules/users/entities/user.entity';
 import { Staff } from 'src/modules/travels/entities/staff.entity';
 import { Travel } from 'src/modules/travels/entities/travel.entity';
 import { Office } from 'src/modules/offices/entities/office.entity';
-import { Commission } from 'src/modules/commissions/entities/commission.entity';
 import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
 
 @Entity('companies')
@@ -78,6 +77,4 @@ export class Company {
   })
   staff: Staff[];
 
-  @OneToMany(() => Commission, (commission) => commission.company)
-  commissions: Commission[];
 }

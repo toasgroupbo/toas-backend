@@ -51,8 +51,8 @@ export class SeedService implements OnModuleInit {
           {
             resourse: ValidResourses.COMMISSION,
             permissions: [
+              ValidPermissions.CREATE_ADMIN,
               ValidPermissions.READ_ADMIN,
-              ValidPermissions.UPDATE_ADMIN,
               ValidPermissions.READ_COMPANY,
             ],
           },
@@ -361,22 +361,13 @@ export class SeedService implements OnModuleInit {
           },
         ],
       },
+
       //! CASHIER_OWNER
 
       {
         name: StaticRoles.CASHIER_OWNER,
         isStatic: true,
         permissions: [
-          /* {
-            resourse: ValidResourses.BUS_CASHIER,
-            permissions: [ValidPermissions.READ],
-          },
-
-          {
-            resourse: ValidResourses.ROUTES_CASHIER,
-            permissions: [ValidPermissions.READ],
-          }, */
-
           {
             resourse: ValidResourses.ROUTES_CASHIER,
             permissions: [ValidPermissions.READ],

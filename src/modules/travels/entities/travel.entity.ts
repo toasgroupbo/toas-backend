@@ -3,6 +3,7 @@ import {
   Column,
   ManyToOne,
   OneToMany,
+  OneToOne,
   DeleteDateColumn,
   CreateDateColumn,
   PrimaryGeneratedColumn,
@@ -17,6 +18,7 @@ import { Route } from 'src/modules/routes/entities/route.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { Company } from 'src/modules/companies/entities/company.entity';
 import { Transaction } from 'src/modules/transactions/entities/transaction.entity';
+import { Commission } from 'src/modules/commissions/entities/commission.entity';
 
 @Entity('travels')
 export class Travel {
@@ -138,4 +140,7 @@ export class Travel {
     nullable: true,
   })
   transaction?: Transaction;
+
+  @OneToOne(() => Commission, (commission) => commission.travel)
+  commission?: Commission;
 }

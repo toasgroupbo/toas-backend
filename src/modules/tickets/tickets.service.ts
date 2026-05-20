@@ -94,9 +94,7 @@ export class TicketsService {
         );
 
       const commissionPercentage =
-        type === TicketType.IN_APP
-          ? (travel.company?.commission_app ?? 0)
-          : 0;
+        type === TicketType.IN_APP ? (travel.company?.commission_app ?? 0) : 0;
       const commission = (totalPrice * commissionPercentage) / 100;
       const totalTicketAmount = totalPrice + commission;
 
@@ -432,6 +430,101 @@ export class TicketsService {
       //! status
       if (status) where.status = status;
 
+      const tickets = await manager.find(Ticket, {
+        where: {
+          ...where,
+          travel: {
+            id: travelId,
+            company: { id: companyId },
+          },
+        },
+        order: { id: 'DESC' },
+        relations: {
+          travel: {
+            company: true,
+            route: {
+              officeOrigin: { place: true },
+              officeDestination: { place: true },
+            },
+          },
+          billing: true,
+          travelSeats: true,
+          buyer: true,
+          canceledBy: true,
+          soldBy: true,
+        },
+      });
+
+      const cashierMap = new Map<
+        number,
+        { cashier: User; cashTotal: number; qrTotal: number }
+      >();
+
+      let totalCash = 0;
+      let totalQr = 0;
+
+      for (const ticket of tickets) {
+        if (!ticket.soldBy) continue;
+
+        const cashierId = ticket.soldBy.id;
+        if (!cashierMap.has(cashierId)) {
+          cashierMap.set(cashierId, {
+            cashier: ticket.soldBy,
+            cashTotal: 0,
+            qrTotal: 0,
+          });
+        }
+
+        const entry = cashierMap.get(cashierId)!;
+
+        if (ticket.payment_type === PaymentType.CASH) {
+          const amount = Number(ticket.total_price);
+          entry.cashTotal += amount;
+          totalCash += amount;
+        } else if (ticket.payment_type === PaymentType.QR) {
+          const amount = Number(ticket.qr_amount);
+          entry.qrTotal += amount;
+          totalQr += amount;
+        }
+      }
+
+      const cashiers = Array.from(cashierMap.values()).map((entry) => ({
+        cashier: entry.cashier,
+        cashTotal: entry.cashTotal.toFixed(2),
+        qrTotal: entry.qrTotal.toFixed(2),
+      }));
+
+      return {
+        tickets,
+        cashiers,
+        totals: {
+          totalCash: totalCash.toFixed(2),
+          totalQr: totalQr.toFixed(2),
+        },
+      };
+    });
+  }
+
+  /* 
+  
+  
+  async findAll(
+    companyId: number,
+    travelId: number,
+    filters: TicketForCashierFilterDto,
+  ) {
+    return await this.dataSource.transaction(async (manager) => {
+      await this.ticketExpirationService.expireTravelIfNeeded(
+        travelId,
+        manager,
+      );
+
+      const { status } = filters;
+      const where: any = {};
+
+      //! status
+      if (status) where.status = status;
+
       return await manager.find(Ticket, {
         where: {
           ...where,
@@ -458,7 +551,7 @@ export class TicketsService {
       });
     });
   }
-
+  */
   //? ============================================================================================== */
   //?                               Assign_Passenger                                                 */
   //? ============================================================================================== */

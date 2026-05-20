@@ -1,11 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Cron } from '@nestjs/schedule';
-import { Between, IsNull, Not, Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
-import { UpdateCommissionDto } from './dto/update-commission.dto';
 import { paginateAdvanced } from 'src/common/pagination/paginate-advanced';
 import { CommissionPaginationDto } from './pagination/commission.pagination';
 
@@ -13,17 +11,12 @@ import { TravelStatus } from '../travels/enums';
 
 import { Commission } from './entities/commission.entity';
 import { Travel } from '../travels/entities/travel.entity';
-import { Company } from '../companies/entities/company.entity';
-import { StaticRoles } from 'src/auth/enums';
 
 @Injectable()
 export class CommissionsService {
   constructor(
     @InjectRepository(Commission)
     private readonly commissionRepository: Repository<Commission>,
-
-    @InjectRepository(Company)
-    private readonly companyRepository: Repository<Company>,
 
     @InjectRepository(Travel)
     private readonly travelRepository: Repository<Travel>,
@@ -33,82 +26,40 @@ export class CommissionsService {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  @Cron('0 0 1,15 * *')
-  async create(date = new Date()) {
-    const year = date.getFullYear();
-    const month = date.getMonth();
+  async create() {
+    const closedTravels = await this.travelRepository
+      .createQueryBuilder('travel')
+      .leftJoin('travel.commission', 'commission')
+      .where('travel.travel_status = :status', { status: TravelStatus.CLOSED })
+      .andWhere('travel.deletedAt IS NULL')
+      .andWhere('commission.id IS NULL')
+      .leftJoinAndSelect('travel.company', 'company')
+      .getMany();
 
-    const start = new Date(year, month, 1);
-    const end = new Date(year, month + 1, 1);
-    const periodKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+    for (const travel of closedTravels) {
+      try {
+        const company = travel.company;
+        const commissionCompanyAtTime = Number(company.commission_company);
+        const ticketsAppCount = travel.tickets_app_count;
+        const commissionAppTotal = Number(travel.total_commission);
+        const commissionCompanyTotal = (
+          commissionCompanyAtTime * ticketsAppCount
+        ).toFixed(2);
 
-    const companies = await this.companyRepository.find();
+        const commission = this.commissionRepository.create({
+          travel,
+          departure_time: travel.departure_time,
+          commission_company: commissionCompanyAtTime.toFixed(2),
+          tickets_app_count: ticketsAppCount,
+          commission_app_total: commissionAppTotal.toFixed(2),
+          commission_company_total: commissionCompanyTotal,
+        });
 
-    for (const company of companies) {
-      const existing = await this.commissionRepository.findOne({
-        where: {
-          company: { id: company.id },
-          period_key: periodKey,
-        },
-      });
-
-      if (existing) {
-        /* console.log(
-          `Comisión ya existe para empresa ${company.id} en ${periodKey}`,
-        ); */
-        continue;
+        await this.commissionRepository.save(commission);
+      } catch (error) {
+        handleDBExceptions(error);
       }
-
-      const result = await this.travelRepository
-        .createQueryBuilder('travel')
-        .select('COUNT(travel.id)', 'total_trips_count')
-        .addSelect('SUM(travel.tickets_app_count)', 'tickets_app_count_total')
-        //.select('SUM(travel.tickets_app_count)', 'tickets_app_count_total')
-        .addSelect('SUM(travel.total_commission)', 'commission_app_total')
-        .where('travel.companyId = :companyId', { companyId: company.id })
-        .andWhere('travel.departure_time >= :start', { start })
-        .andWhere('travel.departure_time < :end', { end })
-        .andWhere('travel.deletedAt IS NULL')
-        .andWhere('travel.travel_status = :status', {
-          status: TravelStatus.CLOSED,
-        })
-        .getRawOne();
-
-      const totalTrips = Number(result?.total_trips_count || 0);
-      const ticketsApp = Number(result?.tickets_app_count_total || 0);
-      const commissionAppTotal = Number(result?.commission_app_total || 0);
-      const commissionPerTicketAtTime = Number(company.commission_company);
-      const netToCompany = (ticketsApp * commissionPerTicketAtTime).toFixed(2);
-
-      const commission = this.commissionRepository.create({
-        company,
-        total_trips_count: totalTrips,
-        tickets_app_count_total: ticketsApp,
-        commission_app_total: commissionAppTotal.toFixed(2),
-        commission_per_ticket_at_time: commissionPerTicketAtTime.toFixed(2),
-        net_to_company: netToCompany,
-        date_to_pay: end,
-        period_start: start,
-        period_end: end,
-        period_key: periodKey,
-        paid: '0',
-      });
-
-      await this.commissionRepository.save(commission);
     }
-  }
-
-  //? ============================================================================================== ?/
-  //?                                    FindAll_Companies                                           ?/
-  //? ============================================================================================== ?/
-
-  async findAllCompanies() {
-    return await this.companyRepository.find({
-      where: {
-        users: { rol: { name: StaticRoles.COMPANY_ADMIN } },
-      },
-      relations: { bankAccount: true, users: true },
-    });
   }
 
   //? ============================================================================================== */
@@ -116,18 +67,14 @@ export class CommissionsService {
   //? ============================================================================================== */
 
   async findAll(filters: CommissionPaginationDto) {
-    const { startDate, endDate, isPaid } = filters;
-
+    const { startDate, endDate } = filters;
     const where: any = {};
 
-    //! FECHAS
     if (startDate && endDate) {
-      where.date_to_pay = Between(startDate, endDate);
-    }
-
-    //! PAGADO
-    if (typeof isPaid === 'boolean') {
-      where.paidAt = isPaid ? Not(IsNull()) : IsNull();
+      where.departure_time = Between(
+        new Date(`${startDate}T00:00:00-04:00`),
+        new Date(`${endDate}T23:59:59.999-04:00`),
+      );
     }
 
     const [paginated, totals] = await Promise.all([
@@ -135,79 +82,71 @@ export class CommissionsService {
         this.commissionRepository,
         filters,
         ['company.name'],
-        ['company'],
-        { 'entity.date_to_pay': 'DESC' },
+        ['travel.company'],
+        { 'entity.departure_time': 'DESC' },
         true,
         where,
       ),
-      this._getTotals({ startDate, endDate, isPaid }),
+      this._getTotals(filters),
     ]);
 
     return { ...paginated, totals };
   }
 
-  private async _getTotals(filters: {
-    startDate?: string;
-    endDate?: string;
-    isPaid?: boolean;
-    companyId?: number;
-  }) {
-    const { startDate, endDate, isPaid, companyId } = filters;
+  //? ============================================================================================== */
+
+  private async _getTotals(filters: CommissionPaginationDto) {
+    const { startDate, endDate, search } = filters;
+
+    const hasFilter = (startDate && endDate) || search;
+    if (!hasFilter) {
+      return { total_commission_app: '0.00', total_commission_company: '0.00' };
+    }
 
     const qb = this.commissionRepository
       .createQueryBuilder('entity')
-      .select('SUM(entity.commission_app_total)', 'total_app')
-      .addSelect('SUM(entity.net_to_company)', 'total_net_to_company')
+      .select('SUM(entity.commission_app_total)', 'total_commission_app')
       .addSelect(
-        'SUM(GREATEST(entity.net_to_company - entity.paid, 0))',
-        'total_balance',
+        'SUM(entity.commission_company_total)',
+        'total_commission_company',
       );
 
-    if (companyId) {
-      qb.andWhere('entity.companyId = :companyId', { companyId });
-    }
-
     if (startDate && endDate) {
-      qb.andWhere('entity.date_to_pay BETWEEN :start AND :end', {
-        start: startDate,
-        end: endDate,
+      qb.andWhere('entity.departure_time BETWEEN :start AND :end', {
+        start: new Date(`${startDate}T00:00:00-04:00`),
+        end: new Date(`${endDate}T23:59:59.999-04:00`),
       });
     }
 
-    if (typeof isPaid === 'boolean') {
-      isPaid
-        ? qb.andWhere('entity.paidAt IS NOT NULL')
-        : qb.andWhere('entity.paidAt IS NULL');
+    if (search) {
+      qb.leftJoin('entity.travel', 'travel')
+        .leftJoin('travel.company', 'company')
+        .andWhere('company.name ILIKE :search', { search: `%${search}%` });
     }
 
     const raw = await qb.getRawOne();
 
     return {
-      total_app: Number(raw?.total_app ?? 0).toFixed(2),
-      total_net_to_company: Number(raw?.total_net_to_company ?? 0).toFixed(2),
-      total_balance: Number(raw?.total_balance ?? 0).toFixed(2),
+      total_commission_app: Number(raw?.total_commission_app ?? 0).toFixed(2),
+      total_commission_company: Number(
+        raw?.total_commission_company ?? 0,
+      ).toFixed(2),
     };
   }
 
   //? ============================================================================================== */
 
   async findAllForCompany(companyId: number, filters: CommissionPaginationDto) {
-    const { startDate, endDate, isPaid } = filters;
-
+    const { startDate, endDate } = filters;
     const where: any = {
-      company: {
-        id: companyId,
-      },
+      travel: { company: { id: companyId } },
     };
 
-    //! FECHAS
     if (startDate && endDate) {
-      where.date_to_pay = Between(startDate, endDate);
-    }
-
-    //! PAGADO
-    if (typeof isPaid === 'boolean') {
-      where.paidAt = isPaid ? Not(IsNull()) : IsNull();
+      where.departure_time = Between(
+        new Date(`${startDate}T00:00:00-04:00`),
+        new Date(`${endDate}T23:59:59.999-04:00`),
+      );
     }
 
     const [paginated, totals] = await Promise.all([
@@ -215,35 +154,49 @@ export class CommissionsService {
         this.commissionRepository,
         filters,
         [],
-        ['company'],
-        { 'entity.date_to_pay': 'DESC' },
+        ['travel.company'],
+        { 'entity.departure_time': 'DESC' },
         true,
         where,
       ),
-      this._getTotals({ startDate, endDate, isPaid, companyId }),
+      this._getTotalsForCompany(companyId, filters),
     ]);
 
     return { ...paginated, totals };
   }
 
   //? ============================================================================================== */
-  //?                                        Update                                                  */
-  //? ============================================================================================== */
 
-  async update(id: number, dto: UpdateCommissionDto) {
-    const commission = await this.commissionRepository.findOne({
-      where: { id },
-    });
+  private async _getTotalsForCompany(
+    companyId: number,
+    filters: CommissionPaginationDto,
+  ) {
+    const { startDate, endDate } = filters;
 
-    if (!commission) {
-      throw new NotFoundException(`Commission with id ${id} not found`);
+    if (!startDate || !endDate) {
+      return { total_commission_company: '0.00' };
     }
 
-    try {
-      Object.assign(commission, dto);
-      return await this.commissionRepository.save(commission);
-    } catch (error) {
-      handleDBExceptions(error);
-    }
+    const qb = this.commissionRepository
+      .createQueryBuilder('entity')
+      .select(
+        'SUM(entity.commission_company_total)',
+        'total_commission_company',
+      )
+      .leftJoin('entity.travel', 'travel')
+      .leftJoin('travel.company', 'company')
+      .where('company.id = :companyId', { companyId })
+      .andWhere('entity.departure_time BETWEEN :start AND :end', {
+        start: new Date(`${startDate}T00:00:00-04:00`),
+        end: new Date(`${endDate}T23:59:59.999-04:00`),
+      });
+
+    const raw = await qb.getRawOne();
+
+    return {
+      total_commission_company: Number(
+        raw?.total_commission_company ?? 0,
+      ).toFixed(2),
+    };
   }
 }
