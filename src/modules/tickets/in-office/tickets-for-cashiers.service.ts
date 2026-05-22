@@ -258,7 +258,7 @@ export class TicketsForCashierService {
       }
 
       const cashiers = Array.from(cashierMap.values()).map((entry) => ({
-        cashier: entry.cashier,
+        ...entry.cashier,
         cashTotal: entry.cashTotal.toFixed(2),
         qrTotal: entry.qrTotal.toFixed(2),
       }));

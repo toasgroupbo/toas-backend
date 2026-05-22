@@ -27,6 +27,7 @@ import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { TravelSeat } from '../entities/travel-seat.entity';
 import { Office } from '../../offices/entities/office.entity';
 import { Owner } from 'src/modules/owners/entities/owner.entity';
+import { Ticket } from '../../tickets/entities/ticket.entity';
 
 @Injectable()
 export class TravelsForCashierService {
@@ -128,6 +129,13 @@ export class TravelsForCashierService {
     const travelIds = travels.data.map((t) => t.id);
     const statsMap = await this.getSeatsStatsByTravels(travelIds);
 
+    const nonClosedPageIds = travels.data
+      .filter((t) => t.travel_status !== TravelStatus.CLOSED)
+      .map((t) => t.id);
+
+    const realtimeAmountsMap =
+      await this.getRealtimeAmountsByTravels(nonClosedPageIds);
+
     const travelsWithSeats = travels.data.map((travel) => {
       const stats = statsMap.get(travel.id) || {
         totalSeats: 0,
@@ -136,8 +144,24 @@ export class TravelsForCashierService {
         seatsAvailable: 0,
       };
 
+      const amounts =
+        travel.travel_status !== TravelStatus.CLOSED
+          ? (realtimeAmountsMap.get(travel.id) ?? {
+              cash_amount: 0,
+              qr_amount: 0,
+              app_amount: 0,
+            })
+          : {
+              cash_amount: Number(travel.cash_amount),
+              qr_amount: Number(travel.qr_amount),
+              app_amount: Number(travel.app_amount),
+            };
+
       return {
         ...travel,
+        cash_amount: amounts.cash_amount,
+        qr_amount: amounts.qr_amount,
+        app_amount: amounts.app_amount,
         totalBusSeats: stats.totalSeats,
         seatsApp: stats.seatsApp,
         seatsOffice: stats.seatsOffice,
@@ -148,13 +172,38 @@ export class TravelsForCashierService {
 
     const allTravels = await this.travelRepository.find({
       where,
-      select: { cash_amount: true, qr_amount: true, app_amount: true },
+      select: {
+        id: true,
+        travel_status: true,
+        cash_amount: true,
+        qr_amount: true,
+        app_amount: true,
+      },
     });
+
+    const allNonClosedIds = allTravels
+      .filter((t) => t.travel_status !== TravelStatus.CLOSED)
+      .map((t) => t.id);
+
+    const realtimeAllAmounts =
+      await this.getRealtimeAmountsByTravels(allNonClosedIds);
 
     const totals = allTravels.reduce(
       (acc, t) => {
-        acc.office += Number(t.cash_amount) + Number(t.qr_amount);
-        acc.app += Number(t.app_amount);
+        const amounts =
+          t.travel_status !== TravelStatus.CLOSED
+            ? (realtimeAllAmounts.get(t.id) ?? {
+                cash_amount: 0,
+                qr_amount: 0,
+                app_amount: 0,
+              })
+            : {
+                cash_amount: Number(t.cash_amount),
+                qr_amount: Number(t.qr_amount),
+                app_amount: Number(t.app_amount),
+              };
+        acc.office += amounts.cash_amount + amounts.qr_amount;
+        acc.app += amounts.app_amount;
         return acc;
       },
       { office: 0, app: 0 },
@@ -254,6 +303,13 @@ export class TravelsForCashierService {
     const travelIds = travels.data.map((t) => t.id);
     const statsMap = await this.getSeatsStatsByTravels(travelIds);
 
+    const nonClosedPageIds = travels.data
+      .filter((t) => t.travel_status !== TravelStatus.CLOSED)
+      .map((t) => t.id);
+
+    const realtimeAmountsMap =
+      await this.getRealtimeAmountsByTravels(nonClosedPageIds);
+
     const travelsWithSeats = travels.data.map((travel) => {
       const stats = statsMap.get(travel.id) || {
         totalSeats: 0,
@@ -262,8 +318,24 @@ export class TravelsForCashierService {
         seatsAvailable: 0,
       };
 
+      const amounts =
+        travel.travel_status !== TravelStatus.CLOSED
+          ? (realtimeAmountsMap.get(travel.id) ?? {
+              cash_amount: 0,
+              qr_amount: 0,
+              app_amount: 0,
+            })
+          : {
+              cash_amount: Number(travel.cash_amount),
+              qr_amount: Number(travel.qr_amount),
+              app_amount: Number(travel.app_amount),
+            };
+
       return {
         ...travel,
+        cash_amount: amounts.cash_amount,
+        qr_amount: amounts.qr_amount,
+        app_amount: amounts.app_amount,
         totalBusSeats: stats.totalSeats,
         seatsApp: stats.seatsApp,
         seatsOffice: stats.seatsOffice,
@@ -274,13 +346,38 @@ export class TravelsForCashierService {
 
     const allTravels = await this.travelRepository.find({
       where,
-      select: { cash_amount: true, qr_amount: true, app_amount: true },
+      select: {
+        id: true,
+        travel_status: true,
+        cash_amount: true,
+        qr_amount: true,
+        app_amount: true,
+      },
     });
+
+    const allNonClosedIds = allTravels
+      .filter((t) => t.travel_status !== TravelStatus.CLOSED)
+      .map((t) => t.id);
+
+    const realtimeAllAmounts =
+      await this.getRealtimeAmountsByTravels(allNonClosedIds);
 
     const totals = allTravels.reduce(
       (acc, t) => {
-        acc.office += Number(t.cash_amount) + Number(t.qr_amount);
-        acc.app += Number(t.app_amount);
+        const amounts =
+          t.travel_status !== TravelStatus.CLOSED
+            ? (realtimeAllAmounts.get(t.id) ?? {
+                cash_amount: 0,
+                qr_amount: 0,
+                app_amount: 0,
+              })
+            : {
+                cash_amount: Number(t.cash_amount),
+                qr_amount: Number(t.qr_amount),
+                app_amount: Number(t.app_amount),
+              };
+        acc.office += amounts.cash_amount + amounts.qr_amount;
+        acc.app += amounts.app_amount;
         return acc;
       },
       { office: 0, app: 0 },
@@ -345,6 +442,60 @@ export class TravelsForCashierService {
           seatsApp: Number(r.seatsApp),
           seatsOffice: Number(r.seatsOffice),
           seatsAvailable: Number(r.seatsAvailable),
+        },
+      ]),
+    );
+  }
+
+  //? ============================================================================================== */
+
+  async getRealtimeAmountsByTravels(travelIds: number[]) {
+    if (!travelIds.length)
+      return new Map<
+        number,
+        { cash_amount: number; qr_amount: number; app_amount: number }
+      >();
+
+    const raw = await this.dataSource
+      .getRepository(Ticket)
+      .createQueryBuilder('t')
+      .select('t.travelId', 'travelId')
+      .addSelect(
+        `SUM(CASE WHEN t.type = :app AND t.status = :sold
+              THEN CAST(t.qr_amount AS decimal) + CAST(t.wallet_amount AS decimal)
+              ELSE 0 END)`,
+        'app_amount',
+      )
+      .addSelect(
+        `SUM(CASE WHEN t.type = :office AND t.status = :sold AND t.payment_type = :qr
+              THEN CAST(t.qr_amount AS decimal)
+              ELSE 0 END)`,
+        'qr_amount',
+      )
+      .addSelect(
+        `SUM(CASE WHEN t.type = :office AND t.status = :sold AND t.payment_type = :cash
+              THEN CAST(t.total_price AS decimal)
+              ELSE 0 END)`,
+        'cash_amount',
+      )
+      .where('t.travelId IN (:...ids)', { ids: travelIds })
+      .setParameters({
+        app: TicketType.IN_APP,
+        office: TicketType.IN_OFFICE,
+        sold: TicketStatus.SOLD,
+        qr: PaymentType.QR,
+        cash: PaymentType.CASH,
+      })
+      .groupBy('t.travelId')
+      .getRawMany();
+
+    return new Map(
+      raw.map((r) => [
+        Number(r.travelId),
+        {
+          cash_amount: Number(r.cash_amount) || 0,
+          qr_amount: Number(r.qr_amount) || 0,
+          app_amount: Number(r.app_amount) || 0,
         },
       ]),
     );
