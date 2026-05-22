@@ -21,6 +21,8 @@ import { GetBatchDetailEncrypt } from './interfaces/toEncrypt/getbatchdetail-to-
 import { AuthorizedBachToEncrypt } from './interfaces/toEncrypt/authorizedbach-to-encrypt.interface';
 import { ProcessMultipleToEncrypt } from './interfaces/toEncrypt/processmultiple-to-encrypt.interface';
 
+import { envs } from 'src/config/environments/environments';
+
 import { CryptoService } from './crypto.service';
 import { HttpService } from './http/http.service';
 import { TicketExpirationService } from '../tickets/ticket-expiration.service';
@@ -515,21 +517,21 @@ export class TransactionsService {
     const amount = Number(travel.net_to_company);
 
     return {
-      documentNumber: '1000029',
-      documentType: 'Q',
-      documentExtension: 'SN',
+      documentNumber: envs.H2H_PROCESS_DOC_NUMBER,
+      documentType: envs.H2H_DOC_TYPE,
+      documentExtension: envs.H2H_PROCESS_DOC_EXTENSION,
       documentComplement: '',
       amount,
       currency: Currency.BOL,
       fundSource: 'Venta pasajes',
       fundDestination: `Pago a ${owner.name}`,
-      sourceAccount: '7015103341336',
+      sourceAccount: envs.H2H_SOURCE_ACCOUNT,
       sourceCurrency: Currency.BOL,
       description: `Pago automático travel ${travel.id}`,
-      sendVouchers: 'luisdiegoborja8@gmail.com',
+      sendVouchers: envs.H2H_VOUCHER_EMAIL,
       cismartApprovers: [
         {
-          idc: '07706841-Q-XX',
+          idc: envs.H2H_APPROVER_IDC,
           type: 1,
         },
       ],
@@ -603,10 +605,10 @@ export class TransactionsService {
   ): Promise<DecryptAuthorizedBatch> {
     const payload: AuthorizedBachToEncrypt = {
       TransactionsId: transactionsId,
-      UserIp: '212.85.20.252',
-      documentNumber: '07706841',
-      documentType: 'Q',
-      documentExtension: 'XX',
+      UserIp: envs.H2H_USER_IP,
+      documentNumber: envs.H2H_SIGNER_DOC_NUMBER,
+      documentType: envs.H2H_DOC_TYPE,
+      documentExtension: envs.H2H_AUTH_DOC_EXTENSION,
       documentComplement: '',
       type: '1',
     };
@@ -629,9 +631,9 @@ export class TransactionsService {
     transactionsId: number[],
   ): Promise<DecryptGetBatchDetail> {
     const payload: GetBatchDetailEncrypt = {
-      documentNumber: '07706841',
-      documentType: 'Q',
-      documentExtension: 'XX',
+      documentNumber: envs.H2H_SIGNER_DOC_NUMBER,
+      documentType: envs.H2H_DOC_TYPE,
+      documentExtension: envs.H2H_AUTH_DOC_EXTENSION,
       documentComplement: '',
       transactionsId: transactionsId,
     };
