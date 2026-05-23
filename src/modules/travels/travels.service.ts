@@ -227,7 +227,8 @@ export class TravelsService {
         const stats = statsMap.get(travel.id) || {
           totalSeats: 0,
           seatsApp: 0,
-          seatsOffice: 0,
+          seatsQr: 0,
+          seatsCash: 0,
           seatsAvailable: 0,
         };
 
@@ -251,9 +252,10 @@ export class TravelsService {
           app_amount: amounts.app_amount,
           totalBusSeats: stats.totalSeats,
           seatsApp: stats.seatsApp,
-          seatsOffice: stats.seatsOffice,
+          seatsQr: stats.seatsQr,
+          seatsCash: stats.seatsCash,
           seatsAvailable: stats.seatsAvailable,
-          totalSoldSeats: stats.seatsApp + stats.seatsOffice,
+          totalSoldSeats: stats.seatsApp + stats.seatsQr + stats.seatsCash,
         };
       });
 
@@ -290,11 +292,12 @@ export class TravelsService {
                   qr_amount: Number(t.qr_amount),
                   app_amount: Number(t.app_amount),
                 };
-          acc.office += amounts.cash_amount + amounts.qr_amount;
+          acc.cash += amounts.cash_amount;
+          acc.qr += amounts.qr_amount;
           acc.app += amounts.app_amount;
           return acc;
         },
-        { office: 0, app: 0 },
+        { cash: 0, qr: 0, app: 0 },
       );
 
       return {
@@ -326,12 +329,21 @@ export class TravelsService {
       )
       .addSelect(
         `
-      SUM(CASE 
-        WHEN t.id IS NOT NULL AND t.type = :office THEN 1 
-        ELSE 0 
+      SUM(CASE
+        WHEN t.id IS NOT NULL AND t.type = :office AND t.payment_type = :qr THEN 1
+        ELSE 0
       END)
     `,
-        'seatsOffice',
+        'seatsQr',
+      )
+      .addSelect(
+        `
+      SUM(CASE
+        WHEN t.id IS NOT NULL AND t.type = :office AND t.payment_type = :cash THEN 1
+        ELSE 0
+      END)
+    `,
+        'seatsCash',
       )
       .addSelect(
         `
@@ -350,6 +362,8 @@ export class TravelsService {
       .setParameters({
         app: TicketType.IN_APP,
         office: TicketType.IN_OFFICE,
+        qr: PaymentType.QR,
+        cash: PaymentType.CASH,
       })
       .getRawMany();
 
@@ -359,7 +373,8 @@ export class TravelsService {
         {
           totalSeats: Number(r.totalSeats),
           seatsApp: Number(r.seatsApp),
-          seatsOffice: Number(r.seatsOffice),
+          seatsQr: Number(r.seatsQr),
+          seatsCash: Number(r.seatsCash),
           seatsAvailable: Number(r.seatsAvailable),
         },
       ]),
