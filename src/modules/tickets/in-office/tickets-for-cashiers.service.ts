@@ -224,6 +224,28 @@ export class TicketsForCashierService {
         },
       });
 
+      const travelRef = tickets.length > 0 ? tickets[0].travel : null;
+      if (travelRef && travelRef.travel_status !== TravelStatus.CLOSED) {
+        const result = await manager
+          .createQueryBuilder(Ticket, 't')
+          .select(
+            'COALESCE(SUM(t.qr_amount + t.wallet_amount), 0)',
+            'total',
+          )
+          .innerJoin('t.travel', 'travel')
+          .where('travel.id = :travelId', { travelId })
+          .andWhere('t.status = :ticketStatus', {
+            ticketStatus: TicketStatus.SOLD,
+          })
+          .andWhere('t.type = :type', { type: TicketType.IN_APP })
+          .getRawOne<{ total: string }>();
+
+        const appAmount = Number(result?.total ?? 0).toFixed(2);
+        for (const ticket of tickets) {
+          ticket.travel.app_amount = appAmount;
+        }
+      }
+
       const cashierMap = new Map<
         number,
         { cashier: User; cashTotal: number; qrTotal: number }
