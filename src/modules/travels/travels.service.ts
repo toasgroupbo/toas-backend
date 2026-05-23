@@ -396,7 +396,7 @@ export class TravelsService {
       .select('t.travelId', 'travelId')
       .addSelect(
         `SUM(CASE WHEN t.type = :app AND t.status = :sold
-              THEN CAST(t.qr_amount AS decimal) + CAST(t.wallet_amount AS decimal)
+              THEN CAST(t.qr_amount AS decimal) + CAST(t.wallet_amount AS decimal) - CAST(t.commission AS decimal)
               ELSE 0 END)`,
         'app_amount',
       )
