@@ -82,7 +82,7 @@ export class TravelsController {
   //?                                        Report                                                  */
   //? ============================================================================================== */
 
-  //!
+  /*   //!
   @Auth(ValidPermissions.READ)
   //!
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -104,5 +104,5 @@ export class TravelsController {
     @GetCompany() companyId: number,
   ) {
     return this.travelsService.closedTravelsReport(companyId, pagination);
-  }
+  } */
 }

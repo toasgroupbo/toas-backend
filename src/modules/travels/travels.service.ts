@@ -6,7 +6,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, DataSource, LessThan, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  Between,
+  DataSource,
+  LessThan,
+  MoreThan,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
@@ -627,7 +634,7 @@ export class TravelsService {
   //?                                  Closed_Trips                                                  */
   //? ============================================================================================== */
 
-  async closedTravelsReport(
+  /* async closedTravelsReport(
     companyId: number,
     pagination: ReportPaginationDto,
   ) {
@@ -669,5 +676,5 @@ export class TravelsService {
     );
 
     return travels;
-  }
+  } */
 }
