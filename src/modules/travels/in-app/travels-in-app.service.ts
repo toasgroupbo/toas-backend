@@ -54,7 +54,7 @@ export class TravelsInAppService {
       where: { ...where, travel_status: TravelStatus.ACTIVE },
       relations: {
         company: true,
-        bus: { busType: true },
+        bus: { busType: true, company: true },
         route: {
           officeOrigin: { place: true },
           officeDestination: { place: true },
@@ -109,7 +109,7 @@ export class TravelsInAppService {
       where,
       relations: {
         company: true,
-        bus: { busType: true },
+        bus: { busType: true, company: true },
         route: {
           officeOrigin: { place: true },
           officeDestination: { place: true },

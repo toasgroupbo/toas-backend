@@ -56,7 +56,7 @@ export class BusesService {
         company: { id: companyId },
         enabled: true,
       },
-      relations: { owner: true, busType: true },
+      relations: { owner: true, busType: true, company: true },
     });
     return buses;
   }
@@ -72,7 +72,7 @@ export class BusesService {
         company: { id: companyId },
         enabled: true,
       },
-      relations: { owner: true, busType: true },
+      relations: { owner: true, busType: true, company: true },
     });
     if (!bus) throw new NotFoundException('Bus not found');
     return bus;
