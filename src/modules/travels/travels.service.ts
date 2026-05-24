@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, DataSource, LessThan, MoreThan, Repository } from 'typeorm';
+import { Between, DataSource, LessThan, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
@@ -185,11 +185,10 @@ export class TravelsService {
         }
       }
 
-      //! Por dia
+      //! Desde startDate en adelante
       if (startDate && !endDate) {
         const start = new Date(`${startDate}T00:00:00-04:00`);
-        const end = new Date(`${startDate}T23:59:59.999-04:00`);
-        options.where.departure_time = Between(start, end);
+        options.where.departure_time = MoreThanOrEqual(start);
       }
 
       //! Entre dos fechas

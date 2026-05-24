@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, DataSource, In, Repository } from 'typeorm';
+import { Between, DataSource, In, MoreThanOrEqual, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -68,15 +68,6 @@ export class TravelsForCashierService {
     //! status
     if (status) where.travel_status = status;
 
-    //! Origen
-    /* if (origin_placeId) {
-      where.route.officeOrigin = {
-        place: {
-          id: origin_placeId,
-        },
-      };
-    } */
-
     //! Destino
     if (destination_placeId) {
       where.route.officeDestination = {
@@ -86,11 +77,10 @@ export class TravelsForCashierService {
       };
     }
 
-    //! Por dia
+    //! Desde startDate en adelante
     if (startDate && !endDate) {
       const start = new Date(`${startDate}T00:00:00-04:00`);
-      const end = new Date(`${startDate}T23:59:59.999-04:00`);
-      where.departure_time = Between(start, end);
+      where.departure_time = MoreThanOrEqual(start);
     }
 
     //! Entre dos fechas
@@ -115,16 +105,6 @@ export class TravelsForCashierService {
       },
       filters,
     );
-
-    /* const travelsWithSeats = await Promise.all(
-      travels.data.map(async (travel) => {
-        const seatsAvailable = await this.getSeatsAvailableCount(travel.id);
-        return {
-          ...travel,
-          seatsAvailable,
-        };
-      }),
-    ); */
 
     const travelIds = travels.data.map((t) => t.id);
     const statsMap = await this.getSeatsStatsByTravels(travelIds);
@@ -271,11 +251,10 @@ export class TravelsForCashierService {
       }
     }
 
-    //! Por dia
+    //! Desde startDate en adelante
     if (startDate && !endDate) {
       const start = new Date(`${startDate}T00:00:00-04:00`);
-      const end = new Date(`${startDate}T23:59:59.999-04:00`);
-      where.departure_time = Between(start, end);
+      where.departure_time = MoreThanOrEqual(start);
     }
 
     //! Entre dos fechas
