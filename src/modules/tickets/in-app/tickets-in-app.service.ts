@@ -139,7 +139,7 @@ export class TicketsInAppService {
         },
         relations: {
           travel: {
-            bus: { busType: true },
+            bus: { busType: true, company: true },
             route: { officeOrigin: true, officeDestination: true },
           },
         },
@@ -162,7 +162,7 @@ export class TicketsInAppService {
     return await this.dataSource.transaction(async (manager) => {
       const ticket = await manager.findOne(Ticket, {
         where: { id: ticketId, buyer: { id: customer.id } },
-        relations: { travel: true },
+        relations: { travel: { company: true } },
       });
 
       if (!ticket) throw new NotFoundException('Ticket not Found');
