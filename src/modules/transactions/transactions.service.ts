@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, DataSource, In, IsNull, Not, Repository } from 'typeorm';
+import { Between, DataSource, In, IsNull, MoreThan, Not, Repository } from 'typeorm';
 
 import { StaticRoles } from 'src/auth/enums';
 import { TravelStatus } from '../travels/enums';
@@ -770,7 +770,7 @@ export class TransactionsService {
       }
 
       const options: any = {
-        where: { company: { id: companyId } },
+        where: { company: { id: companyId }, net_to_company: MoreThan('0') },
       };
 
       //! Pagados

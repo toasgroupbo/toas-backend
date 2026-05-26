@@ -857,6 +857,10 @@ export class TravelsForCashierService {
       travel.closedAt = new Date();
       travel.closedBy = cashier;
 
+      if (net_to_company <= 0) {
+        travel.isPaid = true;
+      }
+
       const now = new Date();
 
       // --------------------------------------------
