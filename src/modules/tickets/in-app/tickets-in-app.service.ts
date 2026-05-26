@@ -172,22 +172,11 @@ export class TicketsInAppService {
         manager,
       );
 
-      /* return await manager.findOne(Ticket, {
-        where: { id: ticketId },
-        relations: {
-          travel: {
-            bus: { busType: true },
-            route: { officeDestination: true, officeOrigin: true },
-          },
-          travelSeats: true,
-        },
-      }); */
-
       const updatedTicket = await manager.findOne(Ticket, {
         where: { id: ticketId },
         relations: {
           travel: {
-            bus: { busType: true },
+            bus: { company: true, busType: true },
             route: { officeDestination: true, officeOrigin: true },
           },
           travelSeats: true,
