@@ -112,8 +112,10 @@ export class TravelsForCashierService {
 
     const travelIds = travels.data.map((t) => t.id);
 
-    // Asientos: QR/cash filtrado por cajero, app y disponibles globales
-    const statsMap = await this.getCashierSeatsStats(travelIds, cashier.id);
+    // Stats globales: totalSeats, seatsApp, seatsAvailable, totalSoldSeats
+    const globalStatsMap = await this.getSeatsStatsByTravels(travelIds);
+    // Stats del cajero: seatsQr y seatsCash solo de este cajero
+    const cashierStatsMap = await this.getCashierSeatsStats(travelIds, cashier.id);
 
     // Montos: siempre en tiempo real (activo o cerrado), solo del cajero
     const cashierAmountsMap = await this.getCashierRealtimeAmounts(
@@ -122,12 +124,16 @@ export class TravelsForCashierService {
     );
 
     const travelsWithSeats = travels.data.map((travel) => {
-      const stats = statsMap.get(travel.id) || {
+      const global = globalStatsMap.get(travel.id) || {
         totalSeats: 0,
         seatsApp: 0,
         seatsQr: 0,
         seatsCash: 0,
         seatsAvailable: 0,
+      };
+      const cashierStats = cashierStatsMap.get(travel.id) || {
+        seatsQr: 0,
+        seatsCash: 0,
       };
 
       const amounts = cashierAmountsMap.get(travel.id) ?? {
@@ -141,12 +147,12 @@ export class TravelsForCashierService {
         cash_amount: amounts.cash_amount,
         qr_amount: amounts.qr_amount,
         app_amount: amounts.app_amount,
-        totalBusSeats: stats.totalSeats,
-        seatsApp: stats.seatsApp,
-        seatsQr: stats.seatsQr,
-        seatsCash: stats.seatsCash,
-        seatsAvailable: stats.seatsAvailable,
-        totalSoldSeats: stats.seatsApp + stats.seatsQr + stats.seatsCash,
+        totalBusSeats: global.totalSeats,
+        seatsApp: global.seatsApp,
+        seatsQr: cashierStats.seatsQr,
+        seatsCash: cashierStats.seatsCash,
+        seatsAvailable: global.seatsAvailable,
+        totalSoldSeats: global.seatsApp + global.seatsQr + global.seatsCash,
       };
     });
 
