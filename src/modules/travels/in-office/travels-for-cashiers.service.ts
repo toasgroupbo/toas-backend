@@ -52,7 +52,11 @@ export class TravelsForCashierService {
   //?                                        FindAll                                                 */
   //? ============================================================================================== */
 
-  async findAll(filters: TravelForCashierFilterDto, office: Office) {
+  async findAll(
+    filters: TravelForCashierFilterDto,
+    office: Office,
+    cashier: User,
+  ) {
     const { destination_placeId, startDate, endDate, status } = filters;
 
     const where: any = {
@@ -107,14 +111,15 @@ export class TravelsForCashierService {
     );
 
     const travelIds = travels.data.map((t) => t.id);
-    const statsMap = await this.getSeatsStatsByTravels(travelIds);
 
-    const nonClosedPageIds = travels.data
-      .filter((t) => t.travel_status !== TravelStatus.CLOSED)
-      .map((t) => t.id);
+    // Asientos: QR/cash filtrado por cajero, app y disponibles globales
+    const statsMap = await this.getCashierSeatsStats(travelIds, cashier.id);
 
-    const realtimeAmountsMap =
-      await this.getRealtimeAmountsByTravels(nonClosedPageIds);
+    // Montos: siempre en tiempo real (activo o cerrado), solo del cajero
+    const cashierAmountsMap = await this.getCashierRealtimeAmounts(
+      travelIds,
+      cashier.id,
+    );
 
     const travelsWithSeats = travels.data.map((travel) => {
       const stats = statsMap.get(travel.id) || {
@@ -125,18 +130,11 @@ export class TravelsForCashierService {
         seatsAvailable: 0,
       };
 
-      const amounts =
-        travel.travel_status !== TravelStatus.CLOSED
-          ? (realtimeAmountsMap.get(travel.id) ?? {
-              cash_amount: 0,
-              qr_amount: 0,
-              app_amount: 0,
-            })
-          : {
-              cash_amount: Number(travel.cash_amount),
-              qr_amount: Number(travel.qr_amount),
-              app_amount: Number(travel.app_amount),
-            };
+      const amounts = cashierAmountsMap.get(travel.id) ?? {
+        cash_amount: 0,
+        qr_amount: 0,
+        app_amount: 0,
+      };
 
       return {
         ...travel,
@@ -154,36 +152,22 @@ export class TravelsForCashierService {
 
     const allTravels = await this.travelRepository.find({
       where,
-      select: {
-        id: true,
-        travel_status: true,
-        cash_amount: true,
-        qr_amount: true,
-        app_amount: true,
-      },
+      select: { id: true },
     });
 
-    const allNonClosedIds = allTravels
-      .filter((t) => t.travel_status !== TravelStatus.CLOSED)
-      .map((t) => t.id);
-
-    const realtimeAllAmounts =
-      await this.getRealtimeAmountsByTravels(allNonClosedIds);
+    const allIds = allTravels.map((t) => t.id);
+    const realtimeAllAmounts = await this.getCashierRealtimeAmounts(
+      allIds,
+      cashier.id,
+    );
 
     const totals = allTravels.reduce(
       (acc, t) => {
-        const amounts =
-          t.travel_status !== TravelStatus.CLOSED
-            ? (realtimeAllAmounts.get(t.id) ?? {
-                cash_amount: 0,
-                qr_amount: 0,
-                app_amount: 0,
-              })
-            : {
-                cash_amount: Number(t.cash_amount),
-                qr_amount: Number(t.qr_amount),
-                app_amount: Number(t.app_amount),
-              };
+        const amounts = realtimeAllAmounts.get(t.id) ?? {
+          cash_amount: 0,
+          qr_amount: 0,
+          app_amount: 0,
+        };
         acc.cash += amounts.cash_amount;
         acc.qr += amounts.qr_amount;
         acc.app += amounts.app_amount;
@@ -493,6 +477,115 @@ export class TravelsForCashierService {
           cash_amount: Number(r.cash_amount) || 0,
           qr_amount: Number(r.qr_amount) || 0,
           app_amount: Number(r.app_amount) || 0,
+        },
+      ]),
+    );
+  }
+
+  //? ============================================================================================== */
+
+  async getCashierSeatsStats(travelIds: number[], cashierId: number) {
+    if (!travelIds.length) return new Map();
+
+    const raw = await this.travelSeatRepository
+      .createQueryBuilder('ts')
+      .leftJoin('ts.ticket', 't')
+      .select('ts.travelId', 'travelId')
+      .addSelect('COUNT(*)', 'totalSeats')
+      .addSelect(
+        `SUM(CASE WHEN t.id IS NOT NULL AND t.type = :app THEN 1 ELSE 0 END)`,
+        'seatsApp',
+      )
+      .addSelect(
+        `SUM(CASE
+          WHEN t.id IS NOT NULL AND t.type = :office AND t.payment_type = :qr AND t.soldById = :cashierId THEN 1
+          ELSE 0
+        END)`,
+        'seatsQr',
+      )
+      .addSelect(
+        `SUM(CASE
+          WHEN t.id IS NOT NULL AND t.type = :office AND t.payment_type = :cash AND t.soldById = :cashierId THEN 1
+          ELSE 0
+        END)`,
+        'seatsCash',
+      )
+      .addSelect(
+        `SUM(CASE WHEN t.id IS NULL THEN 1 ELSE 0 END)`,
+        'seatsAvailable',
+      )
+      .where('ts.travelId IN (:...ids)', { ids: travelIds })
+      .andWhere('(t.status IS NULL OR t.status != :cancelled)', {
+        cancelled: TicketStatus.CANCELLED,
+      })
+      .groupBy('ts.travelId')
+      .setParameters({
+        app: TicketType.IN_APP,
+        office: TicketType.IN_OFFICE,
+        qr: PaymentType.QR,
+        cash: PaymentType.CASH,
+        cashierId,
+      })
+      .getRawMany();
+
+    return new Map(
+      raw.map((r) => [
+        Number(r.travelId),
+        {
+          totalSeats: Number(r.totalSeats),
+          seatsApp: Number(r.seatsApp),
+          seatsQr: Number(r.seatsQr),
+          seatsCash: Number(r.seatsCash),
+          seatsAvailable: Number(r.seatsAvailable),
+        },
+      ]),
+    );
+  }
+
+  //? ============================================================================================== */
+
+  async getCashierRealtimeAmounts(travelIds: number[], cashierId: number) {
+    if (!travelIds.length)
+      return new Map<
+        number,
+        { cash_amount: number; qr_amount: number; app_amount: number }
+      >();
+
+    const raw = await this.dataSource
+      .getRepository(Ticket)
+      .createQueryBuilder('t')
+      .select('t.travelId', 'travelId')
+      .addSelect(
+        `SUM(CASE WHEN t.type = :office AND t.status = :sold AND t.payment_type = :qr
+              THEN CAST(t.qr_amount AS decimal)
+              ELSE 0 END)`,
+        'qr_amount',
+      )
+      .addSelect(
+        `SUM(CASE WHEN t.type = :office AND t.status = :sold AND t.payment_type = :cash
+              THEN CAST(t.total_price AS decimal)
+              ELSE 0 END)`,
+        'cash_amount',
+      )
+      .where('t.travelId IN (:...ids)', { ids: travelIds })
+      .andWhere('t.soldById = :cashierId', { cashierId })
+      .setParameters({
+        office: TicketType.IN_OFFICE,
+        sold: TicketStatus.SOLD,
+        qr: PaymentType.QR,
+        cash: PaymentType.CASH,
+        cashierId,
+      })
+      .groupBy('t.travelId')
+      .getRawMany();
+
+    return new Map(
+      raw.map((r) => [
+        Number(r.travelId),
+        {
+          cash_amount: Number(r.cash_amount) || 0,
+          qr_amount: Number(r.qr_amount) || 0,
+          app_amount: 0,
         },
       ]),
     );

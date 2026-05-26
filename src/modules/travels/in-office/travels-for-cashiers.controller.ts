@@ -100,8 +100,9 @@ export class TravelsForCashiersController {
   findAll(
     @Query() filters: TravelForCashierFilterDto,
     @GetOffice() office: Office,
+    @GetUser() cashier: User,
   ) {
-    return this.travelsForCashierService.findAll(filters, office); //! Get Office
+    return this.travelsForCashierService.findAll(filters, office, cashier);
   }
 
   //? ============================================================================================== */
