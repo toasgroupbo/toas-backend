@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { envs } from 'src/config/environments/environments';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, EntityManager, MoreThan, LessThan } from 'typeorm';
 
@@ -96,7 +97,7 @@ export class WalletService {
     }
 
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
+    expiresAt.setDate(expiresAt.getDate() + envs.BALANCE_EXPIRATION_DAYS);
 
     const currentBalance = Number(wallet.balance);
     const newBalance = currentBalance + amount;
@@ -162,7 +163,7 @@ export class WalletService {
     if (existingCredit) return existingCredit;
 
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
+    expiresAt.setDate(expiresAt.getDate() + envs.BALANCE_EXPIRATION_DAYS);
 
     const currentBalance = Number(wallet.balance);
     const newBalance = currentBalance + amount;
