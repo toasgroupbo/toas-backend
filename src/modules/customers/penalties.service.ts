@@ -7,7 +7,7 @@ import { Customer } from './entities/customer.entity';
 
 const MAX_FAILED = 4;
 const WINDOW_HOURS = 1;
-const BLOCK_HOURS = 1;
+const BLOCK_MINUTES = 15;
 
 @Injectable()
 export class PenaltiesService {
@@ -59,7 +59,7 @@ export class PenaltiesService {
     // ¿Llega al límite?
 
     if (penalty.failedCount >= MAX_FAILED) {
-      penalty.blockedUntil = this.addHours(now, BLOCK_HOURS);
+      penalty.blockedUntil = this.addMinutes(now, BLOCK_MINUTES);
     }
 
     await repository.save(penalty);
@@ -98,7 +98,7 @@ export class PenaltiesService {
 
   //? ============================================================================================== */
 
-  private addHours(date: Date, hours: number): Date {
-    return new Date(date.getTime() + hours * 60 * 60 * 1000);
+  private addMinutes(date: Date, minutes: number): Date {
+    return new Date(date.getTime() + minutes * 60 * 1000);
   }
 }

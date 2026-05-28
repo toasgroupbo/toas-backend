@@ -201,6 +201,7 @@ export class UsersService {
         'permissions.resourse',
         'permissions.permissions',
         'company.id',
+        'company.name',
         'office.id',
         'place.id',
       ])
