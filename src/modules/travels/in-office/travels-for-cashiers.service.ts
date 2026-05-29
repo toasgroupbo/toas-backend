@@ -115,7 +115,10 @@ export class TravelsForCashierService {
     // Stats globales: totalSeats, seatsApp, seatsAvailable, totalSoldSeats
     const globalStatsMap = await this.getSeatsStatsByTravels(travelIds);
     // Stats del cajero: seatsQr y seatsCash solo de este cajero
-    const cashierStatsMap = await this.getCashierSeatsStats(travelIds, cashier.id);
+    const cashierStatsMap = await this.getCashierSeatsStats(
+      travelIds,
+      cashier.id,
+    );
 
     // Montos: siempre en tiempo real (activo o cerrado), solo del cajero
     const cashierAmountsMap = await this.getCashierRealtimeAmounts(
@@ -562,20 +565,26 @@ export class TravelsForCashierService {
       .createQueryBuilder('t')
       .select('t.travelId', 'travelId')
       .addSelect(
-        `SUM(CASE WHEN t.type = :office AND t.status = :sold AND t.payment_type = :qr
+        `SUM(CASE WHEN t.type = :office AND t.status = :sold AND t.payment_type = :qr AND t.soldById = :cashierId
               THEN CAST(t.qr_amount AS decimal)
               ELSE 0 END)`,
         'qr_amount',
       )
       .addSelect(
-        `SUM(CASE WHEN t.type = :office AND t.status = :sold AND t.payment_type = :cash
+        `SUM(CASE WHEN t.type = :office AND t.status = :sold AND t.payment_type = :cash AND t.soldById = :cashierId
               THEN CAST(t.total_price AS decimal)
               ELSE 0 END)`,
         'cash_amount',
       )
+      .addSelect(
+        `SUM(CASE WHEN t.type = :app AND t.status = :sold
+              THEN CAST(t.qr_amount AS decimal) + CAST(t.wallet_amount AS decimal) - CAST(t.commission AS decimal)
+              ELSE 0 END)`,
+        'app_amount',
+      )
       .where('t.travelId IN (:...ids)', { ids: travelIds })
-      .andWhere('t.soldById = :cashierId', { cashierId })
       .setParameters({
+        app: TicketType.IN_APP,
         office: TicketType.IN_OFFICE,
         sold: TicketStatus.SOLD,
         qr: PaymentType.QR,
@@ -591,7 +600,7 @@ export class TravelsForCashierService {
         {
           cash_amount: Number(r.cash_amount) || 0,
           qr_amount: Number(r.qr_amount) || 0,
-          app_amount: 0,
+          app_amount: Number(r.app_amount) || 0,
         },
       ]),
     );
