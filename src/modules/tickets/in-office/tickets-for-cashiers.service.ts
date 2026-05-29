@@ -517,9 +517,4 @@ export class TicketsForCashierService {
     ].includes(ticket.status);
   }
 
-  //? ============================================================================================== */
-
-  private hasTravelDeparted(travel: Travel): boolean {
-    return travel.departure_time <= new Date();
-  }
 }

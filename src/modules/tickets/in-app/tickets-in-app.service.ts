@@ -103,6 +103,7 @@ export class TicketsInAppService {
     if (travel.enabled === false) {
       throw new BadRequestException(`Travel ${travelId} is not enable`);
     }
+    this.assertWithinOperatingWindow(travel);
     return travel;
   }
 
@@ -141,16 +142,26 @@ export class TicketsInAppService {
           travel: {
             bus: { busType: true, company: true },
             route: { officeOrigin: true, officeDestination: true },
+            company: true,
           },
         },
       });
 
       const now = new Date();
 
-      return tickets.map((ticket) => ({
-        ...ticket,
-        past: ticket.travel.departure_time < now,
-      }));
+      return tickets.map((ticket) => {
+        const { departure_time, company } = ticket.travel;
+        const cutoff = new Date(
+          departure_time.getTime() -
+            company.hours_before_closing * 60 * 60 * 1000,
+        );
+        return {
+          ...ticket,
+          // past: departure_time < now,
+          past: cutoff < now,
+          cancelable: cutoff,
+        };
+      });
     });
   }
 
@@ -178,6 +189,7 @@ export class TicketsInAppService {
           travel: {
             bus: { company: true, busType: true },
             route: { officeDestination: true, officeOrigin: true },
+            company: true,
           },
           travelSeats: true,
         },
@@ -186,10 +198,17 @@ export class TicketsInAppService {
       if (!updatedTicket) throw new NotFoundException('Ticket not Found');
 
       const now = new Date();
+      const { departure_time, company } = updatedTicket.travel;
+      const cutoff = new Date(
+        departure_time.getTime() -
+          company.hours_before_closing * 60 * 60 * 1000,
+      );
 
       return {
         ...updatedTicket,
-        past: updatedTicket.travel.departure_time < now,
+        // past: departure_time < now,
+        past: cutoff < now,
+        cancelable: cutoff,
       };
     });
   }
@@ -210,11 +229,7 @@ export class TicketsInAppService {
         queryRunner,
       );
 
-      if (!this.isTicketCancelable(ticket)) {
-        throw new BadRequestException(
-          `Cannot cancel a ticket with status "${ticket.status}"`,
-        );
-      }
+      this.assertWithinOperatingWindow(ticket.travel);
 
       //! wallet
       if (ticket.status == TicketStatus.SOLD && ticket.buyer) {
@@ -355,6 +370,7 @@ export class TicketsInAppService {
       .setLock('pessimistic_write')
       .innerJoinAndSelect('ticket.travelSeats', 'travelSeats')
       .innerJoinAndSelect('ticket.travel', 'travel')
+      .innerJoinAndSelect('travel.company', 'company')
       .innerJoinAndSelect('ticket.buyer', 'buyer')
       .where('ticket.id = :ticketId', { ticketId })
       .andWhere('ticket.buyerId = :buyerId', {
@@ -402,6 +418,7 @@ export class TicketsInAppService {
     previousStatus: TicketStatus,
   ): void {
     ticket.reserve_expiresAt = null;
+    ticket.cancelledAt = new Date();
 
     if (
       previousStatus === TicketStatus.RESERVED ||
@@ -420,17 +437,15 @@ export class TicketsInAppService {
 
   //? ============================================================================================== */
 
-  private isTicketCancelable(ticket: Ticket): boolean {
-    return [
-      TicketStatus.SOLD,
-      TicketStatus.RESERVED,
-      TicketStatus.PENDING_PAYMENT,
-    ].includes(ticket.status);
-  }
-
-  //? ============================================================================================== */
-
-  private hasTravelDeparted(travel: Travel): boolean {
-    return travel.departure_time <= new Date();
+  private assertWithinOperatingWindow(travel: Travel): void {
+    const cutoff = new Date(
+      travel.departure_time.getTime() -
+        travel.company.hours_before_closing * 60 * 60 * 1000,
+    );
+    if (new Date() >= cutoff) {
+      throw new BadRequestException(
+        `This travel is no longer available for app operations ${travel.company.hours_before_closing}h before departure`,
+      );
+    }
   }
 }
