@@ -185,7 +185,15 @@ export class TravelsForCashierService {
       { cash: 0, qr: 0, app: 0 },
     );
 
-    return { data: travelsWithSeats, meta: travels.meta, amounts: totals };
+    return {
+      data: travelsWithSeats,
+      meta: travels.meta,
+      amounts: {
+        cash: parseFloat(totals.cash.toFixed(2)),
+        qr: parseFloat(totals.qr.toFixed(2)),
+        app: parseFloat(totals.app.toFixed(2)),
+      },
+    };
   }
 
   //? ============================================================================================== */
@@ -304,7 +312,7 @@ export class TravelsForCashierService {
           : {
               cash_amount: Number(travel.cash_amount),
               qr_amount: Number(travel.qr_amount),
-              app_amount: Number(travel.app_amount),
+              app_amount: Number(travel.app_amount) - Number(travel.total_commission),
             };
 
       return {
@@ -329,6 +337,7 @@ export class TravelsForCashierService {
         cash_amount: true,
         qr_amount: true,
         app_amount: true,
+        total_commission: true,
       },
     });
 
@@ -351,7 +360,7 @@ export class TravelsForCashierService {
             : {
                 cash_amount: Number(t.cash_amount),
                 qr_amount: Number(t.qr_amount),
-                app_amount: Number(t.app_amount),
+                app_amount: Number(t.app_amount) - Number(t.total_commission),
               };
         acc.cash += amounts.cash_amount;
         acc.qr += amounts.qr_amount;
@@ -361,7 +370,15 @@ export class TravelsForCashierService {
       { cash: 0, qr: 0, app: 0 },
     );
 
-    return { data: travelsWithSeats, meta: travels.meta, amounts: totals };
+    return {
+      data: travelsWithSeats,
+      meta: travels.meta,
+      amounts: {
+        cash: parseFloat(totals.cash.toFixed(2)),
+        qr: parseFloat(totals.qr.toFixed(2)),
+        app: parseFloat(totals.app.toFixed(2)),
+      },
+    };
   }
 
   //? ============================================================================================== */
@@ -844,15 +861,15 @@ export class TravelsForCashierService {
       // 4. GUARDAR MONTOS EN EL TRAVEL
       // --------------------------------------------
 
-      travel.total = total.toString();
+      travel.total = total.toFixed(2);
 
-      travel.cash_amount = cash_amount.toString();
-      travel.qr_amount = qr_amount.toString();
+      travel.cash_amount = cash_amount.toFixed(2);
+      travel.qr_amount = qr_amount.toFixed(2);
 
-      travel.app_amount = app_amount.toString();
+      travel.app_amount = app_amount.toFixed(2);
 
-      travel.total_commission = total_commission.toString();
-      travel.net_to_company = net_to_company.toString();
+      travel.total_commission = total_commission.toFixed(2);
+      travel.net_to_company = net_to_company.toFixed(2);
 
       travel.tickets_app_count = tickets_app_count;
       travel.tickets_office_count = tickets_office_count;

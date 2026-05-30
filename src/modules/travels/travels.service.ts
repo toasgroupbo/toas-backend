@@ -309,7 +309,11 @@ export class TravelsService {
       return {
         data: travelsWithSeats,
         meta: travels.meta,
-        amounts: totals,
+        amounts: {
+          cash: parseFloat(totals.cash.toFixed(2)),
+          qr: parseFloat(totals.qr.toFixed(2)),
+          app: parseFloat(totals.app.toFixed(2)),
+        },
       };
     });
   }

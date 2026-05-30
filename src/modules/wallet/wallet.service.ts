@@ -468,7 +468,7 @@ export class WalletService {
       balance += Number(credit.remainingAmount);
     }
 
-    return balance;
+    return parseFloat(balance.toFixed(2));
   }
 
   //* ============================================================================================== */
