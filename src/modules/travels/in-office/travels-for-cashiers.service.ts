@@ -312,7 +312,7 @@ export class TravelsForCashierService {
           : {
               cash_amount: Number(travel.cash_amount),
               qr_amount: Number(travel.qr_amount),
-              app_amount: Number(travel.app_amount) - Number(travel.total_commission),
+              app_amount: Number(travel.app_amount),
             };
 
       return {
@@ -337,7 +337,6 @@ export class TravelsForCashierService {
         cash_amount: true,
         qr_amount: true,
         app_amount: true,
-        total_commission: true,
       },
     });
 
@@ -360,7 +359,7 @@ export class TravelsForCashierService {
             : {
                 cash_amount: Number(t.cash_amount),
                 qr_amount: Number(t.qr_amount),
-                app_amount: Number(t.app_amount) - Number(t.total_commission),
+                app_amount: Number(t.app_amount),
               };
         acc.cash += amounts.cash_amount;
         acc.qr += amounts.qr_amount;
@@ -839,7 +838,9 @@ export class TravelsForCashierService {
             tickets_app_count++;
 
             app_amount +=
-              Number(ticket.qr_amount) + Number(ticket.wallet_amount);
+              Number(ticket.qr_amount) +
+              Number(ticket.wallet_amount) -
+              commission;
 
             total_commission += commission;
           } else if (ticket.type === TicketType.IN_OFFICE) {
@@ -854,8 +855,8 @@ export class TravelsForCashierService {
         }
       }
 
-      // net_to_company = SOLO lo que se pagó con QR y la app menos la comisión
-      const net_to_company = qr_amount + app_amount - total_commission;
+      // net_to_company = lo que se pagó con QR y la app (app_amount ya es neto)
+      const net_to_company = qr_amount + app_amount;
 
       // --------------------------------------------
       // 4. GUARDAR MONTOS EN EL TRAVEL

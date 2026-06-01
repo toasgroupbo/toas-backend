@@ -462,7 +462,7 @@ export class TicketsService {
         const result = await manager
           .createQueryBuilder(Ticket, 't')
           .select(
-            'COALESCE(SUM(t.qr_amount + t.wallet_amount), 0)',
+            'COALESCE(SUM(t.qr_amount + t.wallet_amount - t.commission), 0)',
             'total',
           )
           .innerJoin('t.travel', 'travel')

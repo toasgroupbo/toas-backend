@@ -125,14 +125,19 @@ export class TravelsInAppService {
     // --------------------------------------------
     const now = new Date();
 
-    return travels.filter((travel) => {
-      const hours = travel.company.hours_before_closing;
+    return travels
+      .filter((travel) => {
+        const hours = travel.company.hours_before_closing;
 
-      const closingTime = new Date(travel.departure_time);
-      closingTime.setHours(closingTime.getHours() - hours);
+        const closingTime = new Date(travel.departure_time);
+        closingTime.setHours(closingTime.getHours() - hours);
 
-      return now < closingTime;
-    });
+        return now < closingTime;
+      })
+      .map((travel) => ({
+        date: travel.departure_time,
+        price_deck_1: travel.price_deck_1,
+      }));
   }
 
   //? ============================================================================================== */

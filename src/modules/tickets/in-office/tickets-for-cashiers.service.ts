@@ -224,12 +224,14 @@ export class TicketsForCashierService {
         },
       });
 
+      let appAmount = '0.00';
+
       const travelRef = tickets.length > 0 ? tickets[0].travel : null;
       if (travelRef && travelRef.travel_status !== TravelStatus.CLOSED) {
         const result = await manager
           .createQueryBuilder(Ticket, 't')
           .select(
-            'COALESCE(SUM(t.qr_amount + t.wallet_amount), 0)',
+            'COALESCE(SUM(t.qr_amount + t.wallet_amount - t.commission), 0)',
             'total',
           )
           .innerJoin('t.travel', 'travel')
@@ -240,7 +242,7 @@ export class TicketsForCashierService {
           .andWhere('t.type = :type', { type: TicketType.IN_APP })
           .getRawOne<{ total: string }>();
 
-        const appAmount = Number(result?.total ?? 0).toFixed(2);
+        appAmount = Number(result?.total ?? 0).toFixed(2);
         for (const ticket of tickets) {
           ticket.travel.app_amount = appAmount;
         }
@@ -304,7 +306,7 @@ export class TicketsForCashierService {
         currentCashier,
         totals: {
           totalCash: totalCash.toFixed(2),
-          totalQr: totalQr.toFixed(2),
+          totalQr: (totalQr + Number(appAmount)).toFixed(2),
         },
       };
     });

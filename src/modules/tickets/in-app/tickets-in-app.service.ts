@@ -229,6 +229,17 @@ export class TicketsInAppService {
         queryRunner,
       );
 
+      if (ticket.travel.travel_status !== TravelStatus.ACTIVE) {
+        throw new BadRequestException(
+          `Travel ${ticket.travel.id} is not active`,
+        );
+      }
+      if (ticket.travel.enabled === false) {
+        throw new BadRequestException(
+          `Travel ${ticket.travel.id} is not enabled`,
+        );
+      }
+
       this.assertWithinOperatingWindow(ticket.travel);
 
       //! wallet
