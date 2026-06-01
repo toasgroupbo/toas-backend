@@ -68,7 +68,7 @@ export async function paginateAdvanced<T extends ObjectLiteral>(
 }
  */
 
-import { Repository, ObjectLiteral, FindOptionsWhere } from 'typeorm';
+import { Repository, ObjectLiteral, FindOptionsWhere, FindOperator } from 'typeorm';
 
 import { PaginationDto } from './pagination.dto';
 
@@ -108,9 +108,32 @@ export async function paginateAdvanced<T extends ObjectLiteral>(
 
   //! WHERE
   if (where) {
-    qb.setFindOptions({
-      where,
-    });
+    const applyWhere = (conditions: any, alias: string = 'entity') => {
+      for (const [key, value] of Object.entries(conditions)) {
+        const paramKey = `${alias}_${key}`.replace(/\./g, '_');
+
+        if (value instanceof FindOperator) {
+          const type = (value as any).type as string;
+          if (type === 'between') {
+            const [start, end] = (value as any).value as [any, any];
+            qb.andWhere(
+              `${alias}.${key} BETWEEN :${paramKey}Start AND :${paramKey}End`,
+              { [`${paramKey}Start`]: start, [`${paramKey}End`]: end },
+            );
+          } else {
+            qb.andWhere(`${alias}.${key} = :${paramKey}`, {
+              [paramKey]: (value as any).value,
+            });
+          }
+        } else if (value !== null && value !== undefined && typeof value === 'object') {
+          applyWhere(value, key);
+        } else if (value !== null && value !== undefined) {
+          qb.andWhere(`${alias}.${key} = :${paramKey}`, { [paramKey]: value });
+        }
+      }
+    };
+
+    applyWhere(where);
   }
 
   //! SEARCH

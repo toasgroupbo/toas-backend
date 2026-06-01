@@ -26,7 +26,6 @@ import { TicketStatus, TicketType } from '../tickets/enums';
 import { CancelTravelDto, CreateTravelDto } from './dto';
 import { paginate } from 'src/common/pagination/paginate';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
-import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
 import { UsersService } from '../users/users.service';
 import { WalletService } from '../wallet/wallet.service';
