@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, MoreThanOrEqual, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -75,6 +75,10 @@ export class CommissionsService {
         new Date(`${startDate}T00:00:00-04:00`),
         new Date(`${endDate}T23:59:59.999-04:00`),
       );
+    } else if (startDate) {
+      where.departure_time = MoreThanOrEqual(
+        new Date(`${startDate}T00:00:00-04:00`),
+      );
     }
 
     const [paginated, totals] = await Promise.all([
@@ -98,11 +102,6 @@ export class CommissionsService {
   private async _getTotals(filters: CommissionPaginationDto) {
     const { startDate, endDate, search } = filters;
 
-    const hasFilter = (startDate && endDate) || search;
-    if (!hasFilter) {
-      return { total_commission_app: '0.00', total_commission_company: '0.00' };
-    }
-
     const qb = this.commissionRepository
       .createQueryBuilder('entity')
       .select('SUM(entity.commission_app_total)', 'total_commission_app')
@@ -115,6 +114,10 @@ export class CommissionsService {
       qb.andWhere('entity.departure_time BETWEEN :start AND :end', {
         start: new Date(`${startDate}T00:00:00-04:00`),
         end: new Date(`${endDate}T23:59:59.999-04:00`),
+      });
+    } else if (startDate) {
+      qb.andWhere('entity.departure_time >= :start', {
+        start: new Date(`${startDate}T00:00:00-04:00`),
       });
     }
 
