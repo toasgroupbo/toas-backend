@@ -94,6 +94,8 @@ export class CommissionsService {
       this._getTotals(filters),
     ]);
 
+    await this._enrichWithTravelDetails(paginated.data);
+
     return { ...paginated, totals };
   }
 
@@ -150,6 +152,10 @@ export class CommissionsService {
         new Date(`${startDate}T00:00:00-04:00`),
         new Date(`${endDate}T23:59:59.999-04:00`),
       );
+    } else if (startDate) {
+      where.departure_time = MoreThanOrEqual(
+        new Date(`${startDate}T00:00:00-04:00`),
+      );
     }
 
     const [paginated, totals] = await Promise.all([
@@ -165,6 +171,8 @@ export class CommissionsService {
       this._getTotalsForCompany(companyId, filters),
     ]);
 
+    await this._enrichWithTravelDetails(paginated.data);
+
     return { ...paginated, totals };
   }
 
@@ -176,10 +184,6 @@ export class CommissionsService {
   ) {
     const { startDate, endDate } = filters;
 
-    if (!startDate || !endDate) {
-      return { total_commission_company: '0.00' };
-    }
-
     const qb = this.commissionRepository
       .createQueryBuilder('entity')
       .select(
@@ -188,11 +192,18 @@ export class CommissionsService {
       )
       .leftJoin('entity.travel', 'travel')
       .leftJoin('travel.company', 'company')
-      .where('company.id = :companyId', { companyId })
-      .andWhere('entity.departure_time BETWEEN :start AND :end', {
+      .where('company.id = :companyId', { companyId });
+
+    if (startDate && endDate) {
+      qb.andWhere('entity.departure_time BETWEEN :start AND :end', {
         start: new Date(`${startDate}T00:00:00-04:00`),
         end: new Date(`${endDate}T23:59:59.999-04:00`),
       });
+    } else if (startDate) {
+      qb.andWhere('entity.departure_time >= :start', {
+        start: new Date(`${startDate}T00:00:00-04:00`),
+      });
+    }
 
     const raw = await qb.getRawOne();
 
@@ -201,5 +212,32 @@ export class CommissionsService {
         raw?.total_commission_company ?? 0,
       ).toFixed(2),
     };
+  }
+
+  //? ============================================================================================== */
+
+  private async _enrichWithTravelDetails(commissions: Commission[]) {
+    if (!commissions.length) return;
+
+    const travelIds = commissions.map((c) => c.travel.id);
+
+    const travels = await this.travelRepository
+      .createQueryBuilder('travel')
+      .leftJoinAndSelect('travel.bus', 'bus')
+      .leftJoinAndSelect('travel.route', 'route')
+      .leftJoinAndSelect('route.officeOrigin', 'officeOrigin')
+      .leftJoinAndSelect('route.officeDestination', 'officeDestination')
+      .where('travel.id IN (:...ids)', { ids: travelIds })
+      .getMany();
+
+    const travelMap = new Map(travels.map((t) => [t.id, t]));
+
+    for (const commission of commissions) {
+      const travel = travelMap.get(commission.travel.id);
+      if (travel) {
+        commission.travel.bus = travel.bus;
+        commission.travel.route = travel.route;
+      }
+    }
   }
 }
