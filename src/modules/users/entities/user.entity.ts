@@ -33,7 +33,7 @@ export class User {
   @Column('text')
   fullName: string;
 
-  @Column('text', { unique: true })
+  @Column('text')
   ci: string;
 
   @Column('text')

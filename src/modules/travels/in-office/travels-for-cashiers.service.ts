@@ -12,7 +12,7 @@ import { TravelForCashierFilterDto } from '../pagination';
 import { paginate } from 'src/common/pagination/paginate';
 
 import { TravelStatus } from '../enums';
-import { SeatStatus } from 'src/common/enums';
+import { SeatStatus, SeatType } from 'src/common/enums';
 import { PaymentType, TicketType } from 'src/modules/tickets/enums';
 import { TicketStatus } from '../../tickets/enums/ticket-status.enum';
 
@@ -389,12 +389,15 @@ export class TravelsForCashierService {
       .createQueryBuilder('ts')
       .leftJoin('ts.ticket', 't')
       .select('ts.travelId', 'travelId')
-      .addSelect('COUNT(*)', 'totalSeats')
+      .addSelect(
+        `SUM(CASE WHEN ts.type = :seatType THEN 1 ELSE 0 END)`,
+        'totalSeats',
+      )
       .addSelect(
         `
-      SUM(CASE 
-        WHEN t.id IS NOT NULL AND t.type = :app THEN 1 
-        ELSE 0 
+      SUM(CASE
+        WHEN ts.type = :seatType AND t.id IS NOT NULL AND t.type = :app AND t.status != :cancelled THEN 1
+        ELSE 0
       END)
     `,
         'seatsApp',
@@ -402,7 +405,7 @@ export class TravelsForCashierService {
       .addSelect(
         `
       SUM(CASE
-        WHEN t.id IS NOT NULL AND t.type = :office AND t.payment_type = :qr THEN 1
+        WHEN ts.type = :seatType AND t.id IS NOT NULL AND t.type = :office AND t.payment_type = :qr AND t.status != :cancelled THEN 1
         ELSE 0
       END)
     `,
@@ -411,7 +414,7 @@ export class TravelsForCashierService {
       .addSelect(
         `
       SUM(CASE
-        WHEN t.id IS NOT NULL AND t.type = :office AND t.payment_type = :cash THEN 1
+        WHEN ts.type = :seatType AND t.id IS NOT NULL AND t.type = :office AND t.payment_type = :cash AND t.status != :cancelled THEN 1
         ELSE 0
       END)
     `,
@@ -420,22 +423,21 @@ export class TravelsForCashierService {
       .addSelect(
         `
       SUM(CASE
-        WHEN t.id IS NULL THEN 1
+        WHEN ts.type = :seatType AND (t.id IS NULL OR t.status = :cancelled) THEN 1
         ELSE 0
       END)
     `,
         'seatsAvailable',
       )
       .where('ts.travelId IN (:...ids)', { ids: travelIds })
-      .andWhere('(t.status IS NULL OR t.status != :cancelled)', {
-        cancelled: TicketStatus.CANCELLED,
-      })
       .groupBy('ts.travelId')
       .setParameters({
+        seatType: SeatType.SEAT,
         app: TicketType.IN_APP,
         office: TicketType.IN_OFFICE,
         qr: PaymentType.QR,
         cash: PaymentType.CASH,
+        cancelled: TicketStatus.CANCELLED,
       })
       .getRawMany();
 
