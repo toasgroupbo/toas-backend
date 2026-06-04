@@ -114,16 +114,23 @@ export async function paginateAdvanced<T extends ObjectLiteral>(
 
         if (value instanceof FindOperator) {
           const type = (value as any).type as string;
+          const val = (value as any).value;
           if (type === 'between') {
-            const [start, end] = (value as any).value as [any, any];
+            const [start, end] = val as [any, any];
             qb.andWhere(
               `${alias}.${key} BETWEEN :${paramKey}Start AND :${paramKey}End`,
               { [`${paramKey}Start`]: start, [`${paramKey}End`]: end },
             );
+          } else if (type === 'moreThanOrEqual') {
+            qb.andWhere(`${alias}.${key} >= :${paramKey}`, { [paramKey]: val });
+          } else if (type === 'moreThan') {
+            qb.andWhere(`${alias}.${key} > :${paramKey}`, { [paramKey]: val });
+          } else if (type === 'lessThanOrEqual') {
+            qb.andWhere(`${alias}.${key} <= :${paramKey}`, { [paramKey]: val });
+          } else if (type === 'lessThan') {
+            qb.andWhere(`${alias}.${key} < :${paramKey}`, { [paramKey]: val });
           } else {
-            qb.andWhere(`${alias}.${key} = :${paramKey}`, {
-              [paramKey]: (value as any).value,
-            });
+            qb.andWhere(`${alias}.${key} = :${paramKey}`, { [paramKey]: val });
           }
         } else if (value !== null && value !== undefined && typeof value === 'object') {
           applyWhere(value, key);
