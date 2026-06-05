@@ -53,7 +53,6 @@ export class TravelsInAppService {
     const travels = await this.travelRepository.find({
       where: { ...where, travel_status: TravelStatus.ACTIVE },
       relations: {
-        company: true,
         bus: { busType: true, company: true },
         route: {
           officeOrigin: { place: true },
@@ -62,17 +61,9 @@ export class TravelsInAppService {
       },
     });
 
-    //return travels;
     const now = new Date();
 
-    return travels.filter((travel) => {
-      const hours = travel.company.hours_before_closing;
-
-      const closingTime = new Date(travel.departure_time);
-      closingTime.setHours(closingTime.getHours() - hours);
-
-      return now < closingTime;
-    });
+    return travels.filter((travel) => now < new Date(travel.departure_time));
   }
 
   //? ============================================================================================== */
@@ -108,7 +99,6 @@ export class TravelsInAppService {
     const travels = await this.travelRepository.find({
       where,
       relations: {
-        company: true,
         bus: { busType: true, company: true },
         route: {
           officeOrigin: { place: true },
@@ -120,20 +110,10 @@ export class TravelsInAppService {
       },
     });
 
-    // --------------------------------------------
-    // FILTRO DE CIERRE
-    // --------------------------------------------
     const now = new Date();
 
     return travels
-      .filter((travel) => {
-        const hours = travel.company.hours_before_closing;
-
-        const closingTime = new Date(travel.departure_time);
-        closingTime.setHours(closingTime.getHours() - hours);
-
-        return now < closingTime;
-      })
+      .filter((travel) => now < new Date(travel.departure_time))
       .map((travel) => ({
         date: travel.departure_time,
         price_deck_1: travel.price_deck_1,

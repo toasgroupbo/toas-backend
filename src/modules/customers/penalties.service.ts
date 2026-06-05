@@ -43,12 +43,13 @@ export class PenaltiesService {
     const penalty = await this.getOrCreate(customer, manager);
     const now = new Date();
 
-    // ¿La ventana ya venció?
-
-    if (
+    const blockExpired =
+      penalty.blockedUntil !== null && penalty.blockedUntil <= now;
+    const windowExpired =
       !penalty.windowStartedAt ||
-      this.isWindowExpired(penalty.windowStartedAt, now)
-    ) {
+      this.isWindowExpired(penalty.windowStartedAt, now);
+
+    if (windowExpired || blockExpired) {
       penalty.failedCount = 0;
       penalty.windowStartedAt = now;
       penalty.blockedUntil = null;

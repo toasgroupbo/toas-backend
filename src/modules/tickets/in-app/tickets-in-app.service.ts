@@ -92,7 +92,7 @@ export class TicketsInAppService {
   ): Promise<Travel> {
     const travel = await manager.findOne(Travel, {
       where: { id: travelId },
-      relations: { bus: true, company: true },
+      relations: { bus: true },
     });
     if (!travel) {
       throw new NotFoundException(`Travel with ID ${travelId} not found`);
@@ -103,7 +103,11 @@ export class TicketsInAppService {
     if (travel.enabled === false) {
       throw new BadRequestException(`Travel ${travelId} is not enable`);
     }
-    this.assertWithinOperatingWindow(travel);
+    if (new Date() >= new Date(travel.departure_time)) {
+      throw new BadRequestException(
+        `This travel is no longer available for app operations`,
+      );
+    }
     return travel;
   }
 
@@ -150,15 +154,14 @@ export class TicketsInAppService {
       const now = new Date();
 
       return tickets.map((ticket) => {
-        const { departure_time, company } = ticket.travel;
+        const { departure_time, company, travel_status } = ticket.travel;
         const cutoff = new Date(
           departure_time.getTime() -
             company.hours_before_closing * 60 * 60 * 1000,
         );
         return {
           ...ticket,
-          // past: departure_time < now,
-          past: cutoff < now,
+          past: travel_status !== TravelStatus.ACTIVE || departure_time < now,
           cancelable: cutoff,
         };
       });
@@ -198,7 +201,7 @@ export class TicketsInAppService {
       if (!updatedTicket) throw new NotFoundException('Ticket not Found');
 
       const now = new Date();
-      const { departure_time, company } = updatedTicket.travel;
+      const { departure_time, company, travel_status } = updatedTicket.travel;
       const cutoff = new Date(
         departure_time.getTime() -
           company.hours_before_closing * 60 * 60 * 1000,
@@ -206,8 +209,7 @@ export class TicketsInAppService {
 
       return {
         ...updatedTicket,
-        // past: departure_time < now,
-        past: cutoff < now,
+        past: travel_status !== TravelStatus.ACTIVE || departure_time < now,
         cancelable: cutoff,
       };
     });
