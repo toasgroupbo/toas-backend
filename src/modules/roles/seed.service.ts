@@ -359,6 +359,11 @@ export class SeedService implements OnModuleInit {
               ValidPermissions.CANCEL,
             ],
           },
+
+          {
+            resourse: ValidResourses.CUSTOMER_CASHIER,
+            permissions: [ValidPermissions.CREATE, ValidPermissions.READ],
+          },
         ],
       },
 
