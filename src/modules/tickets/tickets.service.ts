@@ -96,7 +96,8 @@ export class TicketsService {
 
       const commissionPercentage =
         type === TicketType.IN_APP ? (travel.company?.commission_app ?? 0) : 0;
-      const avgSeatPrice = seats.length > 0 ? totalPrice / seats.length : totalPrice;
+      const avgSeatPrice =
+        seats.length > 0 ? totalPrice / seats.length : totalPrice;
       const commission = (avgSeatPrice * commissionPercentage) / 100;
       const totalTicketAmount = totalPrice + commission;
 

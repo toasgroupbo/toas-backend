@@ -92,7 +92,7 @@ export class TicketsInAppService {
   ): Promise<Travel> {
     const travel = await manager.findOne(Travel, {
       where: { id: travelId },
-      relations: { bus: true },
+      relations: { bus: true, company: true },
     });
     if (!travel) {
       throw new NotFoundException(`Travel with ID ${travelId} not found`);
