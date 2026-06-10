@@ -226,7 +226,9 @@ export class CommissionsService {
       .leftJoinAndSelect('travel.bus', 'bus')
       .leftJoinAndSelect('travel.route', 'route')
       .leftJoinAndSelect('route.officeOrigin', 'officeOrigin')
+      .leftJoinAndSelect('officeOrigin.place', 'placeOrigin')
       .leftJoinAndSelect('route.officeDestination', 'officeDestination')
+      .leftJoinAndSelect('officeDestination.place', 'placeDestination')
       .where('travel.id IN (:...ids)', { ids: travelIds })
       .getMany();
 

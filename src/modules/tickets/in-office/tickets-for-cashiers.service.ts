@@ -257,6 +257,7 @@ export class TicketsForCashierService {
       let totalQr = 0;
 
       for (const ticket of tickets) {
+        if (ticket.status !== TicketStatus.SOLD) continue;
         if (!ticket.soldBy) continue;
 
         const cashierId = ticket.soldBy.id;

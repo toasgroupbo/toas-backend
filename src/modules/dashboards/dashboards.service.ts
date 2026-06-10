@@ -43,25 +43,26 @@ export class DashboardsService {
       .select('ts.travelId', 'travelId')
       .addSelect('COUNT(*)', 'totalSeats')
       .addSelect(
-        `SUM(CASE WHEN t.id IS NOT NULL AND t.type = :app THEN 1 ELSE 0 END)`,
+        `SUM(CASE WHEN t.id IS NOT NULL AND t.type = :app AND t.status = :sold THEN 1 ELSE 0 END)`,
         'seatsApp',
       )
       .addSelect(
-        `SUM(CASE WHEN t.id IS NOT NULL AND t.type = :office THEN 1 ELSE 0 END)`,
+        `SUM(CASE WHEN t.id IS NOT NULL AND t.type = :office AND t.status = :sold THEN 1 ELSE 0 END)`,
         'seatsOffice',
       )
       .addSelect(
-        `SUM(CASE WHEN t.id IS NULL THEN 1 ELSE 0 END)`,
+        `SUM(CASE WHEN t.id IS NULL OR t.status IN (:cancelled, :cancelledForClose, :expired) THEN 1 ELSE 0 END)`,
         'seatsAvailable',
       )
       .where('ts.travelId IN (:...ids)', { ids: travelIds })
-      .andWhere('(t.status IS NULL OR t.status != :cancelled)', {
-        cancelled: TicketStatus.CANCELLED,
-      })
       .groupBy('ts.travelId')
       .setParameters({
         app: TicketType.IN_APP,
         office: TicketType.IN_OFFICE,
+        sold: TicketStatus.SOLD,
+        cancelled: TicketStatus.CANCELLED,
+        cancelledForClose: TicketStatus.CANCELLED_FOR_CLOSE,
+        expired: TicketStatus.EXPIRED,
       })
       .getRawMany();
 
