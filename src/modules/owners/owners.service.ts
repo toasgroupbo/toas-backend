@@ -132,17 +132,14 @@ export class OwnersService {
         return owner;
       }
 
-      //! Validar email SOLO en esta empresa
+      //! Validar email globalmente
       const emailExists = await queryRunner.manager.findOne(User, {
-        where: {
-          email,
-          company: { id: companyId },
-        },
+        where: { email },
         withDeleted: true,
       });
 
       if (emailExists && !emailExists.deletedAt) {
-        throw new ConflictException('Email already in use for this company');
+        throw new ConflictException('Email already in use');
       }
 
       //! Reactivar user eliminado con mismo email

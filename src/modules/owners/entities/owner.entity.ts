@@ -3,7 +3,6 @@ import {
   Entity,
   OneToOne,
   OneToMany,
-  ManyToMany,
   JoinColumn,
   CreateDateColumn,
   PrimaryGeneratedColumn,
@@ -11,7 +10,6 @@ import {
 
 import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { User } from 'src/modules/users/entities/user.entity';
-import { Company } from 'src/modules/companies/entities/company.entity';
 import { BankAccount } from 'src/modules/bank-accounts/entities/bank-account.entity';
 import { CompanyOwner } from 'src/modules/companies/entities/company-owners.entity';
 
@@ -44,7 +42,7 @@ export class Owner {
   //*                                        Relations                                               */
   //* ============================================================================================== */
 
-  @OneToOne(() => BankAccount, (account) => account.company, { cascade: true })
+  @OneToOne(() => BankAccount, (account) => account.owner, { cascade: true })
   @JoinColumn()
   bankAccount: BankAccount;
 
