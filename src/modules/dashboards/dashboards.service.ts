@@ -125,6 +125,7 @@ export class DashboardsService {
       pendingDeposits,
       totalPendingAmount,
 
+      activeCount,
       travelStats,
 
       upcomingTravels,
@@ -185,7 +186,15 @@ export class DashboardsService {
         })
         .getRawOne(),
 
-      // ESTADÍSTICAS DE VIAJES
+      // TOTAL VIAJES ACTIVOS (sin filtro de fecha)
+      travelRepo.count({
+        where: {
+          enabled: true,
+          travel_status: TravelStatus.ACTIVE,
+        },
+      }),
+
+      // ESTADÍSTICAS DE HOY (cancelados y cerrados)
       travelRepo
         .createQueryBuilder('travel')
         .select('travel.travel_status', 'status')
@@ -250,11 +259,11 @@ export class DashboardsService {
       },
 
       travels_today: {
-        actives: mappedStats.active,
+        actives: activeCount,
         canceled: mappedStats.cancelled,
         closed: mappedStats.closed,
 
-        total: mappedStats.active + mappedStats.cancelled + mappedStats.closed,
+        total: activeCount + mappedStats.cancelled + mappedStats.closed,
       },
 
       deposits: {
@@ -310,6 +319,7 @@ export class DashboardsService {
       pendingDeposits,
       totalPendingAmount,
 
+      activeCount,
       travelStats,
 
       upcomingTravels,
@@ -396,7 +406,16 @@ export class DashboardsService {
         })
         .getRawOne(),
 
-      // ESTADÍSTICAS
+      // TOTAL VIAJES ACTIVOS (sin filtro de fecha)
+      travelRepo.count({
+        where: {
+          enabled: true,
+          company: { id: companyId },
+          travel_status: TravelStatus.ACTIVE,
+        },
+      }),
+
+      // ESTADÍSTICAS DE HOY (cancelados y cerrados)
       travelRepo
         .createQueryBuilder('travel')
         .select('travel.travel_status', 'status')
@@ -473,11 +492,11 @@ export class DashboardsService {
       },
 
       travels_today: {
-        actives: mappedStats.active,
+        actives: activeCount,
         canceled: mappedStats.cancelled,
         closed: mappedStats.closed,
 
-        total: mappedStats.active + mappedStats.cancelled + mappedStats.closed,
+        total: activeCount + mappedStats.cancelled + mappedStats.closed,
       },
 
       deposits: {
