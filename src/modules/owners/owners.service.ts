@@ -81,6 +81,15 @@ export class OwnersService {
 
         await queryRunner.manager.save(ownerCompany);
       } else {
+        //! Actualizar owner ANTES de tocar CompanyOwner
+        if (!owner.enabled) {
+          owner.enabled = true;
+        }
+
+        Object.assign(owner, data);
+
+        await queryRunner.manager.save(owner);
+
         //! Verificar relación con company
         const ownerCompany = owner.companyOwner.find(
           (oc) => oc.company.id === companyId,
@@ -89,7 +98,7 @@ export class OwnersService {
         //! Si no existe -> crear relación
         if (!ownerCompany) {
           const newRelation = queryRunner.manager.create(CompanyOwner, {
-            owner,
+            owner: { id: owner.id },
             company: { id: companyId },
           });
 
@@ -101,15 +110,6 @@ export class OwnersService {
           ownerCompany.enabled = true;
           await queryRunner.manager.save(ownerCompany);
         }
-
-        //! Reactivar owner si estaba deshabilitado
-        if (!owner.enabled) {
-          owner.enabled = true;
-        }
-
-        Object.assign(owner, data);
-
-        await queryRunner.manager.save(owner);
       }
 
       //! Verificar user existente en esta empresa
