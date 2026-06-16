@@ -161,7 +161,7 @@ export class TicketsInAppService {
         );
         return {
           ...ticket,
-          past: travel_status !== TravelStatus.ACTIVE || departure_time < now,
+          past: departure_time < now,
           cancelable: cutoff,
         };
       });
@@ -209,7 +209,7 @@ export class TicketsInAppService {
 
       return {
         ...updatedTicket,
-        past: travel_status !== TravelStatus.ACTIVE || departure_time < now,
+        past: departure_time < now,
         cancelable: cutoff,
       };
     });
