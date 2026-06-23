@@ -8,6 +8,8 @@ import {
   Delete,
   Controller,
   ParseIntPipe,
+  ParseBoolPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -48,9 +50,12 @@ export class CompanyController {
   //!
   @Auth(ValidPermissions.READ)
   //!
+  @ApiQuery({ name: 'enabled', required: false, type: Boolean })
   @Get()
-  findAll() {
-    return this.companyService.findAll();
+  findAll(
+    @Query('enabled', new DefaultValuePipe(true), ParseBoolPipe) enabled: boolean,
+  ) {
+    return this.companyService.findAll(enabled);
   }
 
   //? ============================================================================================== */

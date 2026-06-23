@@ -163,7 +163,7 @@ export class DashboardsService {
       userRepo
         .createQueryBuilder('user')
         .where('user.officeId IS NOT NULL')
-        .andWhere('user.deletedAt IS NULL')
+        .andWhere('user.enabled = true')
         .getCount(),
 
       // DEPÓSITOS PENDIENTES
@@ -377,7 +377,7 @@ export class DashboardsService {
         .createQueryBuilder('user')
         .where('user.companyId = :companyId', { companyId })
         .andWhere('user.officeId IS NOT NULL')
-        .andWhere('user.deletedAt IS NULL')
+        .andWhere('user.enabled = true')
         .getCount(),
 
       // DEPÓSITOS PENDIENTES

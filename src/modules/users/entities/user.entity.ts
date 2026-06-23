@@ -42,6 +42,9 @@ export class User {
   @Column('text', { nullable: true, select: false })
   sessionToken?: string | null;
 
+  @Column('boolean', { default: true })
+  enabled: boolean;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })

@@ -21,7 +21,7 @@ export class Owner {
   @Column('text')
   name: string;
 
-  @Column('text', { unique: true })
+  @Column('text')
   ci: string;
 
   @Column('text')

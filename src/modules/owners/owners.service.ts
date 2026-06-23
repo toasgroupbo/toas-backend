@@ -42,19 +42,6 @@ export class OwnersService {
     try {
       const { bankAccount, ci, email, password, ...data } = dto;
 
-      //! Buscar owner existente
-      let owner = await queryRunner.manager.findOne(Owner, {
-        where: { ci },
-        relations: {
-          companyOwner: {
-            company: true,
-          },
-          users: {
-            company: true,
-          },
-        },
-      });
-
       const role = await queryRunner.manager.findOne(Rol, {
         where: { name: StaticRoles.CASHIER_OWNER },
       });
@@ -63,71 +50,62 @@ export class OwnersService {
         throw new NotFoundException('Role not found');
       }
 
-      //! Crear owner si no existe
-      if (!owner) {
+      //! Buscar owner existente en ESTA empresa (scoped por companyId)
+      let owner = await queryRunner.manager.findOne(Owner, {
+        where: {
+          ci,
+          companyOwner: { company: { id: companyId } },
+        },
+        relations: {
+          companyOwner: { company: true },
+          users: { company: true },
+        },
+      });
+
+      if (owner) {
+        //! Owner ya existe en esta empresa → reactivar si estaba deshabilitado
+        if (!owner.enabled) {
+          owner.enabled = true;
+          Object.assign(owner, data);
+          if (bankAccount) {
+            Object.assign(owner.bankAccount, bankAccount);
+          }
+          await queryRunner.manager.save(owner);
+
+          const ownerCompany = owner.companyOwner.find(
+            (oc) => oc.company.id === companyId,
+          );
+          if (ownerCompany && !ownerCompany.enabled) {
+            ownerCompany.enabled = true;
+            await queryRunner.manager.save(ownerCompany);
+          }
+        } else {
+          throw new ConflictException(
+            'Owner with this CI already exists in this company',
+          );
+        }
+      } else {
+        //! Crear nuevo owner para esta empresa
         owner = queryRunner.manager.create(Owner, {
           ...data,
           ci,
           bankAccount,
         });
-
         owner = await queryRunner.manager.save(owner);
 
-        //! Crear relación owner-company
         const ownerCompany = queryRunner.manager.create(CompanyOwner, {
           owner,
           company: { id: companyId },
         });
-
         await queryRunner.manager.save(ownerCompany);
-      } else {
-        //! Actualizar owner ANTES de tocar CompanyOwner
-        if (!owner.enabled) {
-          owner.enabled = true;
-        }
-
-        Object.assign(owner, data);
-
-        await queryRunner.manager.save(owner);
-
-        //! Verificar relación con company
-        const ownerCompany = owner.companyOwner.find(
-          (oc) => oc.company.id === companyId,
-        );
-
-        //! Si no existe -> crear relación
-        if (!ownerCompany) {
-          const newRelation = queryRunner.manager.create(CompanyOwner, {
-            owner: { id: owner.id },
-            company: { id: companyId },
-          });
-
-          await queryRunner.manager.save(newRelation);
-        }
-
-        //! Si existe pero está deshabilitada -> reactivar
-        else if (!ownerCompany.enabled) {
-          ownerCompany.enabled = true;
-          await queryRunner.manager.save(ownerCompany);
-        }
       }
 
-      //! Verificar user existente en esta empresa
-      const existingUserForCompany = owner.users?.find(
-        (user) => user.company?.id === companyId && !user.deletedAt,
+      //! Verificar user activo en esta empresa
+      const existingUser = owner.users?.find(
+        (u) => u.company?.id === companyId,
       );
 
-      //! Reactivar user eliminado
-      if (existingUserForCompany?.deletedAt) {
-        existingUserForCompany.deletedAt = null;
-        await queryRunner.manager.save(existingUserForCompany);
-
-        await queryRunner.commitTransaction();
-        return owner;
-      }
-
-      //! Si ya existe activo
-      if (existingUserForCompany) {
+      if (existingUser) {
         await queryRunner.commitTransaction();
         return owner;
       }
@@ -142,37 +120,31 @@ export class OwnersService {
         throw new ConflictException('Email already in use');
       }
 
-      //! Reactivar user eliminado con mismo email
       if (emailExists?.deletedAt) {
+        //! Reactivar user eliminado con mismo email
         emailExists.deletedAt = null;
         emailExists.password = password;
         emailExists.fullName = data.name;
         emailExists.phone = data.phone;
         emailExists.ci = ci;
         emailExists.owner = owner;
-
         await queryRunner.manager.save(emailExists);
-
-        await queryRunner.commitTransaction();
-        return owner;
+      } else {
+        //! Crear user
+        const user = queryRunner.manager.create(User, {
+          email,
+          password,
+          fullName: data.name,
+          ci,
+          phone: data.phone,
+          rol: role,
+          owner,
+          company: { id: companyId },
+        });
+        await queryRunner.manager.save(user);
       }
 
-      //! Crear user
-      const user = queryRunner.manager.create(User, {
-        email,
-        password,
-        fullName: data.name,
-        ci,
-        phone: data.phone,
-        rol: role,
-        owner,
-        company: { id: companyId },
-      });
-
-      await queryRunner.manager.save(user);
-
       await queryRunner.commitTransaction();
-
       return owner;
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -182,135 +154,51 @@ export class OwnersService {
     }
   }
 
-  /*   async create(dto: CreateOwnerDto, companyId: number) {
-    const queryRunner = this.dataSource.createQueryRunner();
-
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const { bankAccount, ci, email, password, ...data } = dto;
-
-      //! Buscar owner existente
-      let owner = await queryRunner.manager.findOne(Owner, {
-        where: { ci },
-        relations: {
-          companies: true,
-          users: {
-            company: true,
-          },
-        },
-      });
-
-      const role = await queryRunner.manager.findOne(Rol, {
-        where: { name: StaticRoles.CASHIER_OWNER },
-      });
-
-      if (!role) {
-        throw new NotFoundException('Role not found');
-      }
-
-      //! Crear owner si no existe
-
-      if (!owner) {
-        owner = queryRunner.manager.create(Owner, {
-          ...data,
-          ci,
-          bankAccount,
-          companies: [{ id: companyId }],
-        });
-
-        await queryRunner.manager.save(owner);
-      } else {
-        //! Si existe → agregar company si falta
-        const companyAlreadyAdded = owner.companies.some(
-          (c) => c.id === companyId,
-        );
-
-        if (!companyAlreadyAdded) {
-          owner.companies.push({ id: companyId } as any);
-        }
-
-        Object.assign(owner, data);
-
-        await queryRunner.manager.save(owner);
-      }
-
-      //! Verificar si ya tiene user en esta empresa
-      const existingUserForCompany = owner.users?.find(
-        (user) => user.company!.id === companyId,
-      );
-
-      if (existingUserForCompany) {
-        await queryRunner.commitTransaction();
-        return owner;
-      }
-
-      //! Validar email SOLO en esta empresa
-      const emailExists = await queryRunner.manager.findOne(User, {
-        where: {
-          email,
-          company: { id: companyId },
-        },
-      });
-
-      if (emailExists) {
-        throw new ConflictException('Email already in use for this company');
-      }
-
-      //! Crear user para esta empresa
-
-      const user = queryRunner.manager.create(User, {
-        email,
-        password: password,
-        fullName: data.name,
-        ci,
-        phone: data.phone,
-        rol: role,
-        owner,
-        company: { id: companyId },
-      });
-
-      await queryRunner.manager.save(user);
-      await queryRunner.commitTransaction();
-      return owner;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      handleDBExceptions(error);
-    } finally {
-      await queryRunner.release();
-    }
-  } */
-
   //? ============================================================================================== */
   //?                                        FindAll                                                 */
   //? ============================================================================================== */
 
-  async findAll(companyId: number) {
-    return await this.ownerRepository.find({
+  async findAll(companyId: number, enabled: boolean = true) {
+    const owners = await this.ownerRepository.find({
       where: {
-        enabled: true,
+        enabled,
+        //! El filtro en companyOwner usa INNER JOIN: si un owner deshabilitado
+        //! no tiene un companyOwner con enabled=false para esta company
+        //! (inconsistencia de datos), no aparecerá en el resultado.
         companyOwner: {
-          company: {
-            id: companyId,
-          },
-          enabled: true,
-        },
-        users: {
-          company: {
-            id: companyId,
-          },
+          company: { id: companyId },
+          enabled,
         },
       },
       relations: {
         bankAccount: true,
         users: true,
         buses: true,
-        companyOwner: {
-          company: true,
-        },
+        companyOwner: { company: true },
       },
     });
+
+    if (!enabled) {
+      //! Al listar owners deshabilitados se eliminan los ids del owner y de
+      //! todas sus relaciones (bankAccount, users, buses, companyOwner y
+      //! el company anidado). Se usa IIFE para destructor inline sin variable extra.
+      return owners.map(({ id, ...rest }) => ({
+        ...rest,
+        bankAccount: rest.bankAccount
+          ? (({ id: _id, ...ba }) => ba)(rest.bankAccount)
+          : null,
+        users: rest.users?.map(({ id: _id, ...user }) => user) ?? [],
+        buses: rest.buses?.map(({ id: _id, ...bus }) => bus) ?? [],
+        companyOwner: rest.companyOwner?.map(({ id: _id, ...co }) => ({
+          ...co,
+          company: co.company
+            ? (({ id: _cid, ...company }) => company)(co.company)
+            : null,
+        })) ?? [],
+      }));
+    }
+
+    return owners;
   }
 
   //? ============================================================================================== */
@@ -362,7 +250,7 @@ export class OwnersService {
 
       Object.assign(owner, rest);
 
-      if (bankAccount) {
+      if (bankAccount && owner.bankAccount) {
         Object.assign(owner.bankAccount, bankAccount);
       }
 
@@ -447,21 +335,14 @@ export class OwnersService {
           },
         );
 
-        //! Verificar relaciones activas restantes
-        const remainingRelations = owner.companyOwner.filter(
-          (oc) => oc.company.id !== companyId && oc.enabled,
-        );
-
-        //! Si ya no tiene companies activas
-        if (!remainingRelations.length) {
-          //! Soft delete users
-          if (owner.users?.length) {
-            await manager.softRemove(owner.users);
-          }
-
-          //! Deshabilitar owner
-          await manager.update(Owner, { id: owner.id }, { enabled: false });
+        //! Deshabilitar users del owner
+        if (owner.users?.length) {
+          const ownerUserIds = owner.users.map((u) => u.id);
+          await manager.update(User, { id: In(ownerUserIds) }, { enabled: false });
         }
+
+        //! Deshabilitar owner
+        await manager.update(Owner, { id: owner.id }, { enabled: false });
       });
 
       return {

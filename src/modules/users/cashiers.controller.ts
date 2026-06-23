@@ -4,8 +4,11 @@ import {
   Post,
   Body,
   Param,
+  Query,
   Controller,
   ParseIntPipe,
+  ParseBoolPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -49,9 +52,13 @@ export class CashiersController {
   @Auth(ValidPermissions.READ_CASHIERS)
   //!
   @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
+  @ApiQuery({ name: 'enabled', required: false, type: Boolean })
   @Get()
-  findAll(@GetCompany() companyId: number) {
-    return this.usersService.findAllCashiers(companyId);
+  findAll(
+    @GetCompany() companyId: number,
+    @Query('enabled', new DefaultValuePipe(true), ParseBoolPipe) enabled: boolean,
+  ) {
+    return this.usersService.findAllCashiers(companyId, enabled);
   }
   //? ============================================================================================== */
   //?                                        FindOne                                                 */

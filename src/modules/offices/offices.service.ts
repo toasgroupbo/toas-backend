@@ -9,6 +9,7 @@ import { CreateOfficeDto, UpdateOfficeDto } from './dto';
 import { Office } from './entities/office.entity';
 import { Route } from '../routes/entities/route.entity';
 import { Travel } from '../travels/entities/travel.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class OfficesService {
@@ -121,9 +122,10 @@ export class OfficesService {
         );
       }
 
-      //! Cashiers
+      //! Deshabilitar cashiers
       if (office.cashiers?.length) {
-        await manager.softRemove(office.cashiers);
+        const cashierIds = office.cashiers.map((c) => c.id);
+        await manager.update(User, { id: In(cashierIds) }, { enabled: false });
       }
 
       //! Deshabilitar office

@@ -14,6 +14,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
 import { Rol } from './entities/rol.entity';
 import { Permission } from './entities/permission.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class RolesService {
@@ -182,7 +183,8 @@ export class RolesService {
 
     await this.dataSource.transaction(async (manager) => {
       if (rol.users?.length) {
-        await manager.softRemove(rol.users);
+        const rolUserIds = rol.users.map((u) => u.id);
+        await manager.update(User, { id: In(rolUserIds) }, { enabled: false });
       }
 
       await manager.softRemove(rol);

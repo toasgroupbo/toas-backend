@@ -4,9 +4,12 @@ import {
   Body,
   Patch,
   Param,
+  Query,
   Delete,
   Controller,
   ParseIntPipe,
+  ParseBoolPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -48,9 +51,13 @@ export class OwnersController {
   @Auth(ValidPermissions.READ)
   //!
   @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
+  @ApiQuery({ name: 'enabled', required: false, type: Boolean })
   @Get()
-  findAll(@GetCompany() companyId: number) {
-    return this.ownersService.findAll(companyId);
+  findAll(
+    @GetCompany() companyId: number,
+    @Query('enabled', new DefaultValuePipe(true), ParseBoolPipe) enabled: boolean,
+  ) {
+    return this.ownersService.findAll(companyId, enabled);
   }
 
   //? ============================================================================================== */

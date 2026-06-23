@@ -105,7 +105,7 @@ export class UsersService {
 
   async findAll() {
     const users = await this.userRepository.find({
-      where: { rol: { isStatic: false } },
+      where: { rol: { isStatic: false }, enabled: true },
       relations: { rol: true, office: true, company: true },
     });
     return users;
@@ -113,16 +113,30 @@ export class UsersService {
 
   //? ============================================================================================== */
 
-  async findAllCashiers(companyId: number) {
+  async findAllCashiers(companyId: number, enabled: boolean = true) {
     const cashiers = await this.userRepository.find({
       where: {
         company: { id: companyId },
+        enabled,
         rol: {
           name: In([StaticRoles.CASHIER, StaticRoles.CASHIER_SELLER]),
         },
       },
       relations: { rol: true, office: true, company: true },
     });
+
+    if (!enabled) {
+      //! Al listar cashiers deshabilitados se eliminan los ids del cashier
+      //! y de todas sus relaciones (rol, office, company) para no exponer
+      //! claves internas. Se usa IIFE para destructor inline sin variable extra.
+      return cashiers.map(({ id, ...rest }) => ({
+        ...rest,
+        rol: rest.rol ? (({ id: _id, ...rol }) => rol)(rest.rol) : null,
+        office: rest.office ? (({ id: _id, ...office }) => office)(rest.office) : null,
+        company: rest.company ? (({ id: _id, ...company }) => company)(rest.company) : null,
+      }));
+    }
+
     return cashiers;
   }
 
@@ -132,7 +146,7 @@ export class UsersService {
 
   async findOne(id: number) {
     const user = await this.userRepository.findOne({
-      where: { id },
+      where: { id, enabled: true },
       relations: { rol: true, office: { company: true }, company: true },
     });
     if (!user) throw new NotFoundException('User not found');
@@ -143,7 +157,7 @@ export class UsersService {
 
   async findOneForLogin(id: number) {
     const user = await this.userRepository.findOne({
-      where: { id },
+      where: { id, enabled: true },
       relations: { rol: true },
       select: {
         id: true,
@@ -159,7 +173,7 @@ export class UsersService {
 
   async findOneCashier(id: number, companyId: number) {
     const cashier = await this.userRepository.findOne({
-      where: { id, company: { id: companyId } },
+      where: { id, enabled: true, company: { id: companyId } },
       relations: { rol: true, office: true, company: true },
     });
     if (!cashier) throw new NotFoundException('Cashier not found');
@@ -170,7 +184,7 @@ export class UsersService {
 
   async findById(id: number) {
     const user = await this.userRepository.findOne({
-      where: { id },
+      where: { id, enabled: true },
       relations: { rol: true, company: true },
     });
     return user;
@@ -206,6 +220,7 @@ export class UsersService {
         'place.id',
       ])
       .where('user.email = :email', { email })
+      .andWhere('user.enabled = true')
       .getOne();
 
     if (!user) throw new NotFoundException('User not found');
@@ -322,10 +337,10 @@ export class UsersService {
       throw new ConflictException('The User is Static and cannot be deleted');
     }
 
-    await this.userRepository.softRemove(user);
+    await this.userRepository.update({ id: user.id }, { enabled: false });
     return {
-      message: 'User deleted successfully',
-      deleted: user,
+      message: 'User disabled successfully',
+      disabled: user,
     };
   }
 }

@@ -20,6 +20,7 @@ import { Travel } from '../travels/entities/travel.entity';
 import { Office } from '../offices/entities/office.entity';
 import { BusType } from '../buses/entities/bus-type.entity';
 import { CompanyOwner } from './entities/company-owners.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class CompanyService {
@@ -64,14 +65,26 @@ export class CompanyService {
   //?                                        FindAll                                                 */
   //? ============================================================================================== */
 
-  async findAll() {
+  async findAll(enabled: boolean = true) {
     const companies = await this.companyRepository.find({
       where: {
-        enabled: true,
+        enabled,
+        //! El filtro en users actúa como INNER JOIN: solo retorna companies
+        //! que tengan al menos un usuario con rol COMPANY_ADMIN en la BD.
         users: { rol: { name: StaticRoles.COMPANY_ADMIN } },
       },
       relations: { bankAccount: true, users: true },
     });
+
+    if (!enabled) {
+      //! Al listar deshabilitadas se omiten los ids de la company y de sus
+      //! usuarios para no exponer claves internas al consumidor.
+      return companies.map(({ id, ...rest }) => ({
+        ...rest,
+        users: rest.users.map(({ id: _id, ...user }) => user),
+      }));
+    }
+
     return companies;
   }
 
@@ -297,10 +310,11 @@ export class CompanyService {
         await manager.update(Office, { id: In(officeIds) }, { enabled: false });
       }
 
-      //! Soft delete cashiers
+      //! Deshabilitar cashiers
       for (const office of company.offices) {
         if (office.cashiers?.length) {
-          await manager.softRemove(office.cashiers);
+          const cashierIds = office.cashiers.map((c) => c.id);
+          await manager.update(User, { id: In(cashierIds) }, { enabled: false });
         }
       }
 
@@ -358,9 +372,10 @@ export class CompanyService {
 
         //! Si ya no tiene companies activas
         if (!activeRelations.length) {
-          //! Soft delete users
+          //! Deshabilitar users del owner
           if (owner.users?.length) {
-            await manager.softRemove(owner.users);
+            const ownerUserIds = owner.users.map((u) => u.id);
+            await manager.update(User, { id: In(ownerUserIds) }, { enabled: false });
           }
 
           //! Deshabilitar owner
@@ -368,9 +383,10 @@ export class CompanyService {
         }
       }
 
-      //! Soft delete users de company
+      //! Deshabilitar users de company
       if (company.users?.length) {
-        await manager.softRemove(company.users);
+        const companyUserIds = company.users.map((u) => u.id);
+        await manager.update(User, { id: In(companyUserIds) }, { enabled: false });
       }
 
       //! Soft delete bank account
