@@ -11,6 +11,7 @@ import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 import { CreateRouteDto, UpdateRouteDto } from './dto';
 
 import { Route } from './entities/route.entity';
+import { Office } from '../offices/entities/office.entity';
 import { Travel } from '../travels/entities/travel.entity';
 
 @Injectable()
@@ -27,14 +28,24 @@ export class RoutesService {
   //? ============================================================================================== */
 
   async create(dto: CreateRouteDto) {
+    const { officeOriginId, officeDestinationId } = dto;
+
+    if (officeOriginId == officeDestinationId)
+      throw new ConflictException(
+        'The origin and destination offices must be different',
+      );
+
+    const officeOrigin = await this.dataSource.manager.findOne(Office, {
+      where: { id: officeOriginId, enabled: true },
+    });
+    if (!officeOrigin) throw new NotFoundException('Origin office not found or disabled');
+
+    const officeDestination = await this.dataSource.manager.findOne(Office, {
+      where: { id: officeDestinationId, enabled: true },
+    });
+    if (!officeDestination) throw new NotFoundException('Destination office not found or disabled');
+
     try {
-      const { officeOriginId, officeDestinationId } = dto;
-
-      if (officeOriginId == officeDestinationId)
-        throw new ConflictException(
-          'The origin and destination offices must be different',
-        );
-
       const newRoute = this.routeRepository.create({
         ...dto,
         officeOrigin: { id: officeOriginId },
@@ -91,6 +102,21 @@ export class RoutesService {
 
   async update(id: number, dto: UpdateRouteDto, companyId: number) {
     const route = await this.findOne(id, companyId);
+
+    if (dto.officeOriginId) {
+      const officeOrigin = await this.dataSource.manager.findOne(Office, {
+        where: { id: dto.officeOriginId, enabled: true },
+      });
+      if (!officeOrigin) throw new NotFoundException('Origin office not found or disabled');
+    }
+
+    if (dto.officeDestinationId) {
+      const officeDestination = await this.dataSource.manager.findOne(Office, {
+        where: { id: dto.officeDestinationId, enabled: true },
+      });
+      if (!officeDestination) throw new NotFoundException('Destination office not found or disabled');
+    }
+
     try {
       Object.assign(route, dto);
       return await this.routeRepository.save(route);

@@ -20,6 +20,7 @@ export class BusesForCashierService {
     const buses = await this.busRepository.find({
       where: {
         company: { id: office.company.id },
+        enabled: true,
       },
       relations: { owner: true, busType: true },
     });

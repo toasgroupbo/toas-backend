@@ -8,6 +8,7 @@ import { CreateBusDto, UpdateBusDto } from './dto';
 
 import { Bus } from './entities/bus.entity';
 import { BusType } from './entities/bus-type.entity';
+import { Owner } from '../owners/entities/owner.entity';
 import { Travel } from '../travels/entities/travel.entity';
 
 @Injectable()
@@ -24,6 +25,15 @@ export class BusesService {
   //? ============================================================================================== */
 
   async create(dto: CreateBusDto, companyId: number) {
+    const owner = await this.dataSource.manager.findOne(Owner, {
+      where: {
+        id: dto.ownerId,
+        enabled: true,
+        companyOwner: { company: { id: companyId }, enabled: true },
+      },
+    });
+    if (!owner) throw new NotFoundException('Owner not found or disabled');
+
     try {
       const { busType, ...data } = dto;
 
@@ -84,6 +94,18 @@ export class BusesService {
 
   async update(id: number, dto: UpdateBusDto, companyId: number) {
     const bus = await this.findOne(id, companyId);
+
+    if (dto.ownerId) {
+      const owner = await this.dataSource.manager.findOne(Owner, {
+        where: {
+          id: dto.ownerId,
+          enabled: true,
+          companyOwner: { company: { id: companyId }, enabled: true },
+        },
+      });
+      if (!owner) throw new NotFoundException('Owner not found or disabled');
+    }
+
     try {
       Object.assign(bus, dto);
       return await this.busRepository.save(bus);

@@ -24,6 +24,7 @@ import { StaticRoles } from 'src/auth/enums/roles.enum';
 import { RolesService } from '../roles/roles.service';
 
 import { User } from './entities/user.entity';
+import { Office } from '../offices/entities/office.entity';
 
 @Injectable()
 export class UsersService {
@@ -73,8 +74,13 @@ export class UsersService {
 
   async createCashier(dto: CreateUserCashierDto, companyId: number) {
     const { officeId, cashierRol: rolId, ...data } = dto;
-    //! busqueda del rol de Cashier
 
+    const office = await this.userRepository.manager.findOne(Office, {
+      where: { id: officeId, company: { id: companyId }, enabled: true },
+    });
+    if (!office) throw new NotFoundException('Office not found or disabled');
+
+    //! busqueda del rol de Cashier
     const allowedCashierRoles = [
       StaticRoles.CASHIER,
       StaticRoles.CASHIER_SELLER,
@@ -124,18 +130,6 @@ export class UsersService {
       },
       relations: { rol: true, office: true, company: true },
     });
-
-    if (!enabled) {
-      //! Al listar cashiers deshabilitados se eliminan los ids del cashier
-      //! y de todas sus relaciones (rol, office, company) para no exponer
-      //! claves internas. Se usa IIFE para destructor inline sin variable extra.
-      return cashiers.map(({ id, ...rest }) => ({
-        ...rest,
-        rol: rest.rol ? (({ id: _id, ...rol }) => rol)(rest.rol) : null,
-        office: rest.office ? (({ id: _id, ...office }) => office)(rest.office) : null,
-        company: rest.company ? (({ id: _id, ...company }) => company)(rest.company) : null,
-      }));
-    }
 
     return cashiers;
   }
@@ -238,11 +232,7 @@ export class UsersService {
       if (dto.rol) {
         const rol = await this.rolService.findOne(dto.rol);
 
-        // --------------------------------------------
-        // 1. No se puede asignar un rol estatico
-        // --------------------------------------------
-
-        const allowed: StaticRoles[] = [
+        const staticRoles: StaticRoles[] = [
           StaticRoles.SUPER_ADMIN,
           StaticRoles.COMPANY_ADMIN,
           StaticRoles.CASHIER,
@@ -250,11 +240,11 @@ export class UsersService {
           StaticRoles.CASHIER_SELLER,
         ];
 
-        // --------------------------------------------
-        // 2. No se puede asignar un rol a un user estatico
-        // --------------------------------------------
+        if (staticRoles.includes(rol.name as StaticRoles)) {
+          throw new ConflictException('Cannot assign a static role');
+        }
 
-        if (allowed.includes(user.rol.name as StaticRoles)) {
+        if (staticRoles.includes(user.rol.name as StaticRoles)) {
           throw new ConflictException('The User is Static');
         }
       }
@@ -310,6 +300,11 @@ export class UsersService {
   //? ============================================================================================== */
 
   async updateOffice(id: number, dto: UpdateUserOfficeDto, companyId: number) {
+    const newOffice = await this.userRepository.manager.findOne(Office, {
+      where: { id: dto.NewOfficeId, company: { id: companyId }, enabled: true },
+    });
+    if (!newOffice) throw new NotFoundException('Office not found or disabled');
+
     try {
       const user = await this.findOneCashier(id, companyId);
       if (user.rol.name !== StaticRoles.CASHIER) {

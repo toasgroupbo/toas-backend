@@ -66,26 +66,16 @@ export class CompanyService {
   //? ============================================================================================== */
 
   async findAll(enabled: boolean = true) {
-    const companies = await this.companyRepository.find({
+    //! El filtro en users actúa como INNER JOIN: solo retorna companies que
+    //! tengan al menos un usuario con rol COMPANY_ADMIN, y carga únicamente
+    //! ese usuario en la relación users de la respuesta.
+    return this.companyRepository.find({
       where: {
         enabled,
-        //! El filtro en users actúa como INNER JOIN: solo retorna companies
-        //! que tengan al menos un usuario con rol COMPANY_ADMIN en la BD.
         users: { rol: { name: StaticRoles.COMPANY_ADMIN } },
       },
       relations: { bankAccount: true, users: true },
     });
-
-    if (!enabled) {
-      //! Al listar deshabilitadas se omiten los ids de la company y de sus
-      //! usuarios para no exponer claves internas al consumidor.
-      return companies.map(({ id, ...rest }) => ({
-        ...rest,
-        users: rest.users.map(({ id: _id, ...user }) => user),
-      }));
-    }
-
-    return companies;
   }
 
   //? ============================================================================================== */
@@ -314,7 +304,11 @@ export class CompanyService {
       for (const office of company.offices) {
         if (office.cashiers?.length) {
           const cashierIds = office.cashiers.map((c) => c.id);
-          await manager.update(User, { id: In(cashierIds) }, { enabled: false });
+          await manager.update(
+            User,
+            { id: In(cashierIds) },
+            { enabled: false },
+          );
         }
       }
 
@@ -375,7 +369,11 @@ export class CompanyService {
           //! Deshabilitar users del owner
           if (owner.users?.length) {
             const ownerUserIds = owner.users.map((u) => u.id);
-            await manager.update(User, { id: In(ownerUserIds) }, { enabled: false });
+            await manager.update(
+              User,
+              { id: In(ownerUserIds) },
+              { enabled: false },
+            );
           }
 
           //! Deshabilitar owner
@@ -386,7 +384,11 @@ export class CompanyService {
       //! Deshabilitar users de company
       if (company.users?.length) {
         const companyUserIds = company.users.map((u) => u.id);
-        await manager.update(User, { id: In(companyUserIds) }, { enabled: false });
+        await manager.update(
+          User,
+          { id: In(companyUserIds) },
+          { enabled: false },
+        );
       }
 
       //! Soft delete bank account

@@ -178,26 +178,6 @@ export class OwnersService {
       },
     });
 
-    if (!enabled) {
-      //! Al listar owners deshabilitados se eliminan los ids del owner y de
-      //! todas sus relaciones (bankAccount, users, buses, companyOwner y
-      //! el company anidado). Se usa IIFE para destructor inline sin variable extra.
-      return owners.map(({ id, ...rest }) => ({
-        ...rest,
-        bankAccount: rest.bankAccount
-          ? (({ id: _id, ...ba }) => ba)(rest.bankAccount)
-          : null,
-        users: rest.users?.map(({ id: _id, ...user }) => user) ?? [],
-        buses: rest.buses?.map(({ id: _id, ...bus }) => bus) ?? [],
-        companyOwner: rest.companyOwner?.map(({ id: _id, ...co }) => ({
-          ...co,
-          company: co.company
-            ? (({ id: _cid, ...company }) => company)(co.company)
-            : null,
-        })) ?? [],
-      }));
-    }
-
     return owners;
   }
 

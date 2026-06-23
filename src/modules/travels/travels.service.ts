@@ -35,6 +35,7 @@ import { Travel } from './entities/travel.entity';
 import { Bus } from '../buses/entities/bus.entity';
 import { User } from '../users/entities/user.entity';
 import { Office } from '../offices/entities/office.entity';
+import { Route } from '../routes/entities/route.entity';
 import { TravelSeat } from './entities/travel-seat.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
 
@@ -76,12 +77,16 @@ export class TravelsService {
       // 1. Obtener el Bus con tipo y su layout
       // --------------------------------------------
 
+      const route = await queryRunner.manager.findOne(Route, {
+        where: { id: routeId, enabled: true },
+      });
+      if (!route) throw new NotFoundException('Route not found or disabled');
+
       const bus = await queryRunner.manager.findOne(Bus, {
-        where: { id: busId, company: { id: office.company.id } },
+        where: { id: busId, company: { id: office.company.id }, enabled: true },
         relations: { busType: true, company: true },
       });
-
-      if (!bus) throw new NotFoundException('Bus not found');
+      if (!bus) throw new NotFoundException('Bus not found or disabled');
 
       // --------------------------------------------
       // 2. Validar que bus no tenga viajes solapados
@@ -165,7 +170,7 @@ export class TravelsService {
       }
 
       const options: any = {
-        where: { company: { id: companyId } },
+        where: { company: { id: companyId }, enabled: true },
       };
 
       //! status
@@ -454,7 +459,7 @@ export class TravelsService {
       await this.ticketExpirationService.expireTravelIfNeeded(id, manager);
 
       const travel = await manager.findOne(Travel, {
-        where: { id, company: { id: companyId } },
+        where: { id, company: { id: companyId }, enabled: true },
         relations: {
           company: true,
           bus: true,
