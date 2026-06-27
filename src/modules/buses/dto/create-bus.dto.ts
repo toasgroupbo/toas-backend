@@ -4,7 +4,6 @@ import {
   IsEnum,
   IsNumber,
   IsString,
-  ArrayNotEmpty,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -34,7 +33,6 @@ export class CreateBusDto {
     example: [Equipment.WIFI, Equipment.USB_CHARGER],
   })
   @IsArray()
-  @ArrayNotEmpty()
   @IsEnum(Equipment, { each: true })
   @Type(() => String)
   equipment: Equipment[];

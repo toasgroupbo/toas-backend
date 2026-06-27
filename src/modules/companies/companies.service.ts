@@ -282,18 +282,6 @@ export class CompanyService {
 
       const uniqueRouteIds = [...new Set(routeIds)];
 
-      //! Deshabilitar travels
-      if (uniqueRouteIds.length) {
-        await manager.update(
-          Travel,
-          {
-            route: { id: In(uniqueRouteIds) },
-            enabled: true,
-          },
-          { enabled: false },
-        );
-      }
-
       //! Deshabilitar routes
       if (uniqueRouteIds.length) {
         await manager.update(

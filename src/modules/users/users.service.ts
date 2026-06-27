@@ -98,7 +98,7 @@ export class UsersService {
     if (rol.name === StaticRoles.CASHIER) {
       const mainCashierExists = await this.userRepository.exists({
         where: {
-          company: { id: companyId },
+          office: { id: officeId },
           enabled: true,
           rol: { name: StaticRoles.CASHIER },
         },
@@ -106,7 +106,7 @@ export class UsersService {
 
       if (mainCashierExists) {
         throw new ConflictException(
-          'Ya existe un cajero principal habilitado en esta empresa',
+          'Ya existe un cajero principal habilitado en esta oficina',
         );
       }
     }

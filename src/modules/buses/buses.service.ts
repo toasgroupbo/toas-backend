@@ -133,7 +133,6 @@ export class BusesService {
     const hasOpenTravels = await this.dataSource.manager.exists(Travel, {
       where: {
         bus: { id: bus.id },
-        enabled: true,
         travel_status: Not(TravelStatus.CLOSED),
       },
     });
