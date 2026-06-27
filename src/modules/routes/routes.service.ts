@@ -132,20 +132,17 @@ export class RoutesService {
   async remove(id: number, companyId: number) {
     const route = await this.findOne(id, companyId);
 
-    await this.dataSource.transaction(async (manager) => {
-      //! Deshabilitar travels
-      await manager.update(
-        Travel,
-        {
-          route: { id: route.id },
-          enabled: true,
-        },
-        { enabled: false },
-      );
-
-      //! Deshabilitar route
-      await manager.update(Route, { id: route.id }, { enabled: false });
+    const hasAnyTravel = await this.dataSource.manager.exists(Travel, {
+      where: { route: { id: route.id } },
     });
+
+    if (hasAnyTravel) {
+      throw new ConflictException(
+        'No se puede eliminar la ruta porque tiene salidas registradas',
+      );
+    }
+
+    await this.dataSource.manager.update(Route, { id: route.id }, { enabled: false });
 
     return { message: 'Route Disabled', disabled: route };
   }

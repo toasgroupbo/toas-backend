@@ -14,11 +14,8 @@ import { StaticRoles } from 'src/auth/enums';
 import { CreateOwnerDto, UpdateOwnerDto } from './dto';
 
 import { Owner } from './entities/owner.entity';
-import { Bus } from '../buses/entities/bus.entity';
 import { Rol } from '../roles/entities/rol.entity';
 import { User } from '../users/entities/user.entity';
-import { Travel } from '../travels/entities/travel.entity';
-import { BusType } from '../buses/entities/bus-type.entity';
 import { CompanyOwner } from '../companies/entities/company-owners.entity';
 
 @Injectable()
@@ -260,59 +257,6 @@ export class OwnersService {
 
     try {
       await this.dataSource.transaction(async (manager) => {
-        //! Obtener buses de esa company
-        const buses = owner.buses.filter(
-          (bus) => bus.company?.id === companyId && bus.enabled,
-        );
-
-        const busIds = buses.map((b) => b.id);
-
-        //! Deshabilitar travels
-        if (busIds.length) {
-          await manager.update(
-            Travel,
-            {
-              bus: {
-                id: In(busIds),
-              },
-              enabled: true,
-            },
-            {
-              enabled: false,
-            },
-          );
-        }
-
-        //! Deshabilitar busTypes
-        const busTypeIds = buses
-          .filter((b) => b.busType)
-          .map((b) => b.busType.id);
-
-        if (busTypeIds.length) {
-          await manager.update(
-            BusType,
-            {
-              id: In(busTypeIds),
-            },
-            {
-              enabled: false,
-            },
-          );
-        }
-
-        //! Deshabilitar buses
-        if (busIds.length) {
-          await manager.update(
-            Bus,
-            {
-              id: In(busIds),
-            },
-            {
-              enabled: false,
-            },
-          );
-        }
-
         //! Deshabilitar relación OwnerCompany
         await manager.update(
           CompanyOwner,

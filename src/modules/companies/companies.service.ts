@@ -15,7 +15,6 @@ import { RolesService } from '../roles/roles.service';
 import { Bus } from '../buses/entities/bus.entity';
 import { Company } from './entities/company.entity';
 import { Route } from '../routes/entities/route.entity';
-import { Owner } from '../owners/entities/owner.entity';
 import { Travel } from '../travels/entities/travel.entity';
 import { Office } from '../offices/entities/office.entity';
 import { BusType } from '../buses/entities/bus-type.entity';
@@ -365,31 +364,6 @@ export class CompanyService {
           enabled: false,
         },
       );
-
-      //! Deshabilitar owners sin relaciones activas
-      for (const relation of company.companyOwner) {
-        const owner = relation.owner;
-
-        const activeRelations = owner.companyOwner.filter(
-          (oc) => oc.company.id !== company.id && oc.enabled,
-        );
-
-        //! Si ya no tiene companies activas
-        if (!activeRelations.length) {
-          //! Deshabilitar users del owner
-          if (owner.users?.length) {
-            const ownerUserIds = owner.users.map((u) => u.id);
-            await manager.update(
-              User,
-              { id: In(ownerUserIds) },
-              { enabled: false },
-            );
-          }
-
-          //! Deshabilitar owner
-          await manager.update(Owner, { id: owner.id }, { enabled: false });
-        }
-      }
 
       //! Deshabilitar users de company
       if (company.users?.length) {

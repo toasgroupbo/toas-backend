@@ -146,18 +146,6 @@ export class BusesService {
 
     try {
       await this.dataSource.transaction(async (manager) => {
-        //! Deshabilitar viajes asociados
-        await manager.update(
-          Travel,
-          {
-            bus: { id: bus.id },
-            enabled: true,
-          },
-          {
-            enabled: false,
-          },
-        );
-
         //! Deshabilitar busType
         if (bus.busType) {
           await manager.update(
