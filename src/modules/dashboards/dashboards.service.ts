@@ -218,8 +218,8 @@ export class DashboardsService {
         .leftJoinAndSelect('origin.place', 'originPlace')
         .leftJoinAndSelect('destination.place', 'destinationPlace')
         .where('travel.enabled = true')
-        .andWhere('travel.travel_status = :status', {
-          status: TravelStatus.ACTIVE,
+        .andWhere('travel.travel_status IN (:...statuses)', {
+          statuses: [TravelStatus.ACTIVE, TravelStatus.CLOSED],
         })
         .orderBy('travel.departure_time', 'ASC')
         .take(20)
@@ -446,8 +446,8 @@ export class DashboardsService {
         .andWhere('travel.companyId = :companyId', {
           companyId,
         })
-        .andWhere('travel.travel_status = :status', {
-          status: TravelStatus.ACTIVE,
+        .andWhere('travel.travel_status IN (:...statuses)', {
+          statuses: [TravelStatus.ACTIVE, TravelStatus.CLOSED],
         })
         .orderBy('travel.departure_time', 'ASC')
         .take(20)
