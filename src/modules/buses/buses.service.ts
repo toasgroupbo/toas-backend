@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -10,6 +10,7 @@ import { Bus } from './entities/bus.entity';
 import { BusType } from './entities/bus-type.entity';
 import { Owner } from '../owners/entities/owner.entity';
 import { Travel } from '../travels/entities/travel.entity';
+import { TravelStatus } from '../travels/enums';
 
 @Injectable()
 export class BusesService {
@@ -33,6 +34,14 @@ export class BusesService {
       },
     });
     if (!owner) throw new NotFoundException('Owner not found or disabled');
+
+    const plaqueInUse = await this.busRepository.exists({
+      where: { plaque: dto.plaque, enabled: true, company: { id: companyId } },
+    });
+
+    if (plaqueInUse) {
+      throw new ConflictException('Ya existe un bus activo con estas placas');
+    }
 
     try {
       const { busType, ...data } = dto;
@@ -120,6 +129,21 @@ export class BusesService {
 
   async remove(id: number, companyId: number) {
     const bus = await this.findOne(id, companyId);
+
+    const hasOpenTravels = await this.dataSource.manager.exists(Travel, {
+      where: {
+        bus: { id: bus.id },
+        enabled: true,
+        travel_status: Not(TravelStatus.CLOSED),
+      },
+    });
+
+    if (hasOpenTravels) {
+      throw new BadRequestException(
+        'No se puede eliminar el bus porque tiene salidas sin cerrar',
+      );
+    }
+
     try {
       await this.dataSource.transaction(async (manager) => {
         //! Deshabilitar viajes asociados

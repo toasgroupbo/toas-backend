@@ -26,8 +26,8 @@ import { User } from '../../users/entities/user.entity';
 import { Bus } from 'src/modules/buses/entities/bus.entity';
 import { TravelSeat } from '../entities/travel-seat.entity';
 import { Office } from '../../offices/entities/office.entity';
-import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { Ticket } from '../../tickets/entities/ticket.entity';
+import { Owner } from 'src/modules/owners/entities/owner.entity';
 
 @Injectable()
 export class TravelsForCashierService {
@@ -98,7 +98,7 @@ export class TravelsForCashierService {
       this.travelRepository,
       {
         where,
-        order: { id: 'DESC' },
+        order: { departure_time: 'DESC' },
         relations: {
           bus: true,
           route: {
@@ -270,7 +270,7 @@ export class TravelsForCashierService {
       {
         where,
         transaction: true,
-        order: { id: 'DESC' },
+        order: { departure_time: 'DESC' },
         relations: {
           transaction: true,
           bus: true,

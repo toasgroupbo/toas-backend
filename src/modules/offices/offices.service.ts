@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
@@ -91,6 +91,14 @@ export class OfficesService {
     });
 
     if (!office) throw new NotFoundException();
+
+    const hasEnabledCashiers = office.cashiers?.some((c) => c.enabled);
+
+    if (hasEnabledCashiers) {
+      throw new BadRequestException(
+        'No se puede deshabilitar la oficina porque tiene cajeros habilitados',
+      );
+    }
 
     await this.dataSource.transaction(async (manager) => {
       //! Obtener IDs de rutas

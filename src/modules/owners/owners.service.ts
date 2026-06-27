@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   ConflictException,
   NotFoundException,
@@ -246,6 +247,16 @@ export class OwnersService {
 
   async remove(id: number, companyId: number) {
     const owner = await this.findOne(id, companyId);
+
+    const hasEnabledBuses = owner.buses.some(
+      (bus) => bus.enabled && bus.company?.id === companyId,
+    );
+
+    if (hasEnabledBuses) {
+      throw new BadRequestException(
+        'No se puede deshabilitar el propietario porque tiene buses habilitados en esta empresa',
+      );
+    }
 
     try {
       await this.dataSource.transaction(async (manager) => {

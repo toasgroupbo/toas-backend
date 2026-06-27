@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
@@ -262,6 +262,16 @@ export class CompanyService {
 
     if (!company) {
       throw new NotFoundException('Company Not Found');
+    }
+
+    const hasEnabledOwner = company.companyOwner.some(
+      (rel) => rel.enabled && rel.owner?.enabled,
+    );
+
+    if (hasEnabledOwner) {
+      throw new BadRequestException(
+        'No se puede deshabilitar la empresa porque tiene propietarios habilitados',
+      );
     }
 
     await this.dataSource.transaction(async (manager) => {

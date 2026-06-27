@@ -32,7 +32,7 @@ export class Bus {
   @Column('text')
   name: string;
 
-  @Column('text', { unique: true })
+  @Column('text')
   plaque: string;
 
   @Column({

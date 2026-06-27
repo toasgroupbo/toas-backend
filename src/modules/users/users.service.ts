@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
@@ -25,6 +25,8 @@ import { RolesService } from '../roles/roles.service';
 
 import { User } from './entities/user.entity';
 import { Office } from '../offices/entities/office.entity';
+import { Travel } from '../travels/entities/travel.entity';
+import { TravelStatus } from '../travels/enums';
 
 @Injectable()
 export class UsersService {
@@ -84,12 +86,29 @@ export class UsersService {
     const allowedCashierRoles = [
       StaticRoles.CASHIER,
       StaticRoles.CASHIER_SELLER,
+      //StaticRoles.CASHIER_OWNER,
     ];
 
     const rol = await this.rolService.findOne(rolId);
 
     if (!allowedCashierRoles.includes(rol.name as StaticRoles)) {
       throw new BadRequestException('Invalid role. Must be a cashier role');
+    }
+
+    if (rol.name === StaticRoles.CASHIER) {
+      const mainCashierExists = await this.userRepository.exists({
+        where: {
+          company: { id: companyId },
+          enabled: true,
+          rol: { name: StaticRoles.CASHIER },
+        },
+      });
+
+      if (mainCashierExists) {
+        throw new ConflictException(
+          'Ya existe un cajero principal habilitado en esta empresa',
+        );
+      }
     }
 
     try {
@@ -236,7 +255,7 @@ export class UsersService {
           StaticRoles.SUPER_ADMIN,
           StaticRoles.COMPANY_ADMIN,
           StaticRoles.CASHIER,
-          StaticRoles.CASHIER_OWNER,
+          //StaticRoles.CASHIER_OWNER,
           StaticRoles.CASHIER_SELLER,
         ];
 
@@ -256,7 +275,7 @@ export class UsersService {
     }
   }
   //? ============================================================================================== */
-  //?                              Update_Cashiers                                                  */
+  //?                              Update_Cashiers                                                   */
   //? ============================================================================================== */
 
   async updateCashiers(id: number, companyId: number, dto: UpdateUserDto) {
@@ -264,6 +283,7 @@ export class UsersService {
       const allowedCashierRoles = [
         StaticRoles.CASHIER,
         StaticRoles.CASHIER_SELLER,
+        //StaticRoles.CASHIER_OWNER,
       ];
 
       const cashier = await this.findOneCashier(id, companyId);
@@ -328,8 +348,27 @@ export class UsersService {
   async remove(id: number) {
     const user = await this.findOne(id);
 
-    if (user.rol.isStatic) {
+    const cashierRoles = [StaticRoles.CASHIER, StaticRoles.CASHIER_SELLER];
+    const isCashier = cashierRoles.includes(user.rol.name as StaticRoles);
+
+    if (user.rol.isStatic && !isCashier) {
       throw new ConflictException('The User is Static and cannot be deleted');
+    }
+
+    if (isCashier) {
+      const hasOpenTravels = await this.userRepository.manager.exists(Travel, {
+        where: {
+          createdBy: { id: user.id },
+          enabled: true,
+          travel_status: Not(TravelStatus.CLOSED),
+        },
+      });
+
+      if (hasOpenTravels) {
+        throw new BadRequestException(
+          'No se puede deshabilitar el cajero porque tiene salidas sin cerrar',
+        );
+      }
     }
 
     await this.userRepository.update({ id: user.id }, { enabled: false });
