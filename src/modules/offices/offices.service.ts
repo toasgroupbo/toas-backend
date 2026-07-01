@@ -1,6 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -9,6 +14,7 @@ import { CreateOfficeDto, UpdateOfficeDto } from './dto';
 import { Office } from './entities/office.entity';
 import { Route } from '../routes/entities/route.entity';
 import { Travel } from '../travels/entities/travel.entity';
+import { TravelStatus } from '../travels/enums';
 
 @Injectable()
 export class OfficesService {
@@ -99,27 +105,31 @@ export class OfficesService {
       );
     }
 
-    await this.dataSource.transaction(async (manager) => {
-      //! Obtener IDs de rutas
-      const routeIds = [
-        ...(office.origenRoutes?.map((r) => r.id) || []),
-        ...(office.destinationRoutes?.map((r) => r.id) || []),
-      ];
+    //! Obtener IDs de rutas
+    const routeIds = [
+      ...(office.origenRoutes?.map((r) => r.id) || []),
+      ...(office.destinationRoutes?.map((r) => r.id) || []),
+    ];
 
-      const uniqueRouteIds = [...new Set(routeIds)];
+    const uniqueRouteIds = [...new Set(routeIds)];
 
-      //! Deshabilitar travels
-      if (uniqueRouteIds.length) {
-        await manager.update(
-          Travel,
-          {
-            route: { id: In(uniqueRouteIds) },
-            enabled: true,
-          },
-          { enabled: false },
+    if (uniqueRouteIds.length) {
+      const hasActiveTravel = await this.dataSource.manager.exists(Travel, {
+        where: {
+          route: { id: In(uniqueRouteIds) },
+          enabled: true,
+          travel_status: Not(TravelStatus.CLOSED),
+        },
+      });
+
+      if (hasActiveTravel) {
+        throw new ConflictException(
+          'No se puede deshabilitar la oficina porque tiene rutas con salidas activas',
         );
       }
+    }
 
+    await this.dataSource.transaction(async (manager) => {
       //! Deshabilitar rutas
       if (uniqueRouteIds.length) {
         await manager.update(

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -13,6 +13,7 @@ import { CreateRouteDto, UpdateRouteDto } from './dto';
 import { Route } from './entities/route.entity';
 import { Office } from '../offices/entities/office.entity';
 import { Travel } from '../travels/entities/travel.entity';
+import { TravelStatus } from '../travels/enums';
 
 @Injectable()
 export class RoutesService {
@@ -132,13 +133,17 @@ export class RoutesService {
   async remove(id: number, companyId: number) {
     const route = await this.findOne(id, companyId);
 
-    const hasAnyTravel = await this.dataSource.manager.exists(Travel, {
-      where: { route: { id: route.id } },
+    const hasActiveTravel = await this.dataSource.manager.exists(Travel, {
+      where: {
+        route: { id: route.id },
+        enabled: true,
+        travel_status: Not(TravelStatus.CLOSED),
+      },
     });
 
-    if (hasAnyTravel) {
+    if (hasActiveTravel) {
       throw new ConflictException(
-        'No se puede eliminar la ruta porque tiene salidas registradas',
+        'No se puede eliminar la ruta porque tiene salidas activas',
       );
     }
 
