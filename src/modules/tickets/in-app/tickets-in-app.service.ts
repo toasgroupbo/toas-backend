@@ -163,6 +163,7 @@ export class TicketsInAppService {
           ...ticket,
           past: departure_time < now,
           cancelable: cutoff,
+          closed: travel_status === TravelStatus.CLOSED,
         };
       });
     });
@@ -211,6 +212,7 @@ export class TicketsInAppService {
         ...updatedTicket,
         past: departure_time < now,
         cancelable: cutoff,
+        closed: travel_status === TravelStatus.CLOSED,
       };
     });
   }

@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+import { envs } from 'src/config/environments/environments';
+
 import { IsVerifyGuard } from '../../tickets/guards/is-verify.guard';
 import { Auth, GetCustomer, Resource } from 'src/auth/decorators';
 import { ValidResourses } from 'src/common/enums';
@@ -123,5 +125,18 @@ export class CustomersInAppController {
   @Get('balance/history')
   getBalanceHistory(@GetCustomer() customer: Customer) {
     return this.walletService.getBalanceHistory(customer);
+  }
+
+  //? ============================================================================================== */
+  //?                           Get_Balance_Config                                                    */
+  //? ============================================================================================== */
+
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @Get('balance/config')
+  getBalanceConfig() {
+    return { expirationDays: envs.BALANCE_EXPIRATION_DAYS };
   }
 }
