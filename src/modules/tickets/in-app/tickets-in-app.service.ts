@@ -27,6 +27,10 @@ import { PenaltiesService } from 'src/modules/customers/penalties.service';
 import { Ticket } from '../entities/ticket.entity';
 import { Travel } from '../../travels/entities/travel.entity';
 import { Customer } from '../../customers/entities/customer.entity';
+import {
+  PaymentQR,
+  PaymentStatusEnum,
+} from '../../payments/entities/payment-qr.entity';
 
 @Injectable()
 export class TicketsInAppService {
@@ -247,15 +251,36 @@ export class TicketsInAppService {
       this.assertWithinOperatingWindow(ticket.travel);
 
       //! wallet
-      if (ticket.status == TicketStatus.SOLD && ticket.buyer) {
-        await this.walletService.creditFromTicketCancel(
-          ticket,
-          ticket.buyer,
-          true,
-          queryRunner.manager,
-        );
+      if (ticket.buyer) {
+        if (ticket.status === TicketStatus.SOLD) {
+          // Venta ya cobrada (wallet + QR): se acredita todo, con penalidad de comisión
+          await this.walletService.creditFromTicketCancel(
+            ticket,
+            ticket.buyer,
+            true,
+            queryRunner.manager,
+          );
+        } else {
+          // RESERVED / PENDING_PAYMENT: el QR nunca se pagó, solo se revierte
+          // el monto de wallet que ya fue debitado al generar el QR (si existe)
+          await this.walletService.restoreCreditsFromExpiredTicket(
+            ticket,
+            ticket.buyer,
+            queryRunner.manager,
+          );
+        }
       }
       //! wallet
+
+      //! payment qr
+      if (
+        ticket.paymentQr &&
+        ticket.paymentQr.status === PaymentStatusEnum.PENDING
+      ) {
+        ticket.paymentQr.status = PaymentStatusEnum.CANCELLED;
+        await queryRunner.manager.save(PaymentQR, ticket.paymentQr);
+      }
+      //! payment qr
 
       this.changeTicketState(ticket, TicketStatus.CANCELLED);
 
@@ -409,6 +434,16 @@ export class TicketsInAppService {
     if (!ticket) {
       throw new NotFoundException('Ticket not found or expired');
     }
+
+    // Se bloquea aparte porque un LEFT JOIN con FOR UPDATE no es válido en Postgres
+    const paymentQr = await queryRunner.manager
+      .createQueryBuilder(PaymentQR, 'paymentQr')
+      .setLock('pessimistic_write')
+      .innerJoin('paymentQr.ticket', 'pqTicket')
+      .where('pqTicket.id = :ticketId', { ticketId: ticket.id })
+      .getOne();
+
+    ticket.paymentQr = paymentQr ?? undefined;
 
     return ticket;
   }

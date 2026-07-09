@@ -88,10 +88,6 @@ export class DashboardsService {
       cancelled: Number(
         stats.find((s) => s.status === TravelStatus.CANCELLED)?.count || 0,
       ),
-
-      closed: Number(
-        stats.find((s) => s.status === TravelStatus.CLOSED)?.count || 0,
-      ),
     };
   }
 
@@ -127,6 +123,7 @@ export class DashboardsService {
 
       activeCount,
       travelStats,
+      closedTodayCount,
 
       upcomingTravels,
     ] = await Promise.all([
@@ -207,6 +204,19 @@ export class DashboardsService {
         .groupBy('travel.travel_status')
         .getRawMany(),
 
+      // CERRADOS DE HOY (según el momento real de cierre, no la salida)
+      travelRepo
+        .createQueryBuilder('travel')
+        .where('travel.enabled = true')
+        .andWhere('travel.travel_status = :status', {
+          status: TravelStatus.CLOSED,
+        })
+        .andWhere('travel.closedAt BETWEEN :start AND :end', {
+          start,
+          end,
+        })
+        .getCount(),
+
       // PRÓXIMAS SALIDAS
       travelRepo
         .createQueryBuilder('travel')
@@ -261,9 +271,9 @@ export class DashboardsService {
       travels_today: {
         actives: activeCount,
         canceled: mappedStats.cancelled,
-        closed: mappedStats.closed,
+        closed: closedTodayCount,
 
-        total: activeCount + mappedStats.cancelled + mappedStats.closed,
+        total: activeCount + mappedStats.cancelled + closedTodayCount,
       },
 
       deposits: {
@@ -321,6 +331,7 @@ export class DashboardsService {
 
       activeCount,
       travelStats,
+      closedTodayCount,
 
       upcomingTravels,
     ] = await Promise.all([
@@ -431,6 +442,22 @@ export class DashboardsService {
         .groupBy('travel.travel_status')
         .getRawMany(),
 
+      // CERRADOS DE HOY (según el momento real de cierre, no la salida)
+      travelRepo
+        .createQueryBuilder('travel')
+        .where('travel.enabled = true')
+        .andWhere('travel.companyId = :companyId', {
+          companyId,
+        })
+        .andWhere('travel.travel_status = :status', {
+          status: TravelStatus.CLOSED,
+        })
+        .andWhere('travel.closedAt BETWEEN :start AND :end', {
+          start,
+          end,
+        })
+        .getCount(),
+
       // PRÓXIMOS VIAJES
       travelRepo
         .createQueryBuilder('travel')
@@ -494,9 +521,9 @@ export class DashboardsService {
       travels_today: {
         actives: activeCount,
         canceled: mappedStats.cancelled,
-        closed: mappedStats.closed,
+        closed: closedTodayCount,
 
-        total: activeCount + mappedStats.cancelled + mappedStats.closed,
+        total: activeCount + mappedStats.cancelled + closedTodayCount,
       },
 
       deposits: {

@@ -285,7 +285,7 @@ export class TicketsService {
 
   async confirmWithManager(ticket: Ticket, manager: EntityManager) {
     this.applySoldState(ticket);
-    await this.reducePenalty(ticket, manager);
+    await this.resetPenalty(ticket, manager);
 
     await manager.save(Ticket, ticket);
 
@@ -311,7 +311,7 @@ export class TicketsService {
 
   //? ============================================================================================== */
 
-  private async reducePenalty(
+  private async resetPenalty(
     ticket: Ticket,
     manager: EntityManager,
   ): Promise<void> {
@@ -322,8 +322,10 @@ export class TicketsService {
         where: { customer: { id: ticket.buyer.id } },
       });
 
-      if (penalty && penalty.failedCount > 0) {
-        penalty.failedCount -= 1;
+      if (penalty) {
+        penalty.failedCount = 0;
+        penalty.windowStartedAt = null;
+        penalty.blockedUntil = null;
         await penaltyRepository.save(penalty);
       }
     }

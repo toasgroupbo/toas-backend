@@ -346,6 +346,13 @@ export class PaymentsService {
         return;
       }
 
+      // El ticket fue cancelado por el cliente antes de que el banco confirmara
+      // el pago: se ignora la confirmación para no revivir un ticket cancelado.
+      if (paymentQr.status === PaymentStatusEnum.CANCELLED) {
+        await queryRunner.commitTransaction();
+        return;
+      }
+
       // ============================================================
       // IDENTIFICAR EL TIPO POR EL COLLECTOR
       // ============================================================
