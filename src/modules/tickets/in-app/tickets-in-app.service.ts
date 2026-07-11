@@ -248,7 +248,12 @@ export class TicketsInAppService {
         );
       }
 
-      this.assertWithinOperatingWindow(ticket.travel);
+      // La ventana de cierre (hours_before_closing) solo restringe la cancelación
+      // de tickets ya pagados (SOLD). Los RESERVED/PENDING_PAYMENT nunca se cobraron,
+      // por lo que se pueden cancelar en cualquier momento antes de la salida.
+      if (ticket.status === TicketStatus.SOLD) {
+        this.assertWithinOperatingWindow(ticket.travel);
+      }
 
       //! wallet
       if (ticket.buyer) {
