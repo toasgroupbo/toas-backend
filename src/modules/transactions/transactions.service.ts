@@ -709,8 +709,8 @@ export class TransactionsService {
       .leftJoin(
         'company.travels',
         'travel',
-        'travel.isPaid = :isPaid AND travel.travel_status = :status AND travel.enabled = :tEnabled',
-        { isPaid: false, status: TravelStatus.CLOSED, tEnabled: true },
+        'travel.isPaid = :isPaid AND travel.travel_status = :status',
+        { isPaid: false, status: TravelStatus.CLOSED },
       )
       .groupBy('company.id')
       .getRawMany();
@@ -726,8 +726,8 @@ export class TransactionsService {
       .leftJoin(
         'company.travels',
         'travel',
-        'travel.isPaid = :isPaid AND travel.enabled = :tEnabled',
-        { isPaid: true, tEnabled: true },
+        'travel.isPaid = :isPaid',
+        { isPaid: true },
       )
       .groupBy('company.id')
       .getRawMany();
