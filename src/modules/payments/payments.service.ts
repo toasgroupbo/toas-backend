@@ -142,7 +142,7 @@ export class PaymentsService {
       result = await this.httpService.generateQr({
         IdCorrelation,
         expiration: this.formatExpirationForBcp(),
-        amount: 0.01, //! para pruebas
+        amount, // amount: 0.01, //! para pruebas
         gloss: dto.gloss,
         collectors: [
           {
@@ -257,7 +257,7 @@ export class PaymentsService {
       result = await this.httpService.generateQr({
         IdCorrelation,
         expiration: this.formatExpirationForBcp(),
-        amount: 0.01, //! para pruebas // totalAmount,
+        amount: totalAmount, // amount: 0.01, //! para pruebas
         gloss: `Recarga para ${dto.customerIds.length} cliente(s)`,
         collectors: collectors,
       });
