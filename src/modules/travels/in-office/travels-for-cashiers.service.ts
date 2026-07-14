@@ -98,7 +98,7 @@ export class TravelsForCashierService {
       this.travelRepository,
       {
         where,
-        order: { departure_time: 'DESC' },
+        order: { departure_time: 'ASC' },
         relations: {
           bus: true,
           route: {
