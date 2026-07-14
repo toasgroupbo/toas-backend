@@ -46,6 +46,7 @@ export class TemplateService {
               ID_DNI: p.idDni,
               SEAT: p.seat,
               DECK: p.deck,
+              PRICE: p.price,
             }[key] ?? ''
           );
         }),

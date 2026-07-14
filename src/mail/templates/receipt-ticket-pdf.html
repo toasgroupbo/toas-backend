@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Recibo de Compra</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 16mm 14mm;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        color: #1a1a1a;
+      }
+
+      .ticket {
+        width: 300px;
+        border: 1px solid #1a1a1a;
+        padding: 14px;
+      }
+
+      .brand {
+        text-align: center;
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin: 0 0 4px;
+      }
+
+      .ticket-number {
+        text-align: center;
+        font-size: 11px;
+        color: #6b6b6b;
+        margin: 0 0 10px;
+      }
+
+      .route-box {
+        border: 1px solid #1a1a1a;
+        border-radius: 6px;
+        padding: 8px 10px;
+        margin-bottom: 10px;
+      }
+
+      .route-line {
+        font-size: 12px;
+        margin: 0 0 6px;
+        text-align: center;
+      }
+
+      .route-line strong {
+        font-weight: 800;
+      }
+
+      .meta-row {
+        display: table;
+        width: 100%;
+        border-top: 1px dashed #1a1a1a;
+        padding-top: 6px;
+      }
+      .meta-cell {
+        display: table-cell;
+        width: 33.33%;
+        text-align: center;
+      }
+      .meta-label {
+        font-size: 8.5px;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: #6b6b6b;
+        margin: 0 0 2px;
+      }
+      .meta-value {
+        font-size: 12px;
+        font-weight: 800;
+        margin: 0;
+      }
+
+      .section-title {
+        font-size: 9.5px;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: #6b6b6b;
+        margin: 0 0 4px;
+      }
+
+      .buyer-section {
+        margin-bottom: 10px;
+      }
+      .buyer-row {
+        display: table;
+        width: 100%;
+      }
+      .buyer-label {
+        display: table-cell;
+        font-size: 11px;
+      }
+      .buyer-value {
+        display: table-cell;
+        font-size: 11px;
+        font-weight: 700;
+        text-align: right;
+      }
+
+      .seats-section {
+        margin-bottom: 10px;
+      }
+      table.seats {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10.5px;
+      }
+      table.seats th {
+        text-align: left;
+        font-size: 9px;
+        text-transform: uppercase;
+        color: #6b6b6b;
+        border-bottom: 1px solid #1a1a1a;
+        padding: 3px 2px;
+      }
+      table.seats td {
+        padding: 4px 2px;
+        border-bottom: 1px dashed #d0d0d0;
+      }
+      table.seats th:last-child,
+      table.seats td:last-child {
+        text-align: right;
+      }
+
+      .total-box {
+        border-top: 1px dashed #1a1a1a;
+        padding-top: 8px;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+      .total-label {
+        font-size: 9.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #6b6b6b;
+        margin: 0 0 2px;
+      }
+      .total-value {
+        font-size: 20px;
+        font-weight: 900;
+        margin: 0;
+      }
+
+      .sale-info {
+        border-top: 1px dashed #1a1a1a;
+        padding-top: 8px;
+        margin-bottom: 10px;
+      }
+      .sale-row {
+        display: table;
+        width: 100%;
+        margin-bottom: 2px;
+      }
+      .sale-label {
+        display: table-cell;
+        font-size: 10.5px;
+      }
+      .sale-value {
+        display: table-cell;
+        font-size: 10.5px;
+        font-weight: 800;
+        text-align: right;
+      }
+
+      .footer {
+        text-align: center;
+        border-top: 1px dashed #1a1a1a;
+        padding-top: 8px;
+      }
+      .footer p {
+        margin: 0;
+      }
+      .footer .thanks {
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .footer .wish {
+        font-size: 9.5px;
+        color: #6b6b6b;
+        margin-top: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ticket">
+      <p class="brand">{{COMPANY_NAME}}</p>
+      <p class="ticket-number">TICKET #{{TICKET_ID}}</p>
+
+      <div class="route-box">
+        <p class="route-line">
+          ORIGEN: <strong>{{ORIGIN}}</strong><br />
+          &rarr; DESTINO: <strong>{{DESTINATION}}</strong>
+        </p>
+        <div class="meta-row">
+          <div class="meta-cell">
+            <p class="meta-label">Fecha</p>
+            <p class="meta-value">{{DEPARTURE_DATE}}</p>
+          </div>
+          <div class="meta-cell">
+            <p class="meta-label">Hora</p>
+            <p class="meta-value">{{DEPARTURE_TIME}}</p>
+          </div>
+          <div class="meta-cell">
+            <p class="meta-label">Carril</p>
+            <p class="meta-value">{{LANE}}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="buyer-section">
+        <p class="section-title">Comprador</p>
+        <div class="buyer-row">
+          <span class="buyer-label">Nombre:</span>
+          <span class="buyer-value">{{CUSTOMER_NAME}}</span>
+        </div>
+        <div class="buyer-row">
+          <span class="buyer-label">CI/NIT:</span>
+          <span class="buyer-value">{{CUSTOMER_CI}}</span>
+        </div>
+      </div>
+
+      <div class="seats-section">
+        <p class="section-title">Asientos</p>
+        <table class="seats">
+          <thead>
+            <tr>
+              <th>N&deg;</th>
+              <th>Piso</th>
+              <th>Pasajero</th>
+              <th>Precio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- LOOP START -->
+            <tr>
+              <td>{{SEAT}}</td>
+              <td>{{DECK}}</td>
+              <td>{{PASSENGER_NAME}}</td>
+              <td>Bs. {{PRICE}}</td>
+            </tr>
+            <!-- LOOP END -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="total-box">
+        <p class="total-label">Total a Pagar</p>
+        <p class="total-value">Bs. {{TOTAL_PRICE}}</p>
+      </div>
+
+      <div class="sale-info">
+        <div class="sale-row">
+          <span class="sale-label">Tipo de Venta:</span>
+          <span class="sale-value">{{SALE_TYPE}}</span>
+        </div>
+        <div class="sale-row">
+          <span class="sale-label">M&eacute;todo de Pago:</span>
+          <span class="sale-value">{{PAYMENT_METHOD}}</span>
+        </div>
+        <div class="sale-row">
+          <span class="sale-label">Fecha Emisi&oacute;n:</span>
+          <span class="sale-value">{{ISSUE_DATE}}</span>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p class="thanks">&iexcl;Gracias por su preferencia!</p>
+        <p class="wish">Buen Viaje</p>
+      </div>
+    </div>
+  </body>
+</html>

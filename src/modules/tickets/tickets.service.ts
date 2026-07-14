@@ -344,6 +344,7 @@ export class TicketsService {
               officeDestination: true,
             },
             bus: { busType: true },
+            company: true,
           },
           travelSeats: true,
           buyer: true,
@@ -361,17 +362,33 @@ export class TicketsService {
 
       const mailDto = {
         to: buyer.email,
+        ticketId: ticket.id,
         ticketNumber: `TK-${ticket.id.toString().padStart(6, '0')}`,
-        ticketDate: new Date(ticket.createdAt).toLocaleDateString('es-BO'),
+        ticketDate: this.formatIssueDate(ticket.createdAt),
         totalPrice: Number(ticket.total_price),
 
-        customerName: buyer.name || 'Cliente',
+        customerName: ticket.billing?.nombre || buyer.name || 'Cliente',
         customerEmail: buyer.email,
         customerPhone: buyer.phone || 'No registrado',
+        customerCi: ticket.billing?.ci || buyer.ci || 'No registrado',
+
+        companyName: travel.company?.name || 'Empresa',
+        lane: travel.lane?.toString() || 'No asignado',
+        saleType:
+          ticket.type === TicketType.IN_APP ? 'Aplicación' : 'Presencial',
+        paymentMethod:
+          ticket.payment_type === PaymentType.QR ? 'QR' : 'Efectivo',
 
         origin: route.officeOrigin?.name,
         destination: route.officeDestination?.name,
         departureDate: this.formatDateTime(travel.departure_time),
+        departureDay: new Date(travel.departure_time).toLocaleDateString(
+          'es-BO',
+        ),
+        departureTime: new Date(travel.departure_time).toLocaleTimeString(
+          'es-BO',
+          { hour: '2-digit', minute: '2-digit' },
+        ),
         arrivalDate: this.formatDateTime(travel.arrival_time),
         duration: this.calculateDuration(
           travel.departure_time,
@@ -384,6 +401,7 @@ export class TicketsService {
           ci: seat.passenger?.ci || 'No registrado',
           seat: seat.seatNumber,
           deck: seat.deck?.toString() || '1',
+          price: Number(seat.price),
         })),
       };
 
@@ -705,6 +723,22 @@ export class TicketsService {
       month: '2-digit',
       year: 'numeric',
     });
+  }
+
+  private formatIssueDate(date: Date): string {
+    if (!date) return 'No especificada';
+    const d = new Date(date);
+    const datePart = d.toLocaleDateString('es-BO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    const timePart = d.toLocaleTimeString('es-BO', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    return `${datePart} ${timePart}`;
   }
 
   private calculateDuration(departure: Date, arrival: Date): string {

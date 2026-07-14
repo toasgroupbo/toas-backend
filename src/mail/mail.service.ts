@@ -44,6 +44,31 @@ export class MailService {
     //! 3. Generar PDF
     const pdfBuffer = await this.pdfService.generatePdf(ticketHtml);
 
+    //! 4. DATA para el recibo de compra
+    const receiptData = {
+      COMPANY_NAME: dto.companyName,
+      TICKET_ID: dto.ticketId,
+      ORIGIN: dto.origin,
+      DESTINATION: dto.destination,
+      DEPARTURE_DATE: dto.departureDay,
+      DEPARTURE_TIME: dto.departureTime,
+      LANE: dto.lane,
+      CUSTOMER_NAME: dto.customerName,
+      CUSTOMER_CI: dto.customerCi,
+      TOTAL_PRICE: dto.totalPrice,
+      SALE_TYPE: dto.saleType,
+      PAYMENT_METHOD: dto.paymentMethod,
+      ISSUE_DATE: dto.ticketDate,
+    };
+
+    //! 5. Generar HTML y PDF del recibo
+    const receiptHtml = this.templateService.populateTemplate(
+      'receipt-ticket-pdf',
+      receiptData,
+      dto.passengers,
+    );
+    const receiptPdfBuffer = await this.pdfService.generatePdf(receiptHtml);
+
     const passengerNames = dto.passengers?.map((p) => p.name).join(', ');
     const context = {
       ...dto,
@@ -57,11 +82,16 @@ export class MailService {
       template: 'paid-order-test',
       context,
 
-      //! se agrega el PDF como adjunto
+      //! se agregan los PDF como adjuntos
       attachments: [
         {
           filename: `ticket-${dto.ticketNumber}.pdf`,
           content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+        {
+          filename: `recibo-${dto.ticketNumber}.pdf`,
+          content: receiptPdfBuffer,
           contentType: 'application/pdf',
         },
       ],
