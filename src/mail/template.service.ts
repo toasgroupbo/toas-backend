@@ -46,7 +46,7 @@ export class TemplateService {
               ID_DNI: p.idDni,
               SEAT: p.seat,
               DECK: p.deck,
-              PRICE: p.price,
+              PRICE: typeof p.price === 'number' ? p.price.toFixed(2) : p.price,
             }[key] ?? ''
           );
         }),

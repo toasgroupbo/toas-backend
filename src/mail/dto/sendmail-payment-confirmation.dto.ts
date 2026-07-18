@@ -24,6 +24,7 @@ export class SendMailPaymentConfirmationDto {
   arrivalDate: string;
   duration: string;
   terminalAddress: string;
+  terminalDestinationAddress: string;
 
   passengers: PassengerDto[];
 }

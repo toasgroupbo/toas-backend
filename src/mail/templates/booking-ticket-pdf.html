@@ -160,20 +160,6 @@
         overflow-wrap: break-word;
         margin: 0;
       }
-      .cell-value-sm {
-        font-size: 14px;
-        font-weight: 800;
-        color: #0d1e33;
-        line-height: 1.2;
-        margin: 0;
-      }
-      .cell-value-meta {
-        font-size: 13px;
-        font-weight: 600;
-        color: #2c4a6e;
-        line-height: 1.35;
-        margin: 0;
-      }
 
       /* ── Seat badge ── */
       .seat-badge {
@@ -216,6 +202,33 @@
       .icon-cell-wrap .text-td {
         display: table-cell;
         vertical-align: middle;
+      }
+
+      /* ── Full-width stacked rows (Operador / Terminales) ── */
+      .stack-row {
+        padding: 13px 16px;
+        border-bottom: 1px solid #e8edf4;
+      }
+      .stack-row:last-child {
+        border-bottom: none;
+      }
+      .cell-value-accent {
+        font-size: 15px;
+        font-weight: 800;
+        font-style: italic;
+        color: #c0392b;
+        margin: 0;
+      }
+      .cell-value-blue {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1064c8;
+        line-height: 1.2;
+        margin: 0;
+      }
+      .cell-label-accent {
+        font-style: italic;
+        color: #c0392b;
       }
 
       /* ── Info box ── */
@@ -292,97 +305,75 @@
       <div class="section">
         <p class="sec-title">Detalles del Viaje</p>
         <div class="section-box">
-          <!-- Row 1: Origin / Destination / Departure / Arrival / Duration -->
+          <!-- Row 1: Origin / Destination / Departure / Arrival / Duration / Bus Class -->
           <div class="grid-row">
-            <div class="grid-cell" style="width: 22%">
+            <div class="grid-cell" style="width: 19%">
               <p class="cell-label">Origen</p>
               <p class="cell-value">{{ORIGIN}}</p>
             </div>
-            <div class="grid-cell" style="width: 22%">
+            <div class="grid-cell" style="width: 19%">
               <p class="cell-label">Destino</p>
               <p class="cell-value">{{DESTINATION}}</p>
             </div>
-            <div class="grid-cell" style="width: 16%">
+            <div class="grid-cell" style="width: 14%">
               <p class="cell-label">Salida</p>
               <p class="cell-value">{{DEPARTURE_TIME}}</p>
             </div>
-            <div class="grid-cell" style="width: 16%">
+            <div class="grid-cell" style="width: 14%">
               <p class="cell-label">Llegada</p>
               <p class="cell-value">{{ARRIVAL_TIME}}</p>
             </div>
-            <div class="grid-cell" style="width: 24%">
+            <div class="grid-cell" style="width: 16%">
               <p class="cell-label">Duración</p>
               <p class="cell-value">{{DURATION}}</p>
             </div>
-          </div>
-
-          <!-- ╔══════════════════════════════════════════════════════════════╗
-               ║  LOOP START — repeat this .grid-row block for each passenger  ║
-               ║  in the booking (passengers array).                            ║
-               ║  Placeholders per iteration:                                   ║
-               ║    {{PASSENGER_NAME}}  — full name                             ║
-               ║    {{ID_DNI}}          — identity document number              ║
-               ║    {{SEAT}}            — seat number/code                      ║
-               ║    {{DECK}}            — deck/floor number                     ║
-               ╚══════════════════════════════════════════════════════════════╝ -->
-          <!-- Row 2: Passenger / ID / Seat / Deck -->
-          <div class="grid-row">
-            <div class="grid-cell" style="width: 36%">
-              <p class="cell-label">Nombre del Pasajero</p>
-              <p class="cell-value-sm">{{PASSENGER_NAME}}</p>
-            </div>
-            <div class="grid-cell" style="width: 28%">
-              <p class="cell-label">Documento de identidad</p>
-              <p class="cell-value-sm">{{ID_DNI}}</p>
-            </div>
             <div class="grid-cell" style="width: 18%">
-              <p class="cell-label">Asiento</p>
-              <p class="cell-value-sm">{{SEAT}}</p>
-            </div>
-            <div class="grid-cell" style="width: 18%">
-              <p class="cell-label">Piso</p>
-              <p class="cell-value-sm">{{DECK}}</p>
-            </div>
-          </div>
-          <!-- LOOP END —— /passengers -->
-
-          <!-- Row 3: Operator / Terminal / Bus Class -->
-          <div class="grid-row">
-            <div class="grid-cell" style="width: 30%">
-              <p class="cell-label">Operador</p>
-              <div class="icon-cell-wrap">
-                <div class="icon-td">
-                  <!-- Truck/bus small SVG -->
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#1453a2"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <rect x="1" y="6" width="17" height="11" rx="2" />
-                    <path d="M18 9h3l2 3v3h-5V9z" />
-                    <circle cx="5.5" cy="18.5" r="1.5" />
-                    <circle cx="18.5" cy="18.5" r="1.5" />
-                  </svg>
-                </div>
-                <div class="text-td">
-                  <p class="cell-value-meta">{{OPERATOR}}</p>
-                </div>
-              </div>
-            </div>
-            <div class="grid-cell" style="width: 44%">
-              <p class="cell-label">Terminal de Embarque</p>
-              <p class="cell-value-meta">{{TERMINAL_ADDRESS}}</p>
-            </div>
-            <div class="grid-cell" style="width: 26%">
               <p class="cell-label">Clase de Bus</p>
               <p class="bus-class-value">{{BUS_CLASS}}</p>
             </div>
+          </div>
+
+          <!-- Row 3: Operator -->
+          <div class="stack-row">
+            <p class="cell-label">Operador</p>
+            <div class="icon-cell-wrap">
+              <div class="icon-td">
+                <!-- Truck/bus small SVG -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#c0392b"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="1" y="6" width="17" height="11" rx="2" />
+                  <path d="M18 9h3l2 3v3h-5V9z" />
+                  <circle cx="5.5" cy="18.5" r="1.5" />
+                  <circle cx="18.5" cy="18.5" r="1.5" />
+                </svg>
+              </div>
+              <div class="text-td">
+                <p class="cell-value-accent">{{OPERATOR}}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 4: Terminal de Embarque -->
+          <div class="stack-row">
+            <p class="cell-label">Terminal de Embarque</p>
+            <p class="cell-value-blue">{{TERMINAL_ADDRESS}}</p>
+          </div>
+
+          <!-- Row 5: Terminal de Destino -->
+          <div class="stack-row">
+            <p class="cell-label">
+              Terminal de <span class="cell-label-accent">Destino</span>
+            </p>
+            <p class="cell-value-blue">{{DESTINATION_TERMINAL_ADDRESS}}</p>
           </div>
         </div>
       </div>
@@ -411,24 +402,25 @@
             </div>
             <span class="info-title">Información Importante</span>
           </div>
+          <p style="margin: 0 0 8px; color: #2c4468; font-size: 11.5px; line-height: 1.7">
+            El pasajero debe presentarse en el mostrador al menos
+            <strong>30 minutos</strong> antes de la hora de salida programada.
+          </p>
           <ul>
             <li>
-              El pasajero debe presentarse en el mostrador al menos
-              <strong>30 minutos</strong> antes de la hora de salida programada.
-            </li>
-            <li>
-              Se requiere una
+              Se requiere de
               <span class="hl">Cédula de Identidad (CI/DNI)</span> o Documento
-              de identidad válido para abordar. No se aceptan copias digitales.
+              de identidad válido para abordar.
             </li>
             <li>
               El boleto es <span class="hl">intransferible</span> y válido
               únicamente para la fecha y hora indicadas en este documento.
             </li>
             <li>
-              Franquicia de equipaje: {{BAGGAGE_ALLOWANCE}}. El exceso de peso
-              puede generar cargos adicionales.
+              Puede solicitar impresión de ticket y/o factura de ticket en
+              oficina. (La factura está sujeto a la empresa de transporte).
             </li>
+            <li>La factura de comisión de APP esta en proceso de habilitación.</li>
           </ul>
         </div>
       </div>

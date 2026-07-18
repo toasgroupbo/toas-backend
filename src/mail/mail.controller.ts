@@ -31,6 +31,7 @@ export class MailsController {
       arrivalDate: '16:00',
       duration: '6h',
       terminalAddress: 'Terminal Cochabamba',
+      terminalDestinationAddress: 'Terminal Santa Cruz',
 
       passengers: [
         {

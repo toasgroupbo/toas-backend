@@ -384,10 +384,21 @@ export class TicketsService {
         departureDate: this.formatDateTime(travel.departure_time),
         departureDay: new Date(travel.departure_time).toLocaleDateString(
           'es-BO',
+          {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            timeZone: 'America/La_Paz',
+          },
         ),
         departureTime: new Date(travel.departure_time).toLocaleTimeString(
           'es-BO',
-          { hour: '2-digit', minute: '2-digit' },
+          {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'America/La_Paz',
+          },
         ),
         arrivalDate: this.formatDateTime(travel.arrival_time),
         duration: this.calculateDuration(
@@ -395,6 +406,8 @@ export class TicketsService {
           travel.arrival_time,
         ),
         terminalAddress: route.officeOrigin?.address || 'Terminal Central',
+        terminalDestinationAddress:
+          route.officeDestination?.address || 'Terminal Central',
 
         passengers: ticket.travelSeats.map((seat) => ({
           name: seat.passenger?.name || 'pasajero',
@@ -722,6 +735,8 @@ export class TicketsService {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
+      hour12: false,
+      timeZone: 'America/La_Paz',
     });
   }
 
@@ -732,11 +747,13 @@ export class TicketsService {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
+      timeZone: 'America/La_Paz',
     });
     const timePart = d.toLocaleTimeString('es-BO', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
+      timeZone: 'America/La_Paz',
     });
     return `${datePart} ${timePart}`;
   }
