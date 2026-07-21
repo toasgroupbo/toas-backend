@@ -8,6 +8,7 @@ import { paginateAdvanced } from 'src/common/pagination/paginate-advanced';
 import { CommissionPaginationDto } from './pagination/commission.pagination';
 
 import { TravelStatus } from '../travels/enums';
+import { TicketType, TicketStatus } from '../tickets/enums';
 
 import { Commission } from './entities/commission.entity';
 import { Travel } from '../travels/entities/travel.entity';
@@ -34,14 +35,31 @@ export class CommissionsService {
       .andWhere('travel.deletedAt IS NULL')
       .andWhere('commission.id IS NULL')
       .leftJoinAndSelect('travel.company', 'company')
+      .leftJoinAndSelect('travel.tickets', 'tickets')
       .getMany();
 
     for (const travel of closedTravels) {
       try {
         const company = travel.company;
         const commissionCompanyAtTime = Number(company.commission_company);
-        const ticketsAppCount = travel.tickets_app_count;
-        const commissionAppTotal = Number(travel.total_commission);
+
+        // Tickets IN_APP cancelados: el cobro por QR/wallet ya ingresó a la
+        // cuenta de la empresa antes de la cancelación, así que también
+        // generan comisión (solo para este cálculo, no afecta al Travel).
+        const cancelledAppTickets = (travel.tickets ?? []).filter(
+          (ticket) =>
+            ticket.type === TicketType.IN_APP &&
+            ticket.status === TicketStatus.CANCELLED,
+        );
+        const cancelledAppCount = cancelledAppTickets.length;
+        const cancelledAppCommission = cancelledAppTickets.reduce(
+          (sum, ticket) => sum + Number(ticket.commission),
+          0,
+        );
+
+        const ticketsAppCount = travel.tickets_app_count + cancelledAppCount;
+        const commissionAppTotal =
+          Number(travel.total_commission) + cancelledAppCommission;
         const commissionCompanyTotal = (
           commissionCompanyAtTime * ticketsAppCount
         ).toFixed(2);
