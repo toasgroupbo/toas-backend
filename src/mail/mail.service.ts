@@ -29,7 +29,7 @@ export class MailService {
       DURATION: dto.duration,
       TERMINAL_ADDRESS: dto.terminalAddress,
       DESTINATION_TERMINAL_ADDRESS: dto.terminalDestinationAddress,
-      OPERATOR: 'Bus Express',
+      OPERATOR: dto.companyName,
       BUS_CLASS: 'Normal',
       BAGGAGE_ALLOWANCE: '20kg',
       YEAR: new Date().getFullYear(),

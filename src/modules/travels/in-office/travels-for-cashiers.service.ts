@@ -192,6 +192,7 @@ export class TravelsForCashierService {
         cash: parseFloat(totals.cash.toFixed(2)),
         qr: parseFloat(totals.qr.toFixed(2)),
         app: parseFloat(totals.app.toFixed(2)),
+        total: parseFloat((totals.cash + totals.qr + totals.app).toFixed(2)),
       },
     };
   }
@@ -376,6 +377,7 @@ export class TravelsForCashierService {
         cash: parseFloat(totals.cash.toFixed(2)),
         qr: parseFloat(totals.qr.toFixed(2)),
         app: parseFloat(totals.app.toFixed(2)),
+        total: parseFloat((totals.cash + totals.qr + totals.app).toFixed(2)),
       },
     };
   }
