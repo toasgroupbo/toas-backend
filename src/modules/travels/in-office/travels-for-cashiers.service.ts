@@ -150,10 +150,13 @@ export class TravelsForCashierService {
         cash_amount: amounts.cash_amount,
         qr_amount: amounts.qr_amount,
         app_amount: amounts.app_amount,
+
         totalBusSeats: global.totalSeats,
         seatsApp: global.seatsApp,
+
         seatsQr: cashierStats.seatsQr,
         seatsCash: cashierStats.seatsCash,
+
         seatsAvailable: global.seatsAvailable,
         totalSoldSeats: global.seatsApp + global.seatsQr + global.seatsCash,
       };
@@ -688,14 +691,6 @@ export class TravelsForCashierService {
         app_amount: 0,
       };
 
-      const globalAmounts = (
-        await this.getRealtimeAmountsByTravels([travel.id])
-      ).get(travel.id) ?? {
-        cash_amount: 0,
-        qr_amount: 0,
-        app_amount: 0,
-      };
-
       return {
         ...travel,
         cash_amount: amounts.cash_amount,
@@ -708,14 +703,14 @@ export class TravelsForCashierService {
         seatsAvailable: global.seatsAvailable,
         totalSoldSeats: global.seatsApp + global.seatsQr + global.seatsCash,
         amounts: {
-          cash: parseFloat(globalAmounts.cash_amount.toFixed(2)),
-          qr: parseFloat(globalAmounts.qr_amount.toFixed(2)),
-          app: parseFloat(globalAmounts.app_amount.toFixed(2)),
+          cash: parseFloat(amounts.cash_amount.toFixed(2)),
+          qr: parseFloat(amounts.qr_amount.toFixed(2)),
+          app: parseFloat(amounts.app_amount.toFixed(2)),
           total: parseFloat(
             (
-              globalAmounts.cash_amount +
-              globalAmounts.qr_amount +
-              globalAmounts.app_amount
+              amounts.cash_amount +
+              amounts.qr_amount +
+              amounts.app_amount
             ).toFixed(2),
           ),
         },
