@@ -691,6 +691,60 @@ export class TravelsForCashierService {
         app_amount: 0,
       };
 
+      const soldTickets = await manager.find(Ticket, {
+        where: {
+          travel: { id: travel.id },
+          status: TicketStatus.SOLD,
+          type: TicketType.IN_OFFICE,
+        },
+        relations: { soldBy: true },
+      });
+
+      const cashierMap = new Map<
+        number,
+        { cashier: User; cashTotal: number; qrTotal: number }
+      >();
+
+      for (const ticket of soldTickets) {
+        if (!ticket.soldBy) continue;
+
+        const cashierId = ticket.soldBy.id;
+        if (!cashierMap.has(cashierId)) {
+          cashierMap.set(cashierId, {
+            cashier: ticket.soldBy,
+            cashTotal: 0,
+            qrTotal: 0,
+          });
+        }
+
+        const entry = cashierMap.get(cashierId)!;
+
+        if (ticket.payment_type === PaymentType.CASH) {
+          entry.cashTotal += Number(ticket.total_price);
+        } else if (ticket.payment_type === PaymentType.QR) {
+          entry.qrTotal += Number(ticket.qr_amount);
+        }
+      }
+
+      const cashiers = Array.from(cashierMap.values()).map((entry) => ({
+        ...entry.cashier,
+        cashTotal: entry.cashTotal.toFixed(2),
+        qrTotal: entry.qrTotal.toFixed(2),
+      }));
+
+      const currentCashierEntry = cashierMap.get(cashier.id);
+      const currentCashier = currentCashierEntry
+        ? {
+            cashier: currentCashierEntry.cashier,
+            cashTotal: currentCashierEntry.cashTotal.toFixed(2),
+            qrTotal: currentCashierEntry.qrTotal.toFixed(2),
+          }
+        : {
+            cashier,
+            cashTotal: '0.00',
+            qrTotal: '0.00',
+          };
+
       return {
         ...travel,
         cash_amount: amounts.cash_amount,
@@ -714,6 +768,8 @@ export class TravelsForCashierService {
             ).toFixed(2),
           ),
         },
+        cashiers,
+        currentCashier,
       };
     });
   }
