@@ -114,6 +114,21 @@ export class TicketsForCashiersController {
   }
 
   //? ============================================================================================== */
+  //?                                        FindOne                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.READ)
+  //!
+  @Get('ticket/:id')
+  findOne(
+    @Param('id', ParseIntPipe) ticketId: number,
+    @GetUser() cashier: User,
+  ) {
+    return this.ticketsForCashierService.findOne(ticketId, cashier);
+  }
+
+  //? ============================================================================================== */
   //?                                Assign_Passenger                                                */
   //? ============================================================================================== */
 

@@ -313,51 +313,39 @@ export class TicketsForCashierService {
     });
   }
 
-  /* 
-    async findAll(
-    travelId: number,
-    cashier: User,
-    filters: TicketForCashierFilterDto,
-  ) {
-    return await this.dataSource.transaction(async (manager) => {
-      await this.ticketExpirationService.expireTravelIfNeeded(
-        travelId,
-        manager,
-      );
+  //? ============================================================================================== */
+  //?                                        FindOne                                                 */
+  //? ============================================================================================== */
 
-      const { status } = filters;
-
-      const where: any = {};
-
-      //! status
-      if (status) where.status = status;
-
-      const tickets = await manager.find(Ticket, {
-        order: { id: 'DESC' },
-        where: {
-          ...where,
-          travel: { id: travelId },
-        },
-        relations: {
-          travel: {
-            company: true,
-            route: {
-              officeOrigin: { place: true },
-              officeDestination: { place: true },
-            },
+  async findOne(ticketId: number, cashier: User) {
+    const ticket = await this.dataSource.manager.findOne(Ticket, {
+      where: {
+        id: ticketId,
+        travel: { company: { id: cashier.office?.company.id } },
+      },
+      relations: {
+        travel: {
+          company: true,
+          route: {
+            officeOrigin: { place: true },
+            officeDestination: { place: true },
           },
-          billing: true,
-          travelSeats: true,
-          buyer: true,
-          canceledBy: true,
-          soldBy: true,
         },
-      });
-
-      return tickets;
+        billing: true,
+        travelSeats: true,
+        buyer: true,
+        canceledBy: true,
+        soldBy: true,
+      },
     });
+
+    if (!ticket) {
+      throw new NotFoundException(`Ticket with ID ${ticketId} not found`);
+    }
+
+    return ticket;
   }
-  */
+
   //? ============================================================================================== */
   //?                               Assign_Passenger                                                 */
   //? ============================================================================================== */
@@ -519,5 +507,4 @@ export class TicketsForCashierService {
       TicketStatus.PENDING_PAYMENT,
     ].includes(ticket.status);
   }
-
 }
