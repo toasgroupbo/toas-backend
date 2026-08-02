@@ -641,7 +641,7 @@ export class TravelsForCashierService {
   //?                                        FindOne                                                 */
   //? ============================================================================================== */
 
-  async findOne(travelId: number, office: Office) {
+  async findOne(travelId: number, office: Office, cashier: User) {
     return await this.dataSource.transaction(async (manager) => {
       await this.ticketExpirationService.expireTravelIfNeeded(
         travelId,
@@ -663,7 +663,43 @@ export class TravelsForCashierService {
 
       if (!travel) throw new NotFoundException('Travel not found');
 
-      return travel;
+      const global = (await this.getSeatsStatsByTravels([travel.id])).get(
+        travel.id,
+      ) || {
+        totalSeats: 0,
+        seatsApp: 0,
+        seatsQr: 0,
+        seatsCash: 0,
+        seatsAvailable: 0,
+      };
+
+      const cashierStats = (
+        await this.getCashierSeatsStats([travel.id], cashier.id)
+      ).get(travel.id) || {
+        seatsQr: 0,
+        seatsCash: 0,
+      };
+
+      const amounts = (
+        await this.getCashierRealtimeAmounts([travel.id], cashier.id)
+      ).get(travel.id) ?? {
+        cash_amount: 0,
+        qr_amount: 0,
+        app_amount: 0,
+      };
+
+      return {
+        ...travel,
+        cash_amount: amounts.cash_amount,
+        qr_amount: amounts.qr_amount,
+        app_amount: amounts.app_amount,
+        totalBusSeats: global.totalSeats,
+        seatsApp: global.seatsApp,
+        seatsQr: cashierStats.seatsQr,
+        seatsCash: cashierStats.seatsCash,
+        seatsAvailable: global.seatsAvailable,
+        totalSoldSeats: global.seatsApp + global.seatsQr + global.seatsCash,
+      };
     });
   }
 

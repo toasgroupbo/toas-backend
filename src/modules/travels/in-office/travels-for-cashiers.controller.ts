@@ -162,8 +162,12 @@ export class TravelsForCashiersController {
   @Auth(ValidPermissions.READ)
   //!
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @GetOffice() office: Office) {
-    return this.travelsForCashierService.findOne(id, office); //! Get Office
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @GetOffice() office: Office,
+    @GetUser() cashier: User,
+  ) {
+    return this.travelsForCashierService.findOne(id, office, cashier); //! Get Office
   }
 
   //? ============================================================================================== */
