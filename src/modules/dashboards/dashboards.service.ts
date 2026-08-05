@@ -5,6 +5,8 @@ import { TravelStatus } from '../travels/enums';
 import { TicketType } from '../tickets/enums/ticket-type.enum';
 import { TicketStatus } from '../tickets/enums/ticket-status.enum';
 
+import { DashboardTravelsFilter } from './dto/get-dashboard-travels.dto';
+
 import { Bus } from '../buses/entities/bus.entity';
 import { User } from '../users/entities/user.entity';
 import { Route } from '../routes/entities/route.entity';
@@ -95,7 +97,7 @@ export class DashboardsService {
   //?                            Dashboard: General                                                  */
   //? ============================================================================================== */
 
-  async getGeneralDashboard() {
+  async getGeneralDashboard(travelsFilter?: DashboardTravelsFilter) {
     const companyRepo = this.dataSource.getRepository(Company);
     const ownerRepo = this.dataSource.getRepository(Owner);
     const busRepo = this.dataSource.getRepository(Bus);
@@ -105,6 +107,7 @@ export class DashboardsService {
     const travelRepo = this.dataSource.getRepository(Travel);
 
     const { start, end } = this.getTodayRange();
+    const isClosedFilter = travelsFilter === DashboardTravelsFilter.CLOSED;
 
     // =========================================================
     // SUMMARY
@@ -217,7 +220,7 @@ export class DashboardsService {
         })
         .getCount(),
 
-      // PRÓXIMAS SALIDAS
+      // LISTADO DE VIAJES (activos: últimos creados / cerrados: últimos cerrados)
       travelRepo
         .createQueryBuilder('travel')
         .leftJoinAndSelect('travel.company', 'company')
@@ -228,10 +231,10 @@ export class DashboardsService {
         .leftJoinAndSelect('origin.place', 'originPlace')
         .leftJoinAndSelect('destination.place', 'destinationPlace')
         .where('travel.enabled = true')
-        .andWhere('travel.travel_status IN (:...statuses)', {
-          statuses: [TravelStatus.ACTIVE, TravelStatus.CLOSED],
+        .andWhere('travel.travel_status = :status', {
+          status: isClosedFilter ? TravelStatus.CLOSED : TravelStatus.ACTIVE,
         })
-        .orderBy('travel.departure_time', 'ASC')
+        .orderBy(isClosedFilter ? 'travel.closedAt' : 'travel.id', 'DESC')
         .take(20)
         .getMany(),
     ]);
@@ -289,7 +292,10 @@ export class DashboardsService {
   //?                            Dashboard: Company                                                  */
   //? ============================================================================================== */
 
-  async getCompanyDashboard(companyId: number) {
+  async getCompanyDashboard(
+    companyId: number,
+    travelsFilter?: DashboardTravelsFilter,
+  ) {
     const companyRepo = this.dataSource.getRepository(Company);
     const busRepo = this.dataSource.getRepository(Bus);
     const officeRepo = this.dataSource.getRepository(Office);
@@ -314,6 +320,7 @@ export class DashboardsService {
     }
 
     const { start, end } = this.getTodayRange();
+    const isClosedFilter = travelsFilter === DashboardTravelsFilter.CLOSED;
 
     // =========================================================
     // CONTADORES
@@ -458,7 +465,7 @@ export class DashboardsService {
         })
         .getCount(),
 
-      // PRÓXIMOS VIAJES
+      // LISTADO DE VIAJES (activos: últimos creados / cerrados: últimos cerrados)
       travelRepo
         .createQueryBuilder('travel')
         .leftJoinAndSelect('travel.company', 'company')
@@ -473,10 +480,10 @@ export class DashboardsService {
         .andWhere('travel.companyId = :companyId', {
           companyId,
         })
-        .andWhere('travel.travel_status IN (:...statuses)', {
-          statuses: [TravelStatus.ACTIVE, TravelStatus.CLOSED],
+        .andWhere('travel.travel_status = :status', {
+          status: isClosedFilter ? TravelStatus.CLOSED : TravelStatus.ACTIVE,
         })
-        .orderBy('travel.departure_time', 'ASC')
+        .orderBy(isClosedFilter ? 'travel.closedAt' : 'travel.id', 'DESC')
         .take(20)
         .getMany(),
     ]);
