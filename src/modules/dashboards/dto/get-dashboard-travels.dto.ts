@@ -1,4 +1,5 @@
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum DashboardTravelsFilter {
@@ -11,4 +12,10 @@ export class GetDashboardTravelsDto {
   @IsOptional()
   @IsEnum(DashboardTravelsFilter)
   status?: DashboardTravelsFilter;
+
+  @ApiPropertyOptional({ type: Number })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  companyId?: number;
 }
