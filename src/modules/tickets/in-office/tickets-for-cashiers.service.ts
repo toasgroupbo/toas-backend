@@ -224,92 +224,19 @@ export class TicketsForCashierService {
         },
       });
 
-      let appAmount = '0.00';
-
       const travelRef = tickets.length > 0 ? tickets[0].travel : null;
-      if (travelRef && travelRef.travel_status !== TravelStatus.CLOSED) {
-        const result = await manager
-          .createQueryBuilder(Ticket, 't')
-          .select(
-            'COALESCE(SUM(t.qr_amount + t.wallet_amount - t.commission), 0)',
-            'total',
-          )
-          .innerJoin('t.travel', 'travel')
-          .where('travel.id = :travelId', { travelId })
-          .andWhere('t.status = :ticketStatus', {
-            ticketStatus: TicketStatus.SOLD,
-          })
-          .andWhere('t.type = :type', { type: TicketType.IN_APP })
-          .getRawOne<{ total: string }>();
-
-        appAmount = Number(result?.total ?? 0).toFixed(2);
-        for (const ticket of tickets) {
-          ticket.travel.app_amount = appAmount;
-        }
-      }
-
-      const cashierMap = new Map<
-        number,
-        { cashier: User; cashTotal: number; qrTotal: number }
-      >();
-
-      let totalCash = 0;
-      let totalQr = 0;
-
+      const appAmount = await this.getAppAmount(manager, travelId, travelRef);
       for (const ticket of tickets) {
-        if (ticket.status !== TicketStatus.SOLD) continue;
-        if (!ticket.soldBy) continue;
-
-        const cashierId = ticket.soldBy.id;
-        if (!cashierMap.has(cashierId)) {
-          cashierMap.set(cashierId, {
-            cashier: ticket.soldBy,
-            cashTotal: 0,
-            qrTotal: 0,
-          });
-        }
-
-        const entry = cashierMap.get(cashierId)!;
-
-        if (ticket.payment_type === PaymentType.CASH) {
-          const amount = Number(ticket.total_price);
-          entry.cashTotal += amount;
-          totalCash += amount;
-        } else if (ticket.payment_type === PaymentType.QR) {
-          const amount = Number(ticket.qr_amount);
-          entry.qrTotal += amount;
-          totalQr += amount;
-        }
+        ticket.travel.app_amount = appAmount;
       }
 
-      const cashiers = Array.from(cashierMap.values()).map((entry) => ({
-        ...entry.cashier,
-        cashTotal: entry.cashTotal.toFixed(2),
-        qrTotal: entry.qrTotal.toFixed(2),
-      }));
-
-      const currentCashierEntry = cashierMap.get(cashier.id);
-      const currentCashier = currentCashierEntry
-        ? {
-            cashier: currentCashierEntry.cashier,
-            cashTotal: currentCashierEntry.cashTotal.toFixed(2),
-            qrTotal: currentCashierEntry.qrTotal.toFixed(2),
-          }
-        : {
-            cashier,
-            cashTotal: '0.00',
-            qrTotal: '0.00',
-          };
-
-      return {
+      const { cashiers, currentCashier, totals } = this.buildCashierSummary(
         tickets,
-        cashiers,
-        currentCashier,
-        totals: {
-          totalCash: totalCash.toFixed(2),
-          totalQr: (totalQr + Number(appAmount)).toFixed(2),
-        },
-      };
+        cashier,
+        appAmount,
+      );
+
+      return { tickets, cashiers, currentCashier, totals };
     });
   }
 
@@ -318,32 +245,145 @@ export class TicketsForCashierService {
   //? ============================================================================================== */
 
   async findOne(ticketId: number, cashier: User) {
-    const ticket = await this.dataSource.manager.findOne(Ticket, {
-      where: {
-        id: ticketId,
-        travel: { company: { id: cashier.office?.company.id } },
-      },
-      relations: {
-        travel: {
-          company: true,
-          route: {
-            officeOrigin: { place: true },
-            officeDestination: { place: true },
-          },
+    return await this.dataSource.transaction(async (manager) => {
+      const ticket = await manager.findOne(Ticket, {
+        where: {
+          id: ticketId,
+          travel: { company: { id: cashier.office?.company.id } },
         },
-        billing: true,
-        travelSeats: true,
-        buyer: true,
-        canceledBy: true,
-        soldBy: true,
-      },
-    });
+        relations: {
+          travel: {
+            company: true,
+            route: {
+              officeOrigin: { place: true },
+              officeDestination: { place: true },
+            },
+          },
+          billing: true,
+          travelSeats: true,
+          buyer: true,
+          canceledBy: true,
+          soldBy: true,
+        },
+      });
 
-    if (!ticket) {
-      throw new NotFoundException(`Ticket with ID ${ticketId} not found`);
+      if (!ticket) {
+        throw new NotFoundException(`Ticket with ID ${ticketId} not found`);
+      }
+
+      const appAmount = await this.getAppAmount(
+        manager,
+        ticket.travel.id,
+        ticket.travel,
+      );
+      ticket.travel.app_amount = appAmount;
+
+      const { cashiers, currentCashier, totals } = this.buildCashierSummary(
+        [ticket],
+        cashier,
+        appAmount,
+      );
+
+      return { ticket, cashiers, currentCashier, totals };
+    });
+  }
+
+  //? ============================================================================================== */
+
+  private async getAppAmount(
+    manager: EntityManager,
+    travelId: number,
+    travel: Travel | null,
+  ): Promise<string> {
+    if (!travel || travel.travel_status === TravelStatus.CLOSED) {
+      return '0.00';
     }
 
-    return ticket;
+    const result = await manager
+      .createQueryBuilder(Ticket, 't')
+      .select(
+        'COALESCE(SUM(t.qr_amount + t.wallet_amount - t.commission), 0)',
+        'total',
+      )
+      .innerJoin('t.travel', 'travel')
+      .where('travel.id = :travelId', { travelId })
+      .andWhere('t.status = :ticketStatus', {
+        ticketStatus: TicketStatus.SOLD,
+      })
+      .andWhere('t.type = :type', { type: TicketType.IN_APP })
+      .getRawOne<{ total: string }>();
+
+    return Number(result?.total ?? 0).toFixed(2);
+  }
+
+  //? ============================================================================================== */
+
+  private buildCashierSummary(
+    tickets: Ticket[],
+    cashier: User,
+    appAmount: string,
+  ) {
+    const cashierMap = new Map<
+      number,
+      { cashier: User; cashTotal: number; qrTotal: number }
+    >();
+
+    let totalCash = 0;
+    let totalQr = 0;
+
+    for (const ticket of tickets) {
+      if (ticket.status !== TicketStatus.SOLD) continue;
+      if (!ticket.soldBy) continue;
+
+      const cashierId = ticket.soldBy.id;
+      if (!cashierMap.has(cashierId)) {
+        cashierMap.set(cashierId, {
+          cashier: ticket.soldBy,
+          cashTotal: 0,
+          qrTotal: 0,
+        });
+      }
+
+      const entry = cashierMap.get(cashierId)!;
+
+      if (ticket.payment_type === PaymentType.CASH) {
+        const amount = Number(ticket.total_price);
+        entry.cashTotal += amount;
+        totalCash += amount;
+      } else if (ticket.payment_type === PaymentType.QR) {
+        const amount = Number(ticket.qr_amount);
+        entry.qrTotal += amount;
+        totalQr += amount;
+      }
+    }
+
+    const cashiers = Array.from(cashierMap.values()).map((entry) => ({
+      ...entry.cashier,
+      cashTotal: entry.cashTotal.toFixed(2),
+      qrTotal: entry.qrTotal.toFixed(2),
+    }));
+
+    const currentCashierEntry = cashierMap.get(cashier.id);
+    const currentCashier = currentCashierEntry
+      ? {
+          cashier: currentCashierEntry.cashier,
+          cashTotal: currentCashierEntry.cashTotal.toFixed(2),
+          qrTotal: currentCashierEntry.qrTotal.toFixed(2),
+        }
+      : {
+          cashier,
+          cashTotal: '0.00',
+          qrTotal: '0.00',
+        };
+
+    return {
+      cashiers,
+      currentCashier,
+      totals: {
+        totalCash: totalCash.toFixed(2),
+        totalQr: (totalQr + Number(appAmount)).toFixed(2),
+      },
+    };
   }
 
   //? ============================================================================================== */
