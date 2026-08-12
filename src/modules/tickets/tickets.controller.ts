@@ -39,4 +39,20 @@ export class TicketsController {
   ) {
     return this.ticketsService.findAll(companyId, travelId, filters);
   }
+
+  //? ============================================================================================== */
+  //?                                        FindOne                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.READ)
+  @ApiBearerAuth('access-token')
+  //!
+  @Get('ticket/:id')
+  findOne(
+    @Param('id', ParseIntPipe) ticketId: number,
+    @GetCompany() companyId: number,
+  ) {
+    return this.ticketsService.findOne(companyId, ticketId);
+  }
 }
