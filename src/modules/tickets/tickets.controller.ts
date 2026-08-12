@@ -48,6 +48,7 @@ export class TicketsController {
   @Auth(ValidPermissions.READ)
   @ApiBearerAuth('access-token')
   //!
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
   @Get('ticket/:id')
   findOne(
     @Param('id', ParseIntPipe) ticketId: number,
