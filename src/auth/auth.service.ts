@@ -12,7 +12,12 @@ import * as bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 
 import { IJwtPayload } from './interfaces/jwt-payload.interface';
-import { AppleLoginDto, LoginCustomerDto, LoginUserDto } from './dto';
+import {
+  AppleLoginDto,
+  LoginCustomerDto,
+  LoginUserDto,
+  RegisterCustomerDto,
+} from './dto';
 
 import { envs } from 'src/config/environments/environments';
 
@@ -560,6 +565,52 @@ export class AuthService {
         type: LoginType.customer,
       }),
     }; */
+  }
+
+  //? ============================================================================================== */
+  //?                          Register_Customer_With_Password                                        */
+  //? ============================================================================================== */
+
+  //! endpoint temporal solo para pruebas de Android, luego se comenta
+  async registerCustomerWithPassword(dto: RegisterCustomerDto) {
+    const { email, password, name, ci } = dto;
+
+    const existingCustomer = await this.customerRepository.findOneBy({
+      email,
+    });
+    if (existingCustomer) {
+      throw new BadRequestException('Email already registered');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newCustomer = this.customerRepository.create({
+      email,
+      name,
+      ci,
+      password: hashedPassword,
+      provider: AuthProviders.GOOGLE, //! placeholder, cuenta creada solo con password para pruebas
+      idProvider: `test-${email}`,
+      is_verified: true,
+    });
+
+    const customer = await this.customerRepository.save(newCustomer);
+    const { password: _, ...entityWithoutPassword } = customer;
+
+    const token = this.generateJwt({
+      id: customer.id,
+      type: LoginType.customer,
+    });
+
+    await this.customerRepository.update(
+      { id: customer.id },
+      { sessionToken: token },
+    );
+
+    return {
+      customer: entityWithoutPassword,
+      token,
+    };
   }
 
   //? ============================================================================================== */

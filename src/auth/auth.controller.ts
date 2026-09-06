@@ -6,6 +6,7 @@ import {
   GoogleLoginDto,
   LoginCustomerDto,
   LoginUserDto,
+  RegisterCustomerDto,
 } from './dto';
 
 import { GoogleOauthGuard } from './guards';
@@ -63,6 +64,16 @@ export class AuthController {
   @Post('login/customer')
   loginCustomer(@Body() dto: LoginCustomerDto) {
     return this.authService.loginCustomer(dto);
+  }
+
+  //? ============================================================================================== */
+  //?                          Register_Customer (solo pruebas Android)                               */
+  //? ============================================================================================== */
+
+  //! endpoint temporal solo para pruebas de Android, luego se comenta
+  @Post('register/customer')
+  registerCustomer(@Body() dto: RegisterCustomerDto) {
+    return this.authService.registerCustomerWithPassword(dto);
   }
 
   //? ============================================================================================== */
