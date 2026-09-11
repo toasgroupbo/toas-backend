@@ -560,8 +560,12 @@ export class TicketsService {
     travelId: number,
     travel: Travel | null,
   ): Promise<string> {
-    if (!travel || travel.travel_status === TravelStatus.CLOSED) {
+    if (!travel) {
       return '0.00';
+    }
+
+    if (travel.travel_status === TravelStatus.CLOSED) {
+      return travel.app_amount ?? '0.00';
     }
 
     const result = await manager
