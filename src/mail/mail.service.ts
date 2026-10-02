@@ -98,4 +98,22 @@ export class MailService {
       ],
     });
   }
+
+  async sendPasswordResetEmail(data: {
+    to: string;
+    fullName: string;
+    resetLink: string;
+    expiresInMinutes: number;
+  }) {
+    return this.mailerService.sendMail({
+      to: data.to,
+      subject: 'Recuperación de contraseña',
+      template: 'reset-password',
+      context: {
+        fullName: data.fullName,
+        resetLink: data.resetLink,
+        expiresInMinutes: data.expiresInMinutes,
+      },
+    });
+  }
 }

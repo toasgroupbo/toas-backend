@@ -8,15 +8,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import * as QRCode from 'qrcode';
+import { authenticator } from 'otplib';
 
 import { OAuth2Client } from 'google-auth-library';
 
 import { IJwtPayload } from './interfaces/jwt-payload.interface';
 import {
   AppleLoginDto,
+  ForgotPasswordDto,
   LoginCustomerDto,
   LoginUserDto,
   RegisterCustomerDto,
+  ResetPasswordDto,
+  VerifyTwoFactorLoginDto,
 } from './dto';
 
 import { envs } from 'src/config/environments/environments';
@@ -26,9 +32,20 @@ import { LoginType } from '../common/enums/login-type.enum';
 
 import { UsersService } from '../modules/users/users.service';
 import { AppleAuthService } from './services/apple-auth.service';
+import { MailService } from 'src/mail/mail.service';
 
 import { User } from 'src/modules/users/entities/user.entity';
 import { Customer } from '../modules/customers/entities/customer.entity';
+
+const PASSWORD_RESET_EXPIRES_MINUTES = 30;
+const FORGOT_PASSWORD_MESSAGE =
+  'If that email exists, a reset link has been sent';
+
+//! TOTP compatible con Google Authenticator (SHA-1, 6 dígitos, 30 s).
+//! window: 1 tolera ±30 s de desfase del reloj del celular (por defecto otplib v12 usa 0)
+const totp = authenticator.clone({ window: 1 });
+const TWO_FACTOR_ISSUER = 'Bus Express'; //! nombre que se ve en la app de Google Authenticator
+const TWO_FACTOR_TEMP_TOKEN_EXPIRES_IN = '5m';
 
 //! solo da lectura (rutas/viajes): un vencimiento largo evita renovaciones constantes en la app
 const GUEST_TOKEN_EXPIRES_IN = '30d';
@@ -47,6 +64,8 @@ export class AuthService {
     private readonly userService: UsersService,
 
     private readonly appleAuthService: AppleAuthService,
+
+    private readonly mailService: MailService,
   ) {}
 
   private googleClient = new OAuth2Client(envs.GOOGLE_ID_OAUTH);
@@ -94,6 +113,16 @@ export class AuthService {
 
     const { password: _, ...entityWithoutPassword } = user;
 
+    //! con 2FA activo no se emite la sesión todavía: el front pide el código y llama a auth/login/2fa
+    if (user.isTwoFactorEnabled) {
+      const tempToken = this.jwtService.sign(
+        { id: user.id, type: LoginType.user, twoFactorPending: true },
+        { expiresIn: TWO_FACTOR_TEMP_TOKEN_EXPIRES_IN },
+      );
+
+      return { twoFactorRequired: true, tempToken };
+    }
+
     //!
 
     // Generar nuevo token
@@ -140,7 +169,225 @@ export class AuthService {
   }
 
   //? ============================================================================================== */
-  //?                               Register_Customer                                               */
+  //?                                   Login_2FA                                                    */
+  //? ============================================================================================== */
+
+  async verifyTwoFactorLogin(dto: VerifyTwoFactorLoginDto) {
+    let payload: IJwtPayload;
+    try {
+      payload = this.jwtService.verify<IJwtPayload>(dto.tempToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
+    if (!payload.twoFactorPending || payload.type !== LoginType.user) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
+    const user = await this.userService.findOneByIdWithTwoFactor(payload.id);
+
+    if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
+      throw new BadRequestException('2FA is not enabled for this user');
+    }
+
+    if (!totp.verify({ token: dto.code, secret: user.twoFactorSecret })) {
+      throw new UnauthorizedException('Invalid 2FA code');
+    }
+
+    const { twoFactorSecret: _, ...entityWithoutSecret } = user;
+
+    const token = this.generateJwt({ id: user.id, type: LoginType.user });
+
+    // Invalidar sesión anterior (si existe) guardando el nuevo token
+    await this.userRepository.update({ id: user.id }, { sessionToken: token });
+
+    return {
+      user: entityWithoutSecret,
+      token,
+    };
+  }
+
+  //? ============================================================================================== */
+  //?                                  2FA_Generate                                                  */
+  //? ============================================================================================== */
+
+  //! genera el secreto y el QR, pero no activa el 2FA hasta que el usuario confirme un código
+  async generateTwoFactorSecret(userId: number, password: string) {
+    //! pide la contraseña para que una sesión robada no pueda activar 2FA con otro celular
+    await this.verifyUserPassword(userId, password);
+
+    const user = await this.userService.findOneByIdWithTwoFactor(userId);
+
+    //! sin esto se pisaría el secreto activo y la app del usuario dejaría de servir
+    if (user.isTwoFactorEnabled) {
+      throw new BadRequestException(
+        '2FA is already enabled. Disable it before generating a new secret',
+      );
+    }
+
+    const secret = totp.generateSecret(20);
+    const otpauthUrl = totp.keyuri(user.email, TWO_FACTOR_ISSUER, secret);
+    const qrCode = await QRCode.toDataURL(otpauthUrl);
+
+    await this.userRepository.update(
+      { id: user.id },
+      { twoFactorSecret: secret },
+    );
+
+    return { qrCode, secret, otpauthUrl };
+  }
+
+  //? ============================================================================================== */
+  //?                                   2FA_Enable                                                   */
+  //? ============================================================================================== */
+
+  async enableTwoFactor(userId: number, code: string) {
+    const user = await this.userService.findOneByIdWithTwoFactor(userId);
+
+    if (user.isTwoFactorEnabled) {
+      throw new BadRequestException('2FA is already enabled');
+    }
+
+    if (!user.twoFactorSecret) {
+      throw new BadRequestException('Generate a 2FA secret first');
+    }
+
+    //! 400 y no 401: el usuario está logueado y un 401 haría que el front cierre su sesión
+    if (!totp.verify({ token: code, secret: user.twoFactorSecret })) {
+      throw new BadRequestException('Invalid 2FA code');
+    }
+
+    await this.userRepository.update(
+      { id: user.id },
+      { isTwoFactorEnabled: true },
+    );
+
+    return { message: '2FA enabled successfully' };
+  }
+
+  //? ============================================================================================== */
+  //?                                  2FA_Disable                                                   */
+  //? ============================================================================================== */
+
+  //! exige el código (no solo la sesión) para que nadie lo desactive desde una sesión abierta ajena
+  async disableTwoFactor(userId: number, code: string) {
+    const user = await this.userService.findOneByIdWithTwoFactor(userId);
+
+    if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
+      throw new BadRequestException('2FA is not enabled');
+    }
+
+    if (!totp.verify({ token: code, secret: user.twoFactorSecret })) {
+      throw new BadRequestException('Invalid 2FA code');
+    }
+
+    await this.userRepository.update(
+      { id: user.id },
+      { isTwoFactorEnabled: false, twoFactorSecret: null },
+    );
+
+    return { message: '2FA disabled successfully' };
+  }
+
+  //? ============================================================================================== */
+  //?                                 Forgot_Password                                                */
+  //? ============================================================================================== */
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.userRepository.findOneBy({
+      email: dto.email,
+      enabled: true,
+    });
+
+    //! no revelar si el email existe o no
+    if (!user) {
+      return { message: FORGOT_PASSWORD_MESSAGE };
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(
+      Date.now() + PASSWORD_RESET_EXPIRES_MINUTES * 60 * 1000,
+    );
+
+    // Un nuevo pedido reemplaza al token anterior (solo el último link sirve)
+    await this.userRepository.update(
+      { id: user.id },
+      {
+        passwordResetToken: this.hashResetToken(rawToken),
+        passwordResetExpiresAt: expiresAt,
+      },
+    );
+
+    const resetLink = `${envs.FRONTEND_URL}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
+
+    //! sin await: la respuesta tarda lo mismo exista o no el email
+    this.mailService
+      .sendPasswordResetEmail({
+        to: user.email,
+        fullName: user.fullName,
+        resetLink,
+        expiresInMinutes: PASSWORD_RESET_EXPIRES_MINUTES,
+      })
+      .catch((error) =>
+        console.error(
+          `[FORGOT_PASSWORD] Error sending reset email to user ${user.id}`,
+          error,
+        ),
+      );
+
+    return { message: FORGOT_PASSWORD_MESSAGE };
+  }
+
+  //? ============================================================================================== */
+  //?                                  Reset_Password                                                */
+  //? ============================================================================================== */
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const user = await this.userRepository.findOne({
+      where: { email: dto.email, enabled: true },
+      select: {
+        id: true,
+        passwordResetToken: true,
+        passwordResetExpiresAt: true,
+      },
+    });
+
+    const tokenHash = this.hashResetToken(dto.token);
+
+    const isValid =
+      !!user &&
+      user.passwordResetToken === tokenHash &&
+      !!user.passwordResetExpiresAt &&
+      user.passwordResetExpiresAt.getTime() > Date.now();
+
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    //! se consume el token de forma atómica: si dos pedidos llegan a la vez, solo uno pasa.
+    //! además cierra sesión en todos los dispositivos
+    const { affected } = await this.userRepository.update(
+      { id: user.id, passwordResetToken: tokenHash },
+      {
+        passwordResetToken: null,
+        passwordResetExpiresAt: null,
+        sessionToken: null,
+      },
+    );
+
+    if (!affected) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    await this.userService.changePassword(user.id, {
+      password: dto.newPassword,
+    });
+
+    return { message: 'Password updated successfully' };
+  }
+
+  //? ============================================================================================== */
+  //?                               Register_Customer                                                */
   //? ============================================================================================== */
 
   /* async registerCustomer(createCustomerDto: CreateCustomerDto) {
@@ -664,5 +911,25 @@ export class AuthService {
 
   private generateJwt(JwtPayload: IJwtPayload) {
     return this.jwtService.sign(JwtPayload);
+  }
+
+  //* ============================================================================================== */
+
+  private hashResetToken(token: string) {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  //* ============================================================================================== */
+
+  //! 400 y no 401: se usa con el user logueado y un 401 haría que el front cierre su sesión
+  private async verifyUserPassword(userId: number, password: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, enabled: true },
+      select: { id: true, password: true },
+    });
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new BadRequestException('Invalid password');
+    }
   }
 }

@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 
 import { Travel } from 'src/modules/travels/entities/travel.entity';
+import { BeneficiarySnapshot } from '../interfaces/beneficiary-snapshot.interface';
 
 export enum TransactionStatus {
   PENDING = 'PENDING',
@@ -73,6 +74,11 @@ export class Transaction {
 
   @Column({ type: 'jsonb', nullable: true })
   travelsSnapshot?: any[];
+
+  //! cuenta bancaria y owner al momento del pago: el comprobante se arma con esto,
+  //! no con la relación en vivo travel.bus.owner.bankAccount
+  @Column({ type: 'jsonb', nullable: true })
+  beneficiarySnapshot?: BeneficiarySnapshot | null;
 
   //* ============================================================================================== */
 

@@ -6,8 +6,6 @@ import { join } from 'path';
 
 import { envs } from 'src/config/environments/environments';
 
-import { MailsController } from './mail.controller';
-
 import { PdfService } from './pdf.service';
 import { MailService } from './mail.service';
 import { TemplateService } from './template.service';
@@ -38,7 +36,6 @@ import { TemplateService } from './template.service';
       },
     }),
   ],
-  controllers: [MailsController],
   providers: [MailService, PdfService, TemplateService],
   exports: [MailService],
 })

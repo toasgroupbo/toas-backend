@@ -42,6 +42,20 @@ export class User {
   @Column('text', { nullable: true, select: false })
   sessionToken?: string | null;
 
+  //! hash sha256 del token de recuperación, nunca el token en claro
+  @Column('text', { nullable: true, select: false })
+  passwordResetToken?: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true, select: false })
+  passwordResetExpiresAt?: Date | null;
+
+  //! secreto TOTP (Google Authenticator), nunca se expone en las respuestas
+  @Column('text', { nullable: true, select: false })
+  twoFactorSecret?: string | null;
+
+  @Column('boolean', { default: false })
+  isTwoFactorEnabled: boolean;
+
   @Column('boolean', { default: true })
   enabled: boolean;
 

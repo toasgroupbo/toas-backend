@@ -67,3 +67,6 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Documentación interna para el frontend (se comparte por fuera, no se sube)
+docs/

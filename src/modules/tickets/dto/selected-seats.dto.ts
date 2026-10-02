@@ -3,11 +3,16 @@ import { IsNumberString, IsOptional, IsString } from 'class-validator';
 
 //! para guaradar en la entity
 export class SelectedSeatsDto {
+  id?: number; //! id del travel_seat
+
   @IsString()
   seatNumber: string;
 
   @IsNumberString()
   price: string;
+
+  //! copia del pasajero: el travel_seat lo borra al cancelar/vencer el ticket
+  passenger?: { name: string; ci: string } | null;
 }
 
 //! para la creacion del ticket para el cajero

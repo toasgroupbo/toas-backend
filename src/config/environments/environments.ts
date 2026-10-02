@@ -5,6 +5,7 @@ interface IEnvironmentVariables {
   // Server
   PORT: number;
   HOST: string;
+  TRUST_PROXY_HOPS: number;
 
   // JWT
   JWT_SECRET: string;
@@ -28,6 +29,9 @@ interface IEnvironmentVariables {
   MAIL_USER: string;
   MAIL_PASS: string;
   MAIL_FROM: string;
+
+  //Frontend
+  FRONTEND_URL: string;
 
   //BCP
   BCP_USER: string;
@@ -81,6 +85,8 @@ export const envs = {
   // Server
   PORT: envVariables.PORT,
   HOST: envVariables.HOST,
+  //! proxies delante de la app (Traefik de Dokploy = 1), para que req.ip sea la IP real del cliente
+  TRUST_PROXY_HOPS: Number(envVariables.TRUST_PROXY_HOPS ?? 1),
 
   // JWT
   JWT_SECRET: envVariables.JWT_SECRET,
@@ -104,6 +110,9 @@ export const envs = {
   MAIL_USER: envVariables.MAIL_USER,
   MAIL_PASS: envVariables.MAIL_PASS,
   MAIL_FROM: envVariables.MAIL_FROM,
+
+  //Frontend
+  FRONTEND_URL: envVariables.FRONTEND_URL,
 
   //BCP
   BCP_USER: envVariables.BCP_USER,

@@ -53,6 +53,12 @@ interface PreparedTransaction {
   payload: ProcessMultipleToEncrypt;
 }
 
+//! CÓDIGO MUERTO: este servicio no está registrado en ningún módulo (TransactionsModule solo
+//! provee TransactionsService) y nada lo invoca. Si se activa, revisar antes:
+//!  - no guarda beneficiarySnapshot: el comprobante mostraría la cuenta bancaria en vivo
+//!    (ver buildBeneficiarySnapshot en transactions.service.ts)
+//!  - prepareTransactions crea la Transaction con `ownerId` y `amount`, que no existen en la
+//!    entidad (la columna es totalAmount), así que se ignoran y totalAmount queda en 0
 @Injectable()
 export class TransactionsBatchService {
   constructor(

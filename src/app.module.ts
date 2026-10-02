@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { envs } from './config/environments/environments';
 
 import { SettingsModule } from './modules/settings/settings.module';
@@ -40,6 +41,9 @@ import { CommissionsModule } from './modules/commissions/commissions.module';
       autoLoadEntities: true,
       synchronize: true,
     }),
+
+    //! no es global: solo aplica donde se usa @UseGuards(ThrottlerGuard) (hoy auth/login/2fa)
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }]),
 
     AuthModule,
     RolesModule,

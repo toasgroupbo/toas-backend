@@ -84,7 +84,7 @@ export class TravelsService {
 
       const bus = await queryRunner.manager.findOne(Bus, {
         where: { id: busId, company: { id: office.company.id }, enabled: true },
-        relations: { busType: true, company: true },
+        relations: { busType: true, company: true, owner: true },
       });
       if (!bus) throw new NotFoundException('Bus not found or disabled');
 
@@ -128,6 +128,7 @@ export class TravelsService {
         ...data,
         route: { id: routeId },
         bus: bus,
+        owner: bus.owner, //! se fija el dueño al crear: no cambia si el bus se vende después
         travelSeats,
         createdBy: { id: cashier.id },
         company: office.company,

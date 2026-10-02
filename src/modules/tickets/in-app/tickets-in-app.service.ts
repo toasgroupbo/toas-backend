@@ -20,6 +20,7 @@ import {
 
 import { TicketsService } from '../tickets.service';
 import { BillingsService } from '../billings.service';
+import { buildBillingSnapshot } from '../helpers/ticket-snapshots.helper';
 import { WalletService } from 'src/modules/wallet/wallet.service';
 import { TicketExpirationService } from '../ticket-expiration.service';
 import { PenaltiesService } from 'src/modules/customers/penalties.service';
@@ -379,8 +380,9 @@ export class TicketsInAppService {
         manager,
       );
 
-      //  Asignar billing al ticket
+      //  Asignar billing al ticket (+ copia: la fila de billings se comparte por CI y se pisa)
       ticket.billing = billing;
+      ticket.billingSnapshot = buildBillingSnapshot(billing);
 
       await manager.save(ticket);
       await queryRunner.commitTransaction();

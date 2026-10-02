@@ -12,6 +12,10 @@ import {
 } from 'typeorm';
 
 import { SelectedSeatsDto } from '../dto';
+import {
+  TicketBillingSnapshot,
+  TicketTravelSnapshot,
+} from '../interfaces/ticket-snapshots.interface';
 
 import { TicketType } from '../enums/ticket-type.enum';
 import { PaymentType } from '../enums/payment-type.enum';
@@ -62,6 +66,14 @@ export class Ticket {
 
   @Column('json')
   seats: SelectedSeatsDto[];
+
+  //! nombre y CI de facturación al momento de la venta (la fila de billings se comparte por CI y se pisa)
+  @Column({ type: 'jsonb', nullable: true })
+  billingSnapshot?: TicketBillingSnapshot | null;
+
+  //! empresa, origen y destino al momento de la venta (oficinas y empresa se pueden renombrar)
+  @Column({ type: 'jsonb', nullable: true })
+  travelSnapshot?: TicketTravelSnapshot | null;
 
   @Column('boolean', { default: false })
   past: boolean;

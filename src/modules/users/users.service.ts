@@ -208,7 +208,36 @@ export class UsersService {
   //? ============================================================================================== */
 
   async findOneByEmail(email: string): Promise<User> {
-    const user = await this.userRepository
+    const user = await this.loginUserQuery()
+      .addSelect('user.password')
+      .where('user.email = :email', { email })
+      .andWhere('user.enabled = true')
+      .getOne();
+
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  //? ============================================================================================== */
+  //?                               FindOneByIdWithTwoFactor                                         */
+  //? ============================================================================================== */
+
+  //! mismo shape que el login + el secreto TOTP (para el segundo paso del login y activar/desactivar 2FA)
+  async findOneByIdWithTwoFactor(id: number): Promise<User> {
+    const user = await this.loginUserQuery()
+      .addSelect('user.twoFactorSecret')
+      .where('user.id = :id', { id })
+      .andWhere('user.enabled = true')
+      .getOne();
+
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  //* ============================================================================================== */
+
+  private loginUserQuery() {
+    return this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.rol', 'rol')
       .leftJoinAndSelect('rol.permissions', 'permissions')
@@ -220,8 +249,8 @@ export class UsersService {
         'user.ci',
         'user.email',
         'user.fullName',
-        'user.password',
         'user.phone',
+        'user.isTwoFactorEnabled',
         'rol.id',
         'rol.name',
         'rol.isStatic',
@@ -231,13 +260,7 @@ export class UsersService {
         'company.name',
         'office.id',
         'place.id',
-      ])
-      .where('user.email = :email', { email })
-      .andWhere('user.enabled = true')
-      .getOne();
-
-    if (!user) throw new NotFoundException('User not found');
-    return user;
+      ]);
   }
 
   //? ============================================================================================== */
@@ -312,7 +335,26 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     user.password = await bcrypt.hash(dto.password, 10);
-    return this.userRepository.save(user);
+    user.sessionToken = null; //! cierra la sesión del usuario en todos los dispositivos
+    await this.userRepository.save(user);
+
+    //! no devolver el user: save() trae el hash de la contraseña nueva
+    return { message: 'Password updated successfully' };
+  }
+
+  //? ============================================================================================== */
+  //?                                Reset_Two_Factor                                                */
+  //? ============================================================================================== */
+
+  //! para cuando un usuario pierde el celular: el admin le desactiva el 2FA y lo vuelve a configurar
+  async resetTwoFactor(id: number) {
+    const { affected } = await this.userRepository.update(
+      { id },
+      { isTwoFactorEnabled: false, twoFactorSecret: null },
+    );
+    if (!affected) throw new NotFoundException('User not found');
+
+    return { message: '2FA reset successfully' };
   }
 
   //? ============================================================================================== */

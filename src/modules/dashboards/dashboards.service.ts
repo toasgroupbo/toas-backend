@@ -471,6 +471,7 @@ export class DashboardsService {
         .leftJoinAndSelect('travel.company', 'company')
         .leftJoinAndSelect('travel.bus', 'bus')
         .leftJoinAndSelect('bus.owner', 'owner')
+        .leftJoinAndSelect('travel.owner', 'travelOwner') //! dueño del viaje (no cambia si se vende el bus)
         .leftJoinAndSelect('travel.route', 'route')
         .leftJoinAndSelect('route.officeOrigin', 'origin')
         .leftJoinAndSelect('route.officeDestination', 'destination')

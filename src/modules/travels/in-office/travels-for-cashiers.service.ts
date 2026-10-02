@@ -4,7 +4,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, DataSource, In, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  Between,
+  DataSource,
+  In,
+  IsNull,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -227,7 +234,6 @@ export class TravelsForCashierService {
         TravelStatus.CANCELLED,
       ]),
       enabled: true,
-      bus: { owner: { id: owner.id } },
     };
 
     //! Pagados
@@ -272,11 +278,17 @@ export class TravelsForCashierService {
     const travels = await paginate(
       this.travelRepository,
       {
-        where,
+        //! viajes del dueño fijado en el viaje (aunque el bus haya cambiado de dueño).
+        //! la 2da condición cubre viajes previos al backfill de travels.ownerId
+        where: [
+          { ...where, owner: { id: owner.id } },
+          { ...where, owner: IsNull(), bus: { owner: { id: owner.id } } },
+        ],
         transaction: true,
         order: { departure_time: 'DESC' },
         relations: {
           transaction: true,
+          owner: true,
           bus: true,
           route: {
             officeOrigin: { place: true },
@@ -854,6 +866,7 @@ export class TravelsForCashierService {
             travelSeats: true,
           },
           travelSeats: true,
+          company: true,
         },
       });
 
@@ -929,6 +942,9 @@ export class TravelsForCashierService {
       travel.tickets_app_count = tickets_app_count;
       travel.tickets_office_count = tickets_office_count;
       travel.tickets_count = tickets_app_count + tickets_office_count;
+
+      //! tarifa vigente al cerrar: la comisión se genera después con este valor
+      travel.commission_company_rate = travel.company.commission_company;
 
       // --------------------------------------------
       // 5. CERRAR VIAJE

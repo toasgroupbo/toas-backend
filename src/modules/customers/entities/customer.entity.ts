@@ -24,22 +24,22 @@ export class Customer {
   id: number;
 
   @Column('text', { unique: true, nullable: true })
-  email: string;
+  email: string | null;
 
   @Column('text', {
     //select: false,
     nullable: true,
   })
-  password: string; //! pruebas
+  password: string | null; //! pruebas
 
   @Column('text')
   name: string;
 
   @Column('text', { nullable: true })
-  ci?: string;
+  ci?: string | null;
 
   @Column('text', { nullable: true })
-  phone?: string;
+  phone?: string | null;
 
   @Column('boolean', { default: true })
   is_verified: boolean;
@@ -51,7 +51,7 @@ export class Customer {
   idProvider: string;
 
   @Column({ type: 'date', nullable: true })
-  birthDate?: Date;
+  birthDate?: Date | null;
 
   @Column('jsonb', { nullable: true })
   billingObject?: any;

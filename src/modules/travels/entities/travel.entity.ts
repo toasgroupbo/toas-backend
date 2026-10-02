@@ -13,6 +13,7 @@ import { TravelType, TravelStatus } from '../enums';
 
 import { TravelSeat } from './travel-seat.entity';
 import { Bus } from 'src/modules/buses/entities/bus.entity';
+import { Owner } from 'src/modules/owners/entities/owner.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Route } from 'src/modules/routes/entities/route.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
@@ -98,6 +99,11 @@ export class Travel {
   @Column({ type: 'int', default: 0 })
   tickets_count: number; //! Cantidad de tickets vendidos Total
 
+  //! comisión fija de la empresa por ticket app, copiada de company.commission_company al cerrar.
+  //! commissions.create() la usa para no depender de la tarifa vigente el día que se genera
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  commission_company_rate?: string | null;
+
   //! staff
 
   @Column('jsonb', { nullable: true })
@@ -115,6 +121,11 @@ export class Travel {
 
   @ManyToOne(() => Bus, (bus) => bus.travels)
   bus: Bus;
+
+  //! dueño del bus al crear el viaje. Es a quien se le paga y en cuyo historial aparece,
+  //! aunque después el bus cambie de dueño (no usar travel.bus.owner para eso)
+  @ManyToOne(() => Owner, { nullable: true })
+  owner?: Owner | null;
 
   @OneToMany(() => TravelSeat, (seat) => seat.travel, {
     cascade: true,

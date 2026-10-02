@@ -37,10 +37,11 @@ export class UsersController {
   //?                                        Create                                                  */
   //? ============================================================================================== */
 
-  @Post('super-admin')
+  //! solo para pruebas: es público (sin @Auth) y crea un SUPER_ADMIN, no debe quedar activo en producción
+  /* @Post('super-admin')
   create(@Body() createUser: CreateUserDto) {
     return this.usersService.createAdmin(createUser);
-  }
+  } */
 
   //? ============================================================================================== */
 
@@ -118,6 +119,18 @@ export class UsersController {
     @Body() dto: UpdateUserPasswordDto,
   ) {
     return this.usersService.changePassword(id, dto);
+  }
+
+  //? ============================================================================================== */
+  //?                               Reset_Two_Factor                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.UPDATE)
+  //!
+  @Patch(':id/2fa/reset')
+  resetTwoFactor(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.resetTwoFactor(id);
   }
 
   //? ============================================================================================== */

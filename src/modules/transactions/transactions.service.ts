@@ -14,6 +14,7 @@ import { TravelPaginationDto } from '../travels/pagination';
 import { paginate } from 'src/common/pagination/paginate';
 
 import { ResponseBCP } from './interfaces/response-bcp.interface';
+import { BeneficiarySnapshot } from './interfaces/beneficiary-snapshot.interface';
 import { DecryptGetBatchDetail } from './interfaces/decrypt-get-batch-detail.interface';
 import { DecryptProcessMultiple } from './interfaces/decrypt-process-multiple.interface';
 import { DecryptAuthorizedBatch } from './interfaces/decrypt-authorized-batch.interface';
@@ -413,6 +414,10 @@ export class TransactionsService {
         },
         relations: {
           company: true,
+          owner: {
+            bankAccount: true,
+            users: true,
+          },
           bus: {
             owner: {
               bankAccount: true,
@@ -430,7 +435,9 @@ export class TransactionsService {
       // Owner
       // =====================================================
 
-      const owner = travel.bus?.owner;
+      //! se le paga al dueño del viaje (fijado al crearlo), no al dueño actual del bus.
+      //! fallback a bus.owner solo para viajes previos al backfill de travels.ownerId
+      const owner = travel.owner ?? travel.bus?.owner;
 
       if (!owner) {
         throw new NotFoundException('Owner Not Found');
@@ -474,6 +481,8 @@ export class TransactionsService {
             amount,
           },
         ],
+
+        beneficiarySnapshot: this.buildBeneficiarySnapshot(owner),
       });
 
       await manager.save(transaction);
@@ -504,6 +513,26 @@ export class TransactionsService {
 
       return preparedTransaction;
     });
+  }
+
+  //? ============================================================================================== ?/
+  //? ============================================================================================== ?/
+
+  //! mismos datos con los que se arma el payload del banco
+  private buildBeneficiarySnapshot(owner: Owner): BeneficiarySnapshot {
+    const { bankAccount } = owner;
+
+    return {
+      ownerId: owner.id,
+      ownerName: owner.name,
+      bankCode: bankAccount.bankCode,
+      account: bankAccount.account,
+      titularName: bankAccount.titularName,
+      documentType: bankAccount.documentType,
+      documentNumber: bankAccount.documentNumber,
+      documentExtension: bankAccount.documentExtension,
+      branchOfficeId: bankAccount.branchOfficeId,
+    };
   }
 
   //? ============================================================================================== ?/
@@ -822,6 +851,7 @@ export class TransactionsService {
           order: { id: 'DESC' },
           relations: {
             transaction: true,
+            owner: { bankAccount: true }, //! a quién se le paga (o se le pagó) este viaje
             bus: { owner: { bankAccount: true } },
           },
         },

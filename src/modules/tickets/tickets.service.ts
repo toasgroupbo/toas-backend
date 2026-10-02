@@ -25,6 +25,11 @@ import { MailService } from 'src/mail/mail.service';
 import { WalletService } from '../wallet/wallet.service';
 import { PassengersService } from '../customers/passengers.service';
 import { TicketExpirationService } from './ticket-expiration.service';
+import {
+  buildBillingSnapshot,
+  buildSeatsSnapshot,
+  buildTravelSnapshot,
+} from './helpers/ticket-snapshots.helper';
 
 import { Ticket } from './entities/ticket.entity';
 import { Billing } from './entities/billing.entity';
@@ -110,6 +115,18 @@ export class TicketsService {
         paymentType,
       });
 
+      //! datos del viaje tal como están al vender (empresa, oficinas) para el travelSnapshot
+      const travelForSnapshot = await manager.findOne(Travel, {
+        where: { id: travel.id },
+        relations: {
+          company: true,
+          route: {
+            officeOrigin: { place: true },
+            officeDestination: { place: true },
+          },
+        },
+      });
+
       //! se crea el ticket
       const ticket = manager.create(Ticket, {
         type,
@@ -117,11 +134,11 @@ export class TicketsService {
         buyer: buyer,
         soldBy: user,
 
-        seats: seats.map((seat) => ({
-          id: seat.id,
-          seatNumber: seat.seatNumber,
-          price: seat.price,
-        })),
+        seats: buildSeatsSnapshot(seats),
+        billingSnapshot: buildBillingSnapshot(billing),
+        travelSnapshot: travelForSnapshot
+          ? buildTravelSnapshot(travelForSnapshot)
+          : null,
 
         travelSeats: seatsWithPrices,
         reserve_expiresAt: this.getReservationExpiry(),
@@ -358,7 +375,14 @@ export class TicketsService {
 
       const travel = ticket.travel;
       const route = travel.route;
-      const buyer = ticket.buyer!;
+      const buyer = ticket.buyer;
+
+      //! sin comprador con email (venta en oficina o cliente eliminado) no hay a quién enviar
+      if (!buyer?.email) return;
+
+      //! fotos del momento de la venta; fallback a relaciones en vivo para tickets viejos
+      const billingData = ticket.billingSnapshot ?? ticket.billing;
+      const snap = ticket.travelSnapshot;
 
       const mailDto = {
         to: buyer.email,
@@ -367,20 +391,21 @@ export class TicketsService {
         ticketDate: this.formatIssueDate(ticket.createdAt),
         totalPrice: Number(ticket.total_price),
 
-        customerName: ticket.billing?.nombre || buyer.name || 'Cliente',
+        customerName: billingData?.nombre || buyer.name || 'Cliente',
         customerEmail: buyer.email,
         customerPhone: buyer.phone || 'No registrado',
-        customerCi: ticket.billing?.ci || buyer.ci || 'No registrado',
+        customerCi: billingData?.ci || buyer.ci || 'No registrado',
 
-        companyName: travel.company?.name || 'Empresa',
+        companyName: snap?.companyName || travel.company?.name || 'Empresa',
         lane: travel.lane?.toString() || 'No asignado',
         saleType:
           ticket.type === TicketType.IN_APP ? 'Aplicación' : 'Presencial',
         paymentMethod:
           ticket.payment_type === PaymentType.QR ? 'QR' : 'Efectivo',
 
-        origin: route.officeOrigin?.name,
-        destination: route.officeDestination?.name,
+        origin: snap?.origin.officeName ?? route.officeOrigin?.name,
+        destination:
+          snap?.destination.officeName ?? route.officeDestination?.name,
         departureDate: this.formatDateTime(travel.departure_time),
         departureDay: new Date(travel.departure_time).toLocaleDateString(
           'es-BO',
@@ -405,9 +430,14 @@ export class TicketsService {
           travel.departure_time,
           travel.arrival_time,
         ),
-        terminalAddress: route.officeOrigin?.address || 'Terminal Central',
+        terminalAddress:
+          snap?.origin.address ||
+          route.officeOrigin?.address ||
+          'Terminal Central',
         terminalDestinationAddress:
-          route.officeDestination?.address || 'Terminal Central',
+          snap?.destination.address ||
+          route.officeDestination?.address ||
+          'Terminal Central',
 
         passengers: ticket.travelSeats.map((seat) => ({
           name: seat.passenger?.name || 'pasajero',
@@ -751,6 +781,18 @@ export class TicketsService {
       };
 
       await manager.save(seat);
+    }
+
+    //! se refresca la copia de pasajeros en el ticket (sobrevive a la cancelación)
+    const ticket = await manager.findOne(Ticket, {
+      where: { id: ticketId },
+      relations: { travelSeats: true },
+    });
+
+    if (ticket) {
+      await manager.update(Ticket, ticket.id, {
+        seats: buildSeatsSnapshot(ticket.travelSeats),
+      });
     }
   }
 

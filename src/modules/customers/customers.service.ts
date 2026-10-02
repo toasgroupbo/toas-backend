@@ -180,19 +180,33 @@ export class CustomersService {
   //?                                        Delete                                                  */
   //? ============================================================================================== */
 
+  //! anonimiza antes del soft delete:
+  //!  - libera el email (unique): la persona puede volver a registrarse con Google/Apple
+  //!  - no quedan datos personales (requisito de borrado de cuenta de Apple)
+  //! los tickets conservan su historial con billingSnapshot y los pasajeros de ticket.seats
   async remove(id: number) {
-    const customer = await this.customerRepository.findOne({
-      where: { id },
-      relations: { ticketsBought: true },
-    });
-
-    if (!customer) throw new NotFoundException('Customer not found');
+    const exists = await this.customerRepository.existsBy({ id });
+    if (!exists) throw new NotFoundException('Customer not found');
 
     try {
-      await this.customerRepository.softRemove(customer);
+      await this.customerRepository.manager.transaction(async (manager) => {
+        await manager.update(Customer, id, {
+          email: null,
+          password: null,
+          name: 'Cliente eliminado',
+          ci: null,
+          phone: null,
+          idProvider: `deleted-${id}`,
+          birthDate: null,
+          billingObject: () => 'NULL', //! es `any` en la entidad: TypeORM no acepta null directo
+          sessionToken: null,
+        });
+        await manager.softDelete(Customer, id);
+      });
+
       return {
         message: 'Customer deleted successfully',
-        deleted: customer,
+        deleted: { id },
       };
     } catch (error) {
       handleDBExceptions(error);

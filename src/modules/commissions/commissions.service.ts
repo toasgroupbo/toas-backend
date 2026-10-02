@@ -41,7 +41,11 @@ export class CommissionsService {
     for (const travel of closedTravels) {
       try {
         const company = travel.company;
-        const commissionCompanyAtTime = Number(company.commission_company);
+        //! tarifa guardada al cerrar el viaje. Los viajes cerrados antes de este cambio no la
+        //! tienen y usan la tarifa actual de la empresa (comportamiento anterior)
+        const commissionCompanyAtTime = Number(
+          travel.commission_company_rate ?? company.commission_company,
+        );
 
         // Tickets IN_APP cancelados: el cobro por QR/wallet ya ingresó a la
         // cuenta de la empresa antes de la cancelación, así que también
