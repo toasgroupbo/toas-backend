@@ -10,7 +10,7 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { Auth, Resource } from '../../../auth/decorators';
 import { ValidResourses } from 'src/common/enums';
-import { IsVerifyGuard } from '../../tickets/guards/is-verify.guard';
+import { CustomerOrGuestGuard } from '../../tickets/guards/customer-or-guest.guard';
 
 import { TravelInAppFilterDto } from '../pagination';
 
@@ -31,7 +31,7 @@ export class TravelsInAppController {
   //? ============================================================================================== */
 
   //!
-  @UseGuards(IsVerifyGuard)
+  @UseGuards(CustomerOrGuestGuard) //! invitados permitidos (solo lectura)
   @Auth()
   //!
   @ApiQuery({
@@ -59,7 +59,7 @@ export class TravelsInAppController {
   //? ============================================================================================== */
 
   //!
-  @UseGuards(IsVerifyGuard)
+  @UseGuards(CustomerOrGuestGuard) //! invitados permitidos (solo lectura)
   @Auth()
   //!
   @ApiQuery({
@@ -87,7 +87,7 @@ export class TravelsInAppController {
   //? ============================================================================================== */
 
   //!
-  @UseGuards(IsVerifyGuard)
+  @UseGuards(CustomerOrGuestGuard) //! invitados permitidos (solo lectura)
   @Auth()
   //!
   @Get(':id')

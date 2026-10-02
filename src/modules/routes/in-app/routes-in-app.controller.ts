@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Auth, Resource } from 'src/auth/decorators';
 import { ValidResourses } from 'src/common/enums';
 
-import { IsVerifyGuard } from '../../tickets/guards/is-verify.guard';
+import { CustomerOrGuestGuard } from '../../tickets/guards/customer-or-guest.guard';
 
 import { RoutesInAppService } from './routes-in-app.service';
 
@@ -23,7 +23,7 @@ export class RoutesInAppController {
   //? ============================================================================================== */
 
   //!
-  @UseGuards(IsVerifyGuard)
+  @UseGuards(CustomerOrGuestGuard) //! invitados permitidos (solo lectura)
   @Auth()
   //!
   @Get('all')

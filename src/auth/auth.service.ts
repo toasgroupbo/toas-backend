@@ -30,6 +30,9 @@ import { AppleAuthService } from './services/apple-auth.service';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Customer } from '../modules/customers/entities/customer.entity';
 
+//! solo da lectura (rutas/viajes): un vencimiento largo evita renovaciones constantes en la app
+const GUEST_TOKEN_EXPIRES_IN = '30d';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -122,7 +125,22 @@ export class AuthService {
   }
 
   //? ============================================================================================== */
-  //?                               Register_Customer                                                */
+  //?                                        Guest                                                   */
+  //? ============================================================================================== */
+
+  //! a diferencia de monero no usa un customer compartido: la sesión única (sessionToken)
+  //! haría que cada invitado nuevo expulse al anterior. El token no tiene fila en BD
+  getTokenGuest() {
+    const token = this.jwtService.sign(
+      { id: 0, type: LoginType.guest },
+      { expiresIn: GUEST_TOKEN_EXPIRES_IN },
+    );
+
+    return { token, isGuest: true };
+  }
+
+  //? ============================================================================================== */
+  //?                               Register_Customer                                               */
   //? ============================================================================================== */
 
   /* async registerCustomer(createCustomerDto: CreateCustomerDto) {

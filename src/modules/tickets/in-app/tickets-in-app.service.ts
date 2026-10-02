@@ -332,7 +332,11 @@ export class TicketsInAppService {
   //?                               Assign_Passenger                                                 */
   //? ============================================================================================== */
 
-  async assignBilling(ticketId: number, dto: AssignBillingDto) {
+  async assignBilling(
+    ticketId: number,
+    dto: AssignBillingDto,
+    customer: Customer,
+  ) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -345,7 +349,15 @@ export class TicketsInAppService {
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (!ticket) {
+      //! el ticket tiene que ser del customer logueado (se chequea aparte: el lock
+      //! FOR UPDATE no admite el LEFT JOIN que agregaría filtrar por buyer en la misma query)
+      const isOwner =
+        !!ticket &&
+        (await manager.exists(Ticket, {
+          where: { id: ticketId, buyer: { id: customer.id } },
+        }));
+
+      if (!ticket || !isOwner) {
         throw new NotFoundException('Ticket not found');
       }
 

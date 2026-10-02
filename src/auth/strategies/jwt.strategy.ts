@@ -28,6 +28,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
 
+    //! invitado: sin fila en BD ni sesión única (cada invitado tiene su propio token).
+    //! solo pasa por los endpoints con CustomerOrGuestGuard; el resto lo rechaza
+    if (type === LoginType.guest) {
+      (req as any).userType = type;
+      return { isGuest: true };
+    }
+
     if (type === LoginType.user) {
       const userForLogin = await this.userService.findOneForLogin(id);
       if (!userForLogin)

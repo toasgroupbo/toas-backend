@@ -113,12 +113,17 @@ export class TicketsInAppController {
   //?                                 Assign-Billing                                                 */
   //? ============================================================================================== */
 
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
   @Patch('billing/:id')
   assignBilling(
     @Param('id', ParseIntPipe) ticketId: number,
     @Body() dto: AssignBillingDto,
+    @GetCustomer() customer: Customer,
   ) {
-    return this.ticketsInAppService.assignBilling(ticketId, dto);
+    return this.ticketsInAppService.assignBilling(ticketId, dto, customer);
   }
 
   //? ============================================================================================== */

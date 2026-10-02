@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 
 import { LoginType } from 'src/common/enums';
+import { GuestNotAllowedException } from '../exceptions/guest-not-allowed.exception';
 
 export const GetCustomer = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
@@ -12,6 +13,10 @@ export const GetCustomer = createParamDecorator(
 
     const customer = req.user;
     const userType = req.userType;
+
+    if (userType === LoginType.guest) {
+      throw new GuestNotAllowedException();
+    }
 
     if (!customer) {
       throw new UnauthorizedException('customer not found (request)');
