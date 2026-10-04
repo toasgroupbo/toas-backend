@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Not, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -137,7 +137,7 @@ export class RoutesService {
       where: {
         route: { id: route.id },
         enabled: true,
-        travel_status: Not(TravelStatus.CLOSED),
+        travel_status: Not(In([TravelStatus.CLOSED, TravelStatus.REJECTED])),
       },
     });
 

@@ -7,12 +7,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  In,
   Between,
   DataSource,
   LessThan,
   MoreThan,
   MoreThanOrEqual,
   Repository,
+  EntityManager,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
@@ -23,7 +25,12 @@ import { SeatStatus } from 'src/common/enums';
 import { PaymentType } from '../tickets/enums/payment-type.enum';
 import { TicketStatus, TicketType } from '../tickets/enums';
 
-import { CancelTravelDto, CreateTravelDto } from './dto';
+import {
+  CancelTravelDto,
+  CreateTravelDto,
+  RejectTravelDto,
+  TravelApprovalSettingDto,
+} from './dto';
 import { paginate } from 'src/common/pagination/paginate';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 
@@ -38,6 +45,7 @@ import { Office } from '../offices/entities/office.entity';
 import { Route } from '../routes/entities/route.entity';
 import { TravelSeat } from './entities/travel-seat.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
+import { Company } from '../companies/entities/company.entity';
 
 @Injectable()
 export class TravelsService {
@@ -94,10 +102,14 @@ export class TravelsService {
 
       const { departure_time, arrival_time } = data;
 
+      //! los pendientes de aprobación también ocupan el bus
       const overlappingTravel = await queryRunner.manager.findOne(Travel, {
         where: {
           bus: { id: bus.id },
-          travel_status: TravelStatus.ACTIVE,
+          travel_status: In([
+            TravelStatus.ACTIVE,
+            TravelStatus.PENDING_APPROVAL,
+          ]),
           departure_time: LessThan(arrival_time),
           arrival_time: MoreThan(departure_time),
         },
@@ -124,8 +136,17 @@ export class TravelsService {
       // 4. Creacion del Travel
       // --------------------------------------------
 
+      //! si la empresa exige aprobación, el viaje no se puede vender hasta que el admin lo apruebe
+      const company = await queryRunner.manager.findOne(Company, {
+        where: { id: office.company.id },
+        select: { id: true, require_travel_approval: true },
+      });
+
       const newTravel = queryRunner.manager.create(Travel, {
         ...data,
+        travel_status: company?.require_travel_approval
+          ? TravelStatus.PENDING_APPROVAL
+          : TravelStatus.ACTIVE,
         route: { id: routeId },
         bus: bus,
         owner: bus.owner, //! se fija el dueño al crear: no cambia si el bus se vende después
@@ -218,6 +239,8 @@ export class TravelsService {
           relations: {
             bus: true,
             route: { officeOrigin: true, officeDestination: true },
+            createdBy: true,
+            reviewedBy: true,
           },
         },
         pagination,
@@ -466,6 +489,8 @@ export class TravelsService {
           bus: true,
           route: { officeOrigin: true, officeDestination: true },
           travelSeats: true,
+          createdBy: true,
+          reviewedBy: true,
         },
       });
 
@@ -638,6 +663,122 @@ export class TravelsService {
         refundedTickets,
       };
     });
+  }
+
+  //? ============================================================================================== */
+  //?                                       Approve                                                  */
+  //? ============================================================================================== */
+
+  async approve(id: number, companyId: number, admin: User) {
+    return await this.dataSource.transaction(async (manager) => {
+      const travel = await this.findPendingForReview(id, companyId, manager);
+
+      if (travel.departure_time <= new Date()) {
+        throw new BadRequestException(
+          'Cannot approve a travel whose departure time has already passed',
+        );
+      }
+
+      travel.travel_status = TravelStatus.ACTIVE;
+      travel.reviewedAt = new Date();
+      travel.reviewedBy = { id: admin.id } as User;
+      travel.rejection_reason = null;
+
+      await manager.save(Travel, travel);
+
+      return {
+        message: 'Travel approved successfully',
+        travelId: travel.id,
+        travel_status: travel.travel_status,
+      };
+    });
+  }
+
+  //? ============================================================================================== */
+  //?                                        Reject                                                  */
+  //? ============================================================================================== */
+
+  async reject(
+    id: number,
+    companyId: number,
+    dto: RejectTravelDto,
+    admin: User,
+  ) {
+    return await this.dataSource.transaction(async (manager) => {
+      const travel = await this.findPendingForReview(id, companyId, manager);
+
+      travel.travel_status = TravelStatus.REJECTED;
+      travel.reviewedAt = new Date();
+      travel.reviewedBy = { id: admin.id } as User;
+      travel.rejection_reason = dto.rejection_reason?.trim() || null;
+
+      await manager.save(Travel, travel);
+
+      return {
+        message: 'Travel rejected successfully',
+        travelId: travel.id,
+        travel_status: travel.travel_status,
+        rejection_reason: travel.rejection_reason,
+      };
+    });
+  }
+
+  //* ============================================================================================== */
+
+  //! bloquea el viaje para que dos admins no aprueben/rechacen a la vez
+  private async findPendingForReview(
+    id: number,
+    companyId: number,
+    manager: EntityManager,
+  ) {
+    const travel = await manager
+      .createQueryBuilder(Travel, 'travel')
+      .setLock('pessimistic_write')
+      .where('travel.id = :id', { id })
+      .andWhere('travel.companyId = :companyId', { companyId })
+      .andWhere('travel.enabled = true')
+      .getOne();
+
+    if (!travel) throw new NotFoundException('Travel not found');
+
+    if (travel.travel_status !== TravelStatus.PENDING_APPROVAL) {
+      throw new BadRequestException(
+        `The travel is not pending approval (current status: ${travel.travel_status})`,
+      );
+    }
+
+    return travel;
+  }
+
+  //? ============================================================================================== */
+  //?                               Approval_Setting                                                 */
+  //? ============================================================================================== */
+
+  async getApprovalSetting(companyId: number) {
+    const company = await this.dataSource.manager.findOne(Company, {
+      where: { id: companyId },
+      select: { id: true, require_travel_approval: true },
+    });
+
+    if (!company) throw new NotFoundException('Company not found');
+
+    return { require_travel_approval: company.require_travel_approval };
+  }
+
+  async updateApprovalSetting(
+    companyId: number,
+    dto: TravelApprovalSettingDto,
+  ) {
+    const result = await this.dataSource.manager.update(
+      Company,
+      { id: companyId },
+      { require_travel_approval: dto.enabled },
+    );
+
+    if (!result.affected) throw new NotFoundException('Company not found');
+
+    //! los viajes ya pendientes siguen pendientes aunque se desactive: el admin los aprueba o rechaza
+    return { require_travel_approval: dto.enabled };
   }
 
   //? ============================================================================================== */

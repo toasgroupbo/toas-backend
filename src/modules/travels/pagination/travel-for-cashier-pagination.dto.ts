@@ -40,6 +40,12 @@ export class TravelForCashierFilterDto extends PaginationDto {
   isPaid?: boolean;
 
   @IsOptional()
-  @IsEnum([TravelStatus.ACTIVE, TravelStatus.CLOSED, TravelStatus.CANCELLED])
+  @IsEnum([
+    TravelStatus.ACTIVE,
+    TravelStatus.CLOSED,
+    TravelStatus.CANCELLED,
+    TravelStatus.PENDING_APPROVAL,
+    TravelStatus.REJECTED,
+  ])
   status?: TravelStatus;
 }

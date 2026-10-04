@@ -66,8 +66,14 @@ export class TravelsForCashierService {
   ) {
     const { destination_placeId, startDate, endDate, status } = filters;
 
+    //! pendientes/rechazados se muestran para que el cajero vea el estado de lo que creó (no se puede vender en ellos)
     const where: any = {
-      travel_status: In([TravelStatus.ACTIVE, TravelStatus.CLOSED]),
+      travel_status: In([
+        TravelStatus.ACTIVE,
+        TravelStatus.CLOSED,
+        TravelStatus.PENDING_APPROVAL,
+        TravelStatus.REJECTED,
+      ]),
       enabled: true,
       route: {
         officeOrigin: {

@@ -402,7 +402,7 @@ export class UsersService {
         where: {
           createdBy: { id: user.id },
           enabled: true,
-          travel_status: Not(TravelStatus.CLOSED),
+          travel_status: Not(In([TravelStatus.CLOSED, TravelStatus.REJECTED])),
         },
       });
 

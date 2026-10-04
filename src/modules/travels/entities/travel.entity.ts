@@ -115,6 +115,14 @@ export class Travel {
   @Column('boolean', { default: true })
   enabled: boolean;
 
+  //! aprobación (solo empresas con require_travel_approval)
+
+  @Column({ type: 'timestamptz', nullable: true })
+  reviewedAt?: Date | null;
+
+  @Column('text', { nullable: true })
+  rejection_reason?: string | null;
+
   //* ============================================================================================== */
   //*                                        Relations                                               */
   //* ============================================================================================== */
@@ -143,6 +151,10 @@ export class Travel {
 
   @ManyToOne(() => User, { nullable: true })
   createdBy?: User | null;
+
+  //! admin de empresa que aprobó o rechazó el viaje
+  @ManyToOne(() => User, { nullable: true })
+  reviewedBy?: User | null;
 
   @ManyToOne(() => Company, (company) => company.travels)
   company: Company;

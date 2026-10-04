@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   Min,
@@ -6,6 +6,8 @@ import {
   IsInt,
   IsNumber,
   IsString,
+  IsBoolean,
+  IsOptional,
   ValidateNested,
 } from 'class-validator';
 
@@ -64,6 +66,16 @@ export class CreateCompanyDto {
   @Max(5)
   @IsInt()
   hours_before_closing: number;
+
+  @ApiPropertyOptional({
+    example: false,
+    default: false,
+    description:
+      'Si es true, los viajes creados por cajeros requieren aprobación del admin de empresa',
+  })
+  @IsOptional()
+  @IsBoolean()
+  require_travel_approval?: boolean;
 
   //* ============================================================================================== */
   //*                                        Relations                                               */

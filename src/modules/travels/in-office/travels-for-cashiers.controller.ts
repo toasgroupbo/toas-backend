@@ -94,7 +94,12 @@ export class TravelsForCashiersController {
   @ApiQuery({
     name: 'status',
     required: false,
-    enum: [TravelStatus.ACTIVE, TravelStatus.CLOSED],
+    enum: [
+      TravelStatus.ACTIVE,
+      TravelStatus.CLOSED,
+      TravelStatus.PENDING_APPROVAL,
+      TravelStatus.REJECTED,
+    ],
   })
   @Get('all')
   findAll(

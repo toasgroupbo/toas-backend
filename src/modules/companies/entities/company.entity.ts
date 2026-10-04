@@ -38,6 +38,10 @@ export class Company {
   @Column({ type: 'int' })
   hours_before_closing: number;
 
+  //! si está activo, los viajes que crea un cajero nacen en pending_approval hasta que el admin los apruebe
+  @Column('boolean', { default: false })
+  require_travel_approval: boolean;
+
   @CreateDateColumn({
     type: 'timestamptz',
   })

@@ -118,7 +118,7 @@ export class OfficesService {
         where: {
           route: { id: In(uniqueRouteIds) },
           enabled: true,
-          travel_status: Not(TravelStatus.CLOSED),
+          travel_status: Not(In([TravelStatus.CLOSED, TravelStatus.REJECTED])),
         },
       });
 

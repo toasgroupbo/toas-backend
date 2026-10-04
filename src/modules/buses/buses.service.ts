@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Not, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -133,7 +133,7 @@ export class BusesService {
     const hasOpenTravels = await this.dataSource.manager.exists(Travel, {
       where: {
         bus: { id: bus.id },
-        travel_status: Not(TravelStatus.CLOSED),
+        travel_status: Not(In([TravelStatus.CLOSED, TravelStatus.REJECTED])),
       },
     });
 

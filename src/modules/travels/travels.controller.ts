@@ -1,7 +1,15 @@
-import { Get, Query, Param, Controller, ParseIntPipe } from '@nestjs/common';
+import {
+  Get,
+  Body,
+  Patch,
+  Query,
+  Param,
+  Controller,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { Auth, GetCompany, Resource } from 'src/auth/decorators';
+import { Auth, GetCompany, GetUser, Resource } from 'src/auth/decorators';
 
 import { ValidPermissions, ValidResourses } from 'src/common/enums';
 import { TravelStatus } from './enums/travel-status.enum';
@@ -9,7 +17,11 @@ import { TravelStatus } from './enums/travel-status.enum';
 import { TravelPaginationDto } from './pagination/travel-pagination.dto';
 import { ReportPaginationDto } from './pagination/report-pagination.dto';
 
+import { RejectTravelDto, TravelApprovalSettingDto } from './dto';
+
 import { TravelsService } from './travels.service';
+
+import { User } from '../users/entities/user.entity';
 
 //!
 @Resource(ValidResourses.TRAVEL)
@@ -60,6 +72,66 @@ export class TravelsController {
     @GetCompany() companyId: number,
   ) {
     return this.travelsService.findAll(pagination, companyId);
+  }
+
+  //? ============================================================================================== */
+  //?                               Approval_Setting                                                 */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.APPROVE)
+  //!
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
+  @Get('settings/approval')
+  getApprovalSetting(@GetCompany() companyId: number) {
+    return this.travelsService.getApprovalSetting(companyId);
+  }
+
+  //!
+  @Auth(ValidPermissions.APPROVE)
+  //!
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
+  @Patch('settings/approval')
+  updateApprovalSetting(
+    @Body() dto: TravelApprovalSettingDto,
+    @GetCompany() companyId: number,
+  ) {
+    return this.travelsService.updateApprovalSetting(companyId, dto);
+  }
+
+  //? ============================================================================================== */
+  //?                                       Approve                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.APPROVE)
+  //!
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
+  @Patch(':id/approve')
+  approve(
+    @Param('id', ParseIntPipe) id: number,
+    @GetCompany() companyId: number,
+    @GetUser() admin: User,
+  ) {
+    return this.travelsService.approve(id, companyId, admin);
+  }
+
+  //? ============================================================================================== */
+  //?                                        Reject                                                  */
+  //? ============================================================================================== */
+
+  //!
+  @Auth(ValidPermissions.APPROVE)
+  //!
+  @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
+  @Patch(':id/reject')
+  reject(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RejectTravelDto,
+    @GetCompany() companyId: number,
+    @GetUser() admin: User,
+  ) {
+    return this.travelsService.reject(id, companyId, dto, admin);
   }
 
   //? ============================================================================================== */
