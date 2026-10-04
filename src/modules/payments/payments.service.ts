@@ -142,7 +142,7 @@ export class PaymentsService {
       result = await this.httpService.generateQr({
         IdCorrelation,
         expiration: this.formatExpirationForBcp(),
-        amount, // amount: 0.01, //! para pruebas
+        amount: this.resolveQrAmount(amount),
         gloss: dto.gloss,
         collectors: [
           {
@@ -257,7 +257,7 @@ export class PaymentsService {
       result = await this.httpService.generateQr({
         IdCorrelation,
         expiration: this.formatExpirationForBcp(),
-        amount: totalAmount, // amount: 0.01, //! para pruebas
+        amount: this.resolveQrAmount(totalAmount),
         gloss: `Recarga para ${dto.customerIds.length} cliente(s)`,
         collectors: collectors,
       });
@@ -468,6 +468,13 @@ export class PaymentsService {
     const minutes = envs.RESERVATION_QR_EXPIRE_MINUTES || 10;
     const now = new Date();
     return new Date(now.getTime() + minutes * 60 * 1000);
+  }
+
+  //* ============================================================================================== */
+
+  //! Solo afecta el monto enviado al BCP; en la BD se sigue guardando el monto real
+  private resolveQrAmount(realAmount: number): number {
+    return envs.QR_TEST_AMOUNT > 0 ? envs.QR_TEST_AMOUNT : realAmount;
   }
 
   //* ============================================================================================== */

@@ -65,6 +65,7 @@ interface IEnvironmentVariables {
   RESERVATION_EXPIRE_MINUTES: number;
   RESERVATION_QR_EXPIRE_MINUTES: number;
   BALANCE_EXPIRATION_DAYS: number;
+  QR_TEST_AMOUNT: number;
 }
 
 const environmentsSchema = joi
@@ -145,4 +146,6 @@ export const envs = {
   RESERVATION_EXPIRE_MINUTES: envVariables.RESERVATION_EXPIRE_MINUTES,
   BALANCE_EXPIRATION_DAYS: Number(envVariables.BALANCE_EXPIRATION_DAYS),
   RESERVATION_QR_EXPIRE_MINUTES: envVariables.RESERVATION_QR_EXPIRE_MINUTES,
+  //! monto fijo que se cobra en el QR del BCP para pruebas (0 o vacío = monto real)
+  QR_TEST_AMOUNT: Number(envVariables.QR_TEST_AMOUNT ?? 0),
 };
