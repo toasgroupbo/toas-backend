@@ -67,6 +67,11 @@ export class Customer {
   @DeleteDateColumn({ nullable: true, select: false })
   deletedAt: Date;
 
+  //! cuenta eliminada: la fila queda anonimizada pero SIN soft delete, para que ticket.buyer
+  //! siga cargando ("Cliente eliminado") y no llegue null al front. Filtrar a mano donde corresponda
+  @Column({ type: 'timestamptz', nullable: true })
+  accountDeletedAt?: Date | null;
+
   //* ============================================================================================== */
   //*                                        Relations                                               */
   //* ============================================================================================== */

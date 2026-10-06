@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, IsNull, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 
 import { envs } from 'src/config/environments/environments';
@@ -218,7 +218,7 @@ export class PaymentsService {
 
     for (const customerId of dto.customerIds) {
       const customer = await this.dataSource.manager.findOne(Customer, {
-        where: { id: customerId },
+        where: { id: customerId, accountDeletedAt: IsNull() },
       });
 
       if (!customer) {
@@ -404,8 +404,9 @@ export class PaymentsService {
           const { customerId, amount } = customerData;
 
           // Buscar el cliente
+          //! si eliminó su cuenta después de generar el QR, no se le acredita (igual que antes con el soft delete)
           const customer = await queryRunner.manager.findOne(Customer, {
-            where: { id: customerId },
+            where: { id: customerId, accountDeletedAt: IsNull() },
           });
 
           if (!customer) {

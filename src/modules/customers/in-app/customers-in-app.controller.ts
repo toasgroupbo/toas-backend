@@ -20,6 +20,7 @@ import { UpdateCustomerDto } from '../dto';
 import { Customer } from '../entities/customer.entity';
 
 import { WalletService } from 'src/modules/wallet/wallet.service';
+import { CustomersService } from '../customers.service';
 import { CustomersInAppService } from './customers-in-app.service';
 
 //!
@@ -34,6 +35,7 @@ export class CustomersInAppController {
     private readonly customerInAppService: CustomersInAppService,
     //private readonly billingsSerrvices: BillingsService,
     private readonly walletService: WalletService,
+    private readonly customersService: CustomersService,
   ) {}
 
   //? ============================================================================================== */
@@ -60,6 +62,20 @@ export class CustomersInAppController {
   @Patch()
   update(@Body() dto: UpdateCustomerDto, @GetCustomer() customer: Customer) {
     return this.customerInAppService.update(customer, dto);
+  }
+
+  //? ============================================================================================== */
+  //?                                    Delete_Me                                                   */
+  //? ============================================================================================== */
+
+  //! el cliente elimina su propia cuenta (requisito de App Store). Misma lógica que el borrado del admin
+  //!
+  @UseGuards(IsVerifyGuard)
+  @Auth()
+  //!
+  @Delete('me')
+  deleteMe(@GetCustomer() customer: Customer) {
+    return this.customersService.remove(customer.id);
   }
 
   //? ============================================================================================== */

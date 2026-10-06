@@ -574,11 +574,18 @@ export class TravelsService {
         //! Tickets comprados desde APP
         //! ===============================
         if (ticket.type === TicketType.IN_APP) {
+          //! cuenta eliminada: no se acredita a una billetera que nadie puede usar.
+          //! si reclama, se le devuelve en oficina identificándolo por el CI del ticket
+          const buyer =
+            ticket.buyer && !ticket.buyer.accountDeletedAt
+              ? ticket.buyer
+              : null;
+
           //! Refund wallet sin comisión
-          if (ticket.status === TicketStatus.SOLD && ticket.buyer) {
+          if (ticket.status === TicketStatus.SOLD && buyer) {
             await this.walletService.creditFromTicketCancel(
               ticket,
-              ticket.buyer,
+              buyer,
               false,
               manager,
             );
@@ -590,11 +597,11 @@ export class TravelsService {
           if (
             ticket.status === TicketStatus.PENDING_PAYMENT &&
             Number(ticket.wallet_amount) > 0 &&
-            ticket.buyer
+            buyer
           ) {
             await this.walletService.restoreCreditsFromExpiredTicket(
               ticket,
-              ticket.buyer,
+              buyer,
               manager,
             );
           }

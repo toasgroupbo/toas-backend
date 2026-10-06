@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, EntityManager, Repository } from 'typeorm';
+import { Between, EntityManager, IsNull, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -30,7 +30,7 @@ export class CustomersService {
 
   async findAll(pagination: CustomerPaginationDto) {
     const options: any = {
-      where: {},
+      where: { accountDeletedAt: IsNull() },
       select: {
         id: true,
         ci: true,
@@ -90,7 +90,9 @@ export class CustomersService {
       }),
     );
 
-    const allCustomers = await this.customerRepository.find();
+    const allCustomers = await this.customerRepository.find({
+      where: { accountDeletedAt: IsNull() },
+    });
 
     //! balance total
     const balances = await Promise.all(
@@ -127,7 +129,7 @@ export class CustomersService {
       : this.customerRepository;
 
     const customer = await repository.findOne({
-      where: { id },
+      where: { id, accountDeletedAt: IsNull() },
       relations: { ticketsBought: true },
     });
 
@@ -180,12 +182,16 @@ export class CustomersService {
   //?                                        Delete                                                  */
   //? ============================================================================================== */
 
-  //! anonimiza antes del soft delete:
+  //! anonimiza y marca accountDeletedAt (sin soft delete, para que ticket.buyer no llegue null):
   //!  - libera el email (unique): la persona puede volver a registrarse con Google/Apple
   //!  - no quedan datos personales (requisito de borrado de cuenta de Apple)
+  //!  - sessionToken null: el token viejo deja de servir (401)
   //! los tickets conservan su historial con billingSnapshot y los pasajeros de ticket.seats
   async remove(id: number) {
-    const exists = await this.customerRepository.existsBy({ id });
+    const exists = await this.customerRepository.existsBy({
+      id,
+      accountDeletedAt: IsNull(),
+    });
     if (!exists) throw new NotFoundException('Customer not found');
 
     try {
@@ -200,8 +206,8 @@ export class CustomersService {
           birthDate: null,
           billingObject: () => 'NULL', //! es `any` en la entidad: TypeORM no acepta null directo
           sessionToken: null,
+          accountDeletedAt: new Date(),
         });
-        await manager.softDelete(Customer, id);
       });
 
       return {
