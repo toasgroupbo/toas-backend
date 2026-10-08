@@ -148,7 +148,8 @@ export class SeedService implements OnModuleInit {
 
           {
             resourse: ValidResourses.TRAVEL,
-            permissions: [ValidPermissions.READ],
+            //! APPROVE: el super-admin actúa como empresa mandando ?companyId=X
+            permissions: [ValidPermissions.READ, ValidPermissions.APPROVE],
           },
 
           {
