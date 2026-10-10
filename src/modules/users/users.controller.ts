@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
   Controller,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { Auth, GetCompany, Resource } from '../../auth/decorators';
+import { TwoFactorEnabledGuard } from '../../auth/guards';
 import { ValidResourses, ValidPermissions } from '../../common/enums';
 
 import {
@@ -81,7 +83,8 @@ export class UsersController {
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
-  //!
+  //! quien edita tiene que tener el 2FA activo (UseGuards va arriba de Auth para correr después)
+  @UseGuards(TwoFactorEnabledGuard)
   @Auth(ValidPermissions.UPDATE)
   //!
   @Patch(':id')
@@ -93,7 +96,8 @@ export class UsersController {
   //?                               Update_Cashiers                                                  */
   //? ============================================================================================== */
 
-  //!
+  //! quien edita tiene que tener el 2FA activo
+  @UseGuards(TwoFactorEnabledGuard)
   @Auth(ValidPermissions.UPDATE_CASHIERS)
   //!
   @ApiQuery({ name: 'companyId', required: false, type: Number }) //! GetCompany
@@ -110,7 +114,8 @@ export class UsersController {
   //?                                Update_Password                                                 */
   //? ============================================================================================== */
 
-  //!
+  //! quien cambia la contraseña tiene que tener el 2FA activo
+  @UseGuards(TwoFactorEnabledGuard)
   @Auth(ValidPermissions.UPDATE)
   //!
   @Put(':id')
