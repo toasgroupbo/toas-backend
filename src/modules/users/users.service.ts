@@ -17,9 +17,12 @@ import {
   UpdateUserOfficeDto,
   CreateUserCashierDto,
   UpdateUserPasswordDto,
+  UpdateMyProfileDto,
+  UpdateMyPasswordDto,
 } from './dto';
 
 import { StaticRoles } from 'src/auth/enums/roles.enum';
+import { InvalidPasswordException } from 'src/auth/exceptions/invalid-password.exception';
 
 import { RolesService } from '../roles/roles.service';
 
@@ -267,12 +270,15 @@ export class UsersService {
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
-  async update(id: number, dto: UpdateUserDto) {
+  async update(id: number, actorId: number, dto: UpdateUserDto) {
+    const { currentPassword, ...data } = dto;
+    await this.verifyPassword(actorId, currentPassword);
+
     try {
       const user = await this.findOne(id);
 
-      if (dto.rol) {
-        const rol = await this.rolService.findOne(dto.rol);
+      if (data.rol) {
+        const rol = await this.rolService.findOne(data.rol);
 
         const staticRoles: StaticRoles[] = [
           StaticRoles.SUPER_ADMIN,
@@ -291,7 +297,7 @@ export class UsersService {
         }
       }
 
-      Object.assign(user, dto);
+      Object.assign(user, data);
       return await this.userRepository.save(user);
     } catch (error) {
       handleDBExceptions(error);
@@ -301,7 +307,15 @@ export class UsersService {
   //?                              Update_Cashiers                                                   */
   //? ============================================================================================== */
 
-  async updateCashiers(id: number, companyId: number, dto: UpdateUserDto) {
+  async updateCashiers(
+    id: number,
+    companyId: number,
+    actorId: number,
+    dto: UpdateUserDto,
+  ) {
+    const { currentPassword, ...data } = dto;
+    await this.verifyPassword(actorId, currentPassword);
+
     try {
       const allowedCashierRoles = [
         StaticRoles.CASHIER,
@@ -311,16 +325,34 @@ export class UsersService {
 
       const cashier = await this.findOneCashier(id, companyId);
 
-      if (dto.rol) {
-        const rol = await this.rolService.findOne(dto.rol);
+      if (data.rol) {
+        const rol = await this.rolService.findOne(data.rol);
 
         if (!allowedCashierRoles.includes(rol.name as StaticRoles)) {
           throw new BadRequestException('Invalid role. Must be a cashier role');
         }
       }
 
-      Object.assign(cashier, dto);
+      Object.assign(cashier, data);
       return await this.userRepository.save(cashier);
+    } catch (error) {
+      handleDBExceptions(error);
+    }
+  }
+
+  //? ============================================================================================== */
+  //?                               Update_My_Profile                                                */
+  //? ============================================================================================== */
+
+  async updateMyProfile(actorId: number, dto: UpdateMyProfileDto) {
+    const { currentPassword, ...data } = dto;
+    await this.verifyPassword(actorId, currentPassword);
+
+    try {
+      const user = await this.findOne(actorId);
+
+      Object.assign(user, data);
+      return await this.userRepository.save(user);
     } catch (error) {
       handleDBExceptions(error);
     }
@@ -330,16 +362,49 @@ export class UsersService {
   //?                               Update_password                                                  */
   //? ============================================================================================== */
 
-  async changePassword(id: number, dto: UpdateUserPasswordDto) {
+  async updatePassword(
+    id: number,
+    actorId: number,
+    dto: UpdateUserPasswordDto,
+  ) {
+    await this.verifyPassword(actorId, dto.currentPassword);
+    return this.changePassword(id, dto.password);
+  }
+
+  //? ============================================================================================== */
+
+  async updateMyPassword(actorId: number, dto: UpdateMyPasswordDto) {
+    await this.verifyPassword(actorId, dto.currentPassword);
+    return this.changePassword(actorId, dto.newPassword);
+  }
+
+  //* ============================================================================================== */
+
+  //! sin confirmar la contraseña actual: también lo usa "Olvidé mi contraseña" (auth.service)
+  async changePassword(id: number, password: string) {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) throw new NotFoundException('User not found');
 
-    user.password = await bcrypt.hash(dto.password, 10);
+    user.password = await bcrypt.hash(password, 10);
     user.sessionToken = null; //! cierra la sesión del usuario en todos los dispositivos
     await this.userRepository.save(user);
 
     //! no devolver el user: save() trae el hash de la contraseña nueva
     return { message: 'Password updated successfully' };
+  }
+
+  //* ============================================================================================== */
+
+  //! confirma la contraseña de quien hace la acción antes de editar un perfil o una contraseña
+  private async verifyPassword(userId: number, password: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, enabled: true },
+      select: { id: true, password: true },
+    });
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new InvalidPasswordException();
+    }
   }
 
   //? ============================================================================================== */

@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, MaxLength, MinLength } from 'class-validator';
 
-export class UpdateUserPasswordDto {
+import { CurrentPasswordDto } from './current-password.dto';
+
+export class UpdateUserPasswordDto extends CurrentPasswordDto {
   @ApiProperty({
     example: '123456',
   })

@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { Auth, GetCompany, Resource } from '../../auth/decorators';
+import { Auth, GetCompany, GetUser, Resource } from '../../auth/decorators';
 import { TwoFactorEnabledGuard } from '../../auth/guards';
 import { ValidResourses, ValidPermissions } from '../../common/enums';
 
@@ -21,8 +21,11 @@ import {
   UpdateUserDto,
   CreateUserAdminDto,
   UpdateUserPasswordDto,
+  UpdateMyProfileDto,
+  UpdateMyPasswordDto,
 } from './dto';
 
+import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
 //!
@@ -80,23 +83,55 @@ export class UsersController {
   }
 
   //? ============================================================================================== */
+  //?                               Update_My_Profile                                                */
+  //? ============================================================================================== */
+
+  //! cualquier user del panel con 2FA activo + su contraseña. Van antes de las rutas ':id'
+  //! para que 'me' no caiga en el ParseIntPipe
+  @UseGuards(TwoFactorEnabledGuard)
+  @Auth()
+  //!
+  @Patch('me')
+  updateMyProfile(@Body() dto: UpdateMyProfileDto, @GetUser() user: User) {
+    return this.usersService.updateMyProfile(user.id, dto);
+  }
+
+  //? ============================================================================================== */
+  //?                               Update_My_Password                                               */
+  //? ============================================================================================== */
+
+  //! cierra todas las sesiones, también la actual
+  @UseGuards(TwoFactorEnabledGuard)
+  @Auth()
+  //!
+  @Patch('me/password')
+  updateMyPassword(@Body() dto: UpdateMyPasswordDto, @GetUser() user: User) {
+    return this.usersService.updateMyPassword(user.id, dto);
+  }
+
+  //? ============================================================================================== */
   //?                                        Update                                                  */
   //? ============================================================================================== */
 
   //! quien edita tiene que tener el 2FA activo (UseGuards va arriba de Auth para correr después)
+  //! y confirmar con su contraseña (currentPassword)
   @UseGuards(TwoFactorEnabledGuard)
   @Auth(ValidPermissions.UPDATE)
   //!
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(id, dto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserDto,
+    @GetUser() user: User,
+  ) {
+    return this.usersService.update(id, user.id, dto);
   }
 
   //? ============================================================================================== */
   //?                               Update_Cashiers                                                  */
   //? ============================================================================================== */
 
-  //! quien edita tiene que tener el 2FA activo
+  //! quien edita tiene que tener el 2FA activo y confirmar con su contraseña
   @UseGuards(TwoFactorEnabledGuard)
   @Auth(ValidPermissions.UPDATE_CASHIERS)
   //!
@@ -106,15 +141,16 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
     @GetCompany() companyId: number,
+    @GetUser() user: User,
   ) {
-    return this.usersService.updateCashiers(id, companyId, dto);
+    return this.usersService.updateCashiers(id, companyId, user.id, dto);
   }
 
   //? ============================================================================================== */
   //?                                Update_Password                                                 */
   //? ============================================================================================== */
 
-  //! quien cambia la contraseña tiene que tener el 2FA activo
+  //! quien cambia la contraseña tiene que tener el 2FA activo y confirmar con su contraseña
   @UseGuards(TwoFactorEnabledGuard)
   @Auth(ValidPermissions.UPDATE)
   //!
@@ -122,8 +158,9 @@ export class UsersController {
   updatePassword(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserPasswordDto,
+    @GetUser() user: User,
   ) {
-    return this.usersService.changePassword(id, dto);
+    return this.usersService.updatePassword(id, user.id, dto);
   }
 
   //? ============================================================================================== */

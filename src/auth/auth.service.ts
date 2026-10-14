@@ -379,9 +379,7 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired token');
     }
 
-    await this.userService.changePassword(user.id, {
-      password: dto.newPassword,
-    });
+    await this.userService.changePassword(user.id, dto.newPassword);
 
     return { message: 'Password updated successfully' };
   }
