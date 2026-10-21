@@ -281,15 +281,17 @@ export class TravelsForCashierService {
       where.departure_time = Between(from, to);
     }
 
+    //! viajes del dueño fijado en el viaje (aunque el bus haya cambiado de dueño).
+    //! la 2da condición cubre viajes previos al backfill de travels.ownerId
+    const ownerWhere = [
+      { ...where, owner: { id: owner.id } },
+      { ...where, owner: IsNull(), bus: { owner: { id: owner.id } } },
+    ];
+
     const travels = await paginate(
       this.travelRepository,
       {
-        //! viajes del dueño fijado en el viaje (aunque el bus haya cambiado de dueño).
-        //! la 2da condición cubre viajes previos al backfill de travels.ownerId
-        where: [
-          { ...where, owner: { id: owner.id } },
-          { ...where, owner: IsNull(), bus: { owner: { id: owner.id } } },
-        ],
+        where: ownerWhere,
         transaction: true,
         order: { departure_time: 'DESC' },
         relations: {
@@ -351,8 +353,9 @@ export class TravelsForCashierService {
       };
     });
 
+    //! mismo filtro de dueño que la paginación: sin él los totales sumaban viajes de todos los owners
     const allTravels = await this.travelRepository.find({
-      where,
+      where: ownerWhere,
       select: {
         id: true,
         travel_status: true,
