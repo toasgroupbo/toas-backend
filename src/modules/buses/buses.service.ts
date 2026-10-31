@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Not, Repository } from 'typeorm';
+import { DataSource, In, MoreThan, Not, Repository } from 'typeorm';
 
 import { handleDBExceptions } from 'src/common/helpers/handleDBExceptions';
 
@@ -35,13 +35,7 @@ export class BusesService {
     });
     if (!owner) throw new NotFoundException('Owner not found or disabled');
 
-    const plaqueInUse = await this.busRepository.exists({
-      where: { plaque: dto.plaque, enabled: true, company: { id: companyId } },
-    });
-
-    if (plaqueInUse) {
-      throw new ConflictException('Ya existe un bus activo con estas placas');
-    }
+    await this.validatePlaqueAvailable(dto.plaque, companyId);
 
     try {
       const { busType, ...data } = dto;
@@ -115,6 +109,14 @@ export class BusesService {
       if (!owner) throw new NotFoundException('Owner not found or disabled');
     }
 
+    //! solo si cambia de verdad: un bus ya duplicado se puede seguir editando si el form reenvía su placa
+    if (
+      dto.plaque &&
+      this.normalizePlaque(dto.plaque) !== this.normalizePlaque(bus.plaque)
+    ) {
+      await this.validatePlaqueAvailable(dto.plaque, companyId);
+    }
+
     try {
       Object.assign(bus, dto);
       return await this.busRepository.save(bus);
@@ -131,15 +133,30 @@ export class BusesService {
     const bus = await this.findOne(id, companyId);
 
     const hasOpenTravels = await this.dataSource.manager.exists(Travel, {
-      where: {
-        bus: { id: bus.id },
-        travel_status: Not(In([TravelStatus.CLOSED, TravelStatus.REJECTED])),
-      },
+      where: [
+        //! un viaje cancelado ya liberó asientos y devolvió saldos: no retiene al bus
+        {
+          bus: { id: bus.id },
+          travel_status: Not(
+            In([
+              TravelStatus.CLOSED,
+              TravelStatus.REJECTED,
+              TravelStatus.CANCELLED,
+            ]),
+          ),
+        },
+        //! cerrado no significa que llegó: el bus sigue en ruta hasta su arrival_time
+        {
+          bus: { id: bus.id },
+          travel_status: TravelStatus.CLOSED,
+          arrival_time: MoreThan(new Date()),
+        },
+      ],
     });
 
     if (hasOpenTravels) {
       throw new BadRequestException(
-        'No se puede eliminar el bus porque tiene salidas sin cerrar',
+        'No se puede eliminar el bus porque tiene salidas sin cerrar o en curso',
       );
     }
 
@@ -168,6 +185,29 @@ export class BusesService {
       };
     } catch (error) {
       handleDBExceptions(error);
+    }
+  }
+
+  //* ============================================================================================== */
+
+  //! misma regla en JS y en SQL: sin guiones ni espacios y en mayúsculas
+  private normalizePlaque(plaque: string) {
+    return plaque.replace(/[-\s]/g, '').toUpperCase();
+  }
+
+  //! ABC-1234 y abc 1234 son el mismo bus físico: si no, el chequeo de viajes solapados por bus.id no lo detecta
+  private async validatePlaqueAvailable(plaque: string, companyId: number) {
+    const plaqueInUse = await this.busRepository
+      .createQueryBuilder('bus')
+      .where(`UPPER(REGEXP_REPLACE(bus.plaque, '[-\\s]', '', 'g')) = :plaque`, {
+        plaque: this.normalizePlaque(plaque),
+      })
+      .andWhere('bus.enabled = true')
+      .andWhere('bus.companyId = :companyId', { companyId })
+      .getExists();
+
+    if (plaqueInUse) {
+      throw new ConflictException('Ya existe un bus activo con estas placas');
     }
   }
 }

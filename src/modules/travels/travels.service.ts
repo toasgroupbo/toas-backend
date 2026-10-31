@@ -102,13 +102,28 @@ export class TravelsService {
 
       const { departure_time, arrival_time } = data;
 
-      //! los pendientes de aprobación también ocupan el bus
+      //! con llegada <= salida el chequeo de solape no detecta nada y el viaje tampoco bloquearía al bus
+      if (arrival_time <= departure_time) {
+        throw new BadRequestException(
+          'The arrival time must be after the departure time',
+        );
+      }
+
+      //! bloquea el bus (SIN joins) para que dos requests simultáneos no pasen el chequeo a la vez
+      await queryRunner.manager
+        .createQueryBuilder(Bus, 'bus')
+        .setLock('pessimistic_write')
+        .where('bus.id = :id', { id: bus.id })
+        .getOne();
+
+      //! los pendientes de aprobación también ocupan el bus, y los cerrados lo ocupan hasta su llegada
       const overlappingTravel = await queryRunner.manager.findOne(Travel, {
         where: {
           bus: { id: bus.id },
           travel_status: In([
             TravelStatus.ACTIVE,
             TravelStatus.PENDING_APPROVAL,
+            TravelStatus.CLOSED,
           ]),
           departure_time: LessThan(arrival_time),
           arrival_time: MoreThan(departure_time),
